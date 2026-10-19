@@ -5,6 +5,7 @@ import { households } from "./db/schema";
 import type { AppEnv, Env } from "./env";
 import { requireProfile, requireSession } from "./middleware/auth";
 import { auth } from "./routes/auth";
+import { setup } from "./routes/setup";
 
 const app = new Hono<AppEnv>();
 
@@ -14,6 +15,7 @@ app.get("/healthz", async (c) => {
 });
 
 app.route("/", auth);
+app.route("/", setup);
 
 app.use("/api/*", requireSession, requireProfile);
 app.get("/", requireSession, requireProfile, (c) => c.text("add screen coming soon"));

@@ -1,7 +1,9 @@
 import { env } from "cloudflare:test";
 import { app } from "../src/index";
 import { getDb } from "../src/db/client";
-import { households, profiles } from "../src/db/schema";
+import { eq } from "drizzle-orm";
+import { categories, households, profiles } from "../src/db/schema";
+import { seedCategories } from "../src/lib/households";
 import { hashPin } from "../src/lib/pin";
 import { PROFILE_COOKIE, SESSION_COOKIE, createSession } from "../src/lib/session";
 
@@ -24,7 +26,9 @@ export async function seedHousehold(opts: { username?: string; pin?: string; pro
     const [p] = await db().insert(profiles).values({ householdId: h.id, name, createdAt }).returning();
     profileIds.push(p.id);
   }
+  await seedCategories(env, h.id, createdAt);
   const categoryIds: Record<string, number> = {};
+  for (const c of await db().select().from(categories).where(eq(categories.householdId, h.id))) categoryIds[c.name] = c.id;
   return { householdId: h.id, profileIds, categoryIds };
 }
 
