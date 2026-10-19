@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { count } from "drizzle-orm";
+import { runBackup } from "./backup";
 import { getDb } from "./db/client";
 import { households } from "./db/schema";
 import type { AppEnv, Env } from "./env";
@@ -29,7 +30,9 @@ app.route("/", spending);
 app.route("/", entriesRoutes);
 app.route("/", settings);
 
-async function scheduled(_controller: ScheduledController, _env: Env, _ctx: ExecutionContext) {}
+async function scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+  ctx.waitUntil(runBackup(env, Date.now()));
+}
 
 export { app };
 export default { fetch: app.fetch, scheduled } satisfies ExportedHandler<Env>;
