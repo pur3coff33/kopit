@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { and, desc, eq, gte, isNull, lt } from "drizzle-orm";
 import { getDb } from "../db/client";
-import { entries, households, profiles } from "../db/schema";
+import { entries, profiles } from "../db/schema";
 import type { AppEnv } from "../env";
 import { getCategory } from "../lib/categories";
 import { formatPeso } from "../lib/money";
@@ -91,11 +91,10 @@ spending.get("/spending", async (c) => {
   const view = await readView(c, householdId);
   const profileId = view.who === "all" ? null : view.who;
   const filter = { householdId, profileId, start: view.range.start, end: view.range.end };
-  const household = await getDb(c.env).query.households.findFirst({ where: eq(households.id, householdId) });
   const [b, p, ns] = await Promise.all([
     breakdown(c.env, filter),
     view.range.kind === "this" ? pace(c.env, householdId, profileId, now) : Promise.resolve(null),
-    noSpendDays(c.env, filter, household!.createdAt, now),
+    noSpendDays(c.env, filter, c.get("householdCreatedAt"), now),
   ]);
   const top = Math.max(1, ...b.rows.map((r) => r.amount));
   const nsText = noSpendText(ns, view.range.kind);

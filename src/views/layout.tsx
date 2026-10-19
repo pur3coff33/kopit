@@ -42,6 +42,17 @@ export function Layout(props: { title: string; tab?: Tab; profileName?: string; 
             {props.tab && <Nav tab={props.tab} />}
           </div>
           <InlineScript code="if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js')" />
+          {props.tab && (
+            // Start loading a tab as soon as a finger lands on it (Chrome on Android), so switching feels instant.
+            <script
+              type="speculationrules"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  prerender: [{ where: { href_matches: ["/spending", "/history"] }, eagerness: "moderate" }],
+                }),
+              }}
+            ></script>
+          )}
         </body>
       </html>
     </>

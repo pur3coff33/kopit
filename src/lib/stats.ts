@@ -57,13 +57,14 @@ export async function breakdown(env: Env, f: Filter): Promise<{ total: number; c
 export async function pace(env: Env, householdId: number, profileId: number | null, now: number): Promise<{ diff: number } | null> {
   const thisStart = monthStart(now);
   const prevStart = addMonths(now, -1);
-  const lastWhole = await total(env, householdId, profileId, prevStart, thisStart);
-  if (lastWhole.count === 0) return null;
   const lastEnd = Math.min(prevStart + (now - thisStart), thisStart);
-  const [thisSoFar, lastSoFar] = await Promise.all([
+  // All three at once: each query is a round trip to the database.
+  const [lastWhole, thisSoFar, lastSoFar] = await Promise.all([
+    total(env, householdId, profileId, prevStart, thisStart),
     total(env, householdId, profileId, thisStart, now),
     total(env, householdId, profileId, prevStart, lastEnd),
   ]);
+  if (lastWhole.count === 0) return null;
   return { diff: thisSoFar.total - lastSoFar.total };
 }
 

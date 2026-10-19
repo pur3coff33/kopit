@@ -2,6 +2,8 @@
 const CACHE = "kopit-v1";
 const PRECACHE = [
   "/app.css",
+  "/js/history.js",
+  "/js/edit.js",
   "/js/keypad.js",
   "/js/add.js",
   "/js/queue.js",
@@ -51,9 +53,17 @@ async function addScreen(event) {
   const cached = await cache.match("/");
   const network = fetch(event.request).then(async (res) => {
     if (res.ok && !res.redirected) await cache.put("/", res.clone());
+    // Sent to /login or /profile: the saved add screen no longer belongs to this phone.
+    else if (res.redirected) await cache.delete("/");
     return res;
   });
   if (!cached) return network.then(clean).catch(offline);
+  // Open instantly from the saved copy and refresh it in the background — unless a fresh copy
+  // was asked for (?fresh, right after picking a profile), where a stale page would be wrong.
+  if (!new URL(event.request.url).searchParams.has("fresh")) {
+    event.waitUntil(network.catch(() => {}));
+    return cached;
+  }
   event.waitUntil(network.catch(() => {})); // keep refreshing the cache in the background
   const timeout = new Promise((resolve) => setTimeout(resolve, NAV_TIMEOUT_MS, null));
   try {

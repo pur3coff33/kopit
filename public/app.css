@@ -255,3 +255,11 @@ p { margin: 6px 0; }
 .range-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .range-form input[type="date"] { min-width: 0; width: 100%; font-size: 15px; padding: 9px 8px; }
 .range-form .save { grid-column: 1 / -1; margin-top: 0; padding: 9px; font-size: 15px; }
+
+/* Smooth cross-fade between screens instead of a white flash (Chrome, Safari 18.2+).
+   The header and bottom bar stay put while the content changes. */
+@view-transition { navigation: auto; }
+.top { view-transition-name: top; }
+.nav { view-transition-name: nav; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.15s; }
+@media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }

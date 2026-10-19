@@ -157,5 +157,6 @@ setup.post("/profile", requireSession, async (c) => {
   });
   if (!p) return c.text("Unknown profile", 400);
   setLongCookie(c, PROFILE_COOKIE, String(p.id));
-  return c.redirect("/");
+  // ?fresh makes the service worker fetch a new add screen instead of the saved one (which has the old profile).
+  return c.redirect("/?fresh=1");
 });

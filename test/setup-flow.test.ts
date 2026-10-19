@@ -52,7 +52,7 @@ describe("profiles", () => {
     expect(ps.map((p) => p.name)).toEqual(["Jon", "Ana"]);
     const pick = await req("/profile", { ...form({ profileId: String(ps[1].id) }), cookie });
     expect(pick.status).toBe(302);
-    expect(pick.headers.get("Location")).toBe("/");
+    expect(pick.headers.get("Location")).toBe("/?fresh=1"); // never show a saved add screen that belongs to the previous profile
     expect(pick.headers.get("Set-Cookie")).toMatch(new RegExp(`^kopit_profile=${ps[1].id};.*Max-Age=31536000`));
   });
 

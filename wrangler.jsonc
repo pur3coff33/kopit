@@ -5,6 +5,9 @@
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
   "preview_urls": false,
+  // Run the Worker next to the D1 database: pages make several queries, and each would
+  // otherwise cross the region on every request.
+  "placement": { "mode": "smart" },
   "assets": { "directory": "./public", "binding": "ASSETS" },
   "d1_databases": [
     {
