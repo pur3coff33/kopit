@@ -8,6 +8,7 @@ import { add } from "./routes/add";
 import { api } from "./routes/api";
 import { auth } from "./routes/auth";
 import { entriesRoutes } from "./routes/entries";
+import { settings } from "./routes/settings";
 import { setup } from "./routes/setup";
 import { spending } from "./routes/spending";
 
@@ -26,6 +27,7 @@ app.route("/api", api);
 app.route("/", add);
 app.route("/", spending);
 app.route("/", entriesRoutes);
+app.route("/", settings);
 
 async function scheduled(_controller: ScheduledController, _env: Env, _ctx: ExecutionContext) {}
 

@@ -1,0 +1,160 @@
+import { Hono } from "hono";
+import type { Context } from "hono";
+import { and, eq } from "drizzle-orm";
+import { getDb } from "../db/client";
+import { households, profiles } from "../db/schema";
+import type { AppEnv } from "../env";
+import { cleanName, listCategories, renameCategory, setCategoryHidden } from "../lib/categories";
+import { recordFailure, recordSuccess } from "../lib/login";
+import { hashPin, isValidPin, verifyPin } from "../lib/pin";
+import { clockTime } from "../lib/time";
+import { requireProfile, requireSession } from "../middleware/auth";
+import { Layout } from "../views/layout";
+import { householdProfiles } from "./setup";
+
+export const settings = new Hono<AppEnv>();
+
+settings.use("/settings", requireSession, requireProfile);
+settings.use("/settings/*", requireSession, requireProfile);
+
+const OK: Record<string, string> = {
+  people: "Saved.",
+  cat: "Category saved.",
+  pin: "PIN changed.",
+};
+
+async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: string }) {
+  const householdId = c.get("householdId");
+  const [people, cats] = await Promise.all([
+    householdProfiles(c.env, householdId),
+    listCategories(c.env, householdId, { includeHidden: true }),
+  ]);
+  const ok = OK[c.req.query("ok") ?? ""];
+  return (
+    <Layout title="Settings" profileName={c.get("profileName")}>
+      <p>
+        <a href="/">‹ Back</a>
+      </p>
+      <h1>Settings</h1>
+      {(message ?? ok) && <p class="msg">{message ?? ok}</p>}
+
+      <h2>This phone is</h2>
+      <p>
+        {c.get("profileName")} · <a href="/profile">switch</a>
+      </p>
+
+      <h2>People</h2>
+      {people.map((p) => (
+        <form class="form inline" method="post" action={`/settings/profiles/${p.id}`}>
+          <label>
+            <input name="name" value={p.name} maxlength={24} required aria-label="Name" />
+          </label>
+          <button class="save" type="submit">Rename</button>
+        </form>
+      ))}
+      <form class="form inline" method="post" action="/settings/profiles">
+        <label>
+          <input name="name" maxlength={24} required placeholder="Add a person" aria-label="New person" />
+        </label>
+        <button class="save" type="submit">Add</button>
+      </form>
+
+      <h2>Categories</h2>
+      <p class="muted">Hidden categories stay on old expenses but leave the add screen.</p>
+      {cats.map((cat) => (
+        <div style={cat.hidden ? "opacity:.55" : ""}>
+          <form class="form inline" method="post" action={`/settings/categories/${cat.id}`} style="margin-bottom:4px">
+            <label style="flex:0 0 58px">
+              <input name="emoji" value={cat.emoji} maxlength={8} aria-label="Emoji" />
+            </label>
+            <label>
+              <input name="name" value={cat.name} maxlength={24} required aria-label="Name" />
+            </label>
+            <button class="save" type="submit">Save</button>
+          </form>
+          <form method="post" action={`/settings/categories/${cat.id}/hidden`} style="margin:0 0 10px">
+            <input type="hidden" name="hidden" value={cat.hidden ? "0" : "1"} />
+            <button class="linkbtn" type="submit">{cat.hidden ? "Show on add screen" : "Hide"}</button>
+          </form>
+        </div>
+      ))}
+
+      <h2>Change PIN</h2>
+      <form class="form" method="post" action="/settings/pin">
+        <label>
+          Current PIN
+          <input name="current" type="password" inputmode="numeric" autocomplete="current-password" pattern="\d{6}" maxlength={6} required />
+        </label>
+        <label>
+          New PIN
+          <input name="next" type="password" inputmode="numeric" autocomplete="new-password" pattern="\d{6}" maxlength={6} required />
+        </label>
+        <label>
+          New PIN again
+          <input name="nextConfirm" type="password" inputmode="numeric" autocomplete="new-password" pattern="\d{6}" maxlength={6} required />
+        </label>
+        <button class="save" type="submit">Change PIN</button>
+      </form>
+
+      <h2>Log out</h2>
+      <form method="post" action="/logout">
+        <button class="save plain" type="submit">Log out on this phone</button>
+      </form>
+    </Layout>
+  );
+}
+
+const page = (c: Context<AppEnv>, message?: string, status: 200 | 400 = 200) => c.html(<SettingsPage c={c} message={message} />, status);
+
+settings.get("/settings", (c) => page(c));
+
+settings.post("/settings/profiles", async (c) => {
+  const name = cleanName(String((await c.req.parseBody()).name ?? ""));
+  if (!name) return page(c, "Names can be 1–24 characters.", 400);
+  await getDb(c.env).insert(profiles).values({ householdId: c.get("householdId"), name, createdAt: Date.now() });
+  return c.redirect("/settings?ok=people");
+});
+
+settings.post("/settings/profiles/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  const name = cleanName(String((await c.req.parseBody()).name ?? ""));
+  const where = and(eq(profiles.id, id), eq(profiles.householdId, c.get("householdId")));
+  if (!Number.isInteger(id) || !(await getDb(c.env).query.profiles.findFirst({ where }))) return c.notFound();
+  if (!name) return page(c, "Names can be 1–24 characters.", 400);
+  await getDb(c.env).update(profiles).set({ name }).where(where);
+  return c.redirect("/settings?ok=people");
+});
+
+settings.post("/settings/categories/:id", async (c) => {
+  const body = await c.req.parseBody();
+  const result = await renameCategory(c.env, c.get("householdId"), Number(c.req.param("id")), String(body.name ?? ""), String(body.emoji ?? ""));
+  if (result === "not-found") return c.notFound();
+  if (result === "exists") return page(c, "That category already exists.", 400);
+  if (result === "invalid") return page(c, "Category names can be 1–24 characters.", 400);
+  return c.redirect("/settings?ok=cat");
+});
+
+settings.post("/settings/categories/:id/hidden", async (c) => {
+  const hidden = String((await c.req.parseBody()).hidden ?? "") === "1";
+  if (!(await setCategoryHidden(c.env, c.get("householdId"), Number(c.req.param("id")), hidden))) return c.notFound();
+  return c.redirect("/settings?ok=cat");
+});
+
+settings.post("/settings/pin", async (c) => {
+  const body = await c.req.parseBody();
+  const [current, next, confirm] = [body.current, body.next, body.nextConfirm].map((v) => String(v ?? ""));
+  const householdId = c.get("householdId");
+  const h = (await getDb(c.env).query.households.findFirst({ where: eq(households.id, householdId) }))!;
+  const now = Date.now();
+  if (h.lockedUntil !== null && now < h.lockedUntil) return page(c, `Too many tries. Try again at ${clockTime(h.lockedUntil)}.`, 400);
+  if (!(await verifyPin(c.env.PIN_PEPPER, current, h.pinSalt, h.pinHash))) {
+    const lockedUntil = await recordFailure(c.env, householdId, now);
+    return page(c, lockedUntil ? `Too many tries. Try again at ${clockTime(lockedUntil)}.` : "Current PIN didn't match.", 400);
+  }
+  if (!isValidPin(next)) return page(c, "PIN must be 6 digits.", 400);
+  if (next !== confirm) return page(c, "PINs don't match. Try again?", 400);
+  const { hash, salt } = await hashPin(c.env.PIN_PEPPER, next);
+  await getDb(c.env).update(households).set({ pinHash: hash, pinSalt: salt }).where(eq(households.id, householdId));
+  await recordSuccess(c.env, householdId);
+  return c.redirect("/settings?ok=pin");
+});
