@@ -177,7 +177,46 @@ p { margin: 6px 0; }
 .pick { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
 .linkbtn { border: 0; background: none; padding: 0; text-decoration: underline; cursor: pointer; font-weight: 700; }
 
+/* ---------- install badge ---------- */
+.install {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 10px;
+  padding: 7px 8px 7px 12px; border: 1.5px dashed var(--chip-dash); border-radius: 12px;
+  background: var(--note); font-size: 13px; font-weight: 700; line-height: 1.3;
+}
+.install[hidden] { display: none; }
+.install > span { flex: 1; }
+.install[data-mode="prompt"] .if-ios, .install[data-mode="ios"] .if-prompt { display: none; }
+.install-btn {
+  border: 1.5px solid var(--ink); background: var(--save); color: var(--save-ink); cursor: pointer;
+  border-radius: 10px; padding: 5px 12px; font-size: 13px; font-weight: 800; box-shadow: 2px 2px 0 var(--ink);
+}
+.install .x { font-size: 20px; line-height: 1; padding: 0 4px; }
+
 /* ---------- bottom nav ---------- */
-.nav { display: flex; justify-content: space-around; margin-top: 14px; padding-top: 8px; font-size: 17px; font-weight: 800; }
+/* Pinned to the bottom so it never scrolls away; paper background covers content passing under it. */
+.app:has(> .nav) { padding-bottom: 0; }
+.nav {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; justify-content: space-around;
+  margin: 10px -16px 0; padding: 6px 16px calc(8px + env(safe-area-inset-bottom));
+  background-color: var(--paper); background-image: var(--grain);
+  font-size: 17px; font-weight: 800;
+}
 .nav a { text-decoration: none; opacity: 0.6; padding: 4px 12px; }
 .nav a.on { opacity: 1; text-decoration: underline wavy var(--swoosh); text-underline-offset: 5px; }
+
+/* Short phones (and Safari with its toolbars): keep the whole add screen on one screen. */
+@media (max-height: 760px) {
+  .app { padding-top: calc(8px + env(safe-area-inset-top)); }
+  .amount { font-size: 44px; margin: 6px 0 0; }
+  .amount .cur { font-size: 26px; }
+  .underline { margin-bottom: 4px; }
+  .cats { gap: 6px; margin: 8px 0; }
+  .cat { padding: 6px 2px 5px; }
+  .cat .e { font-size: 18px; }
+  .keys { gap: 6px; }
+  .keys button { padding: 8px 0; font-size: 20px; }
+  .save { padding: 10px; margin-top: 8px; }
+  .sync { min-height: 0; margin-top: 4px; }
+  .install { margin-bottom: 6px; padding-top: 5px; padding-bottom: 5px; }
+}

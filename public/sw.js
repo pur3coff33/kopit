@@ -6,6 +6,7 @@ const PRECACHE = [
   "/js/add.js",
   "/js/queue.js",
   "/js/save.js",
+  "/js/install.js",
   "/fonts/nunito-latin-wght-normal.woff2",
   "/fonts/nunito-latin-ext-wght-normal.woff2",
   "/icons/icon-192.png",
