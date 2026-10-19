@@ -1,6 +1,7 @@
 export type Env = {
   DB: D1Database;
-  BACKUPS: R2Bucket;
+  /** Optional: R2 needs a payment method on the Cloudflare account, so backups start switched off. */
+  BACKUPS?: R2Bucket;
   ASSETS: Fetcher;
   PIN_PEPPER: string;
 };

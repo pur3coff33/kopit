@@ -5,6 +5,7 @@ declare global {
   namespace Cloudflare {
     interface Env extends KopitEnv {
       TEST_MIGRATIONS: D1Migration[];
+      BACKUPS: R2Bucket; // always bound in tests (vitest.config.ts)
     }
   }
 }

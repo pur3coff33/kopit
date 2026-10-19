@@ -30,8 +30,10 @@ app.route("/", spending);
 app.route("/", entriesRoutes);
 app.route("/", settings);
 
+// Nightly backup to R2 — only runs once a BACKUPS bucket and a cron trigger are configured (see README).
 async function scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-  ctx.waitUntil(runBackup(env, Date.now()));
+  const bucket = env.BACKUPS;
+  if (bucket) ctx.waitUntil(runBackup({ ...env, BACKUPS: bucket }, Date.now()));
 }
 
 export { app };

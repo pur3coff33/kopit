@@ -11,8 +11,8 @@
       "database_id": "local-placeholder",
       "migrations_dir": "migrations"
     }
-  ],
-  "r2_buckets": [{ "binding": "BACKUPS", "bucket_name": "kopit-backups" }],
-  // 19:00 UTC = 03:00 Asia/Manila
-  "triggers": { "crons": ["0 19 * * *"] }
+  ]
+  // Nightly R2 backups are off (R2 needs a payment method). To turn them on, see README → Backups:
+  // "r2_buckets": [{ "binding": "BACKUPS", "bucket_name": "kopit-backups" }],
+  // "triggers": { "crons": ["0 19 * * *"] }  // 19:00 UTC = 03:00 Asia/Manila
 }

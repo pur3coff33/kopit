@@ -36,7 +36,7 @@ export async function dumpToSql(env: Env): Promise<string> {
   return lines.join("\n") + "\n";
 }
 
-export async function runBackup(env: Env, now: number): Promise<string> {
+export async function runBackup(env: Env & { BACKUPS: R2Bucket }, now: number): Promise<string> {
   const key = `${BACKUP_PREFIX}kopit-${toDateInput(now)}.sql`;
   await env.BACKUPS.put(key, await dumpToSql(env), { httpMetadata: { contentType: "application/sql" } });
   const keys: string[] = [];

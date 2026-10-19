@@ -2,7 +2,7 @@
 
 Household expense tracker. Logging an expense means typing the amount, optionally tapping a category, and pressing **Save**. The spending screen shows where the money went, with a few gentle nudges.
 
-It's one Cloudflare Worker (Hono, server-rendered with `hono/jsx`), with a D1 database (Drizzle) and a nightly SQL backup to R2. It installs as a PWA and saves expenses offline. There's no frontend framework: the browser code is in `public/js/`.
+It's one Cloudflare Worker (Hono, server-rendered with `hono/jsx`), with a D1 database (Drizzle). An optional nightly SQL backup to R2 is switched off for now. It installs as a PWA and saves expenses offline. There's no frontend framework: the browser code is in `public/js/`.
 
 ## Local development
 
@@ -17,18 +17,11 @@ npm run typecheck
 
 After changing `src/db/schema.ts`, run `npm run db:generate` and commit the new file in `migrations/`.
 
-To test the nightly backup locally, run `npx wrangler dev --test-scheduled`, then:
-
-```sh
-curl "http://localhost:8787/__scheduled?cron=0+19+*+*+*"
-```
-
 ## Deploy (first time)
 
 ```sh
 npx wrangler login
 npx wrangler d1 create kopit --location apac       # put the database_id into wrangler.jsonc
-npx wrangler r2 bucket create kopit-backups
 node -e "console.log(crypto.randomBytes(32).toString('hex'))"   # copy this value…
 npx wrangler secret put PIN_PEPPER                  # …and paste it here
 npx wrangler d1 migrations apply kopit --remote
@@ -48,21 +41,38 @@ Later deploys: `npx wrangler d1 migrations apply kopit --remote` (only if there 
 
 ## Backups and restore
 
-A cron job (`0 19 * * *`, 03:00 Manila) writes `backups/kopit-YYYY-MM-DD.sql` to the `kopit-backups` bucket and keeps the newest 30. Sessions aren't backed up, so after a restore everyone logs in again.
+Nightly backups to R2 are **switched off**, because R2 needs a payment method on the Cloudflare account. Without them you still have two free options:
 
-Restore a dump:
+- **D1 Time Travel** is automatic, free and needs no setup. It can restore the database to any minute in the last 30 days:
+
+  ```sh
+  npx wrangler d1 time-travel info kopit
+  npx wrangler d1 time-travel restore kopit --timestamp=2026-10-19T03:00:00+08:00
+  ```
+
+- **Export a copy to your computer** whenever you like (for example, at each weekly review):
+
+  ```sh
+  npx wrangler d1 export kopit --remote --output kopit-2026-10-19.sql
+  ```
+
+### Turning nightly R2 backups on later
+
+The code is already written and tested (`src/backup.ts`). It writes `backups/kopit-YYYY-MM-DD.sql` every night at 03:00 Manila and keeps the newest 30. To switch it on:
+
+1. Add a payment method in the Cloudflare dashboard (R2's free allowance is far more than kopit needs).
+2. Run `npx wrangler r2 bucket create kopit-backups`.
+3. In `wrangler.jsonc`, uncomment the `r2_buckets` and `triggers` lines, then run `npm run deploy`.
+4. After the first few nights, check **Workers → kopit → Logs**. On the Free plan, a run that goes over its CPU limit fails quietly and writes no file.
+
+To try it locally, run `npx wrangler dev --test-scheduled` with those lines uncommented, then `curl "http://localhost:8787/__scheduled?cron=0+19+*+*+*"`.
+
+To restore a nightly dump (sessions aren't included, so everyone logs in again afterwards):
 
 ```sh
 npx wrangler r2 object get kopit-backups/backups/kopit-2026-10-19.sql --file restore.sql --remote
 npx wrangler d1 execute kopit --remote --command "DELETE FROM deleted_entries; DELETE FROM entries; DELETE FROM categories; DELETE FROM sessions; DELETE FROM profiles; DELETE FROM households;"
 npx wrangler d1 execute kopit --remote --file restore.sql
-```
-
-The dump has SQLite build each line, so the Worker does very little work. Still, glance at **Workers → kopit → Logs** after the first few nightly runs: on the Free plan, a run that goes over its CPU limit fails quietly and writes no file. D1 also has 30-day point-in-time restore built in:
-
-```sh
-npx wrangler d1 time-travel info kopit
-npx wrangler d1 time-travel restore kopit --timestamp=2026-10-19T03:00:00+08:00
 ```
 
 ## Forgotten PIN

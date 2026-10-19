@@ -1,4 +1,4 @@
-import { env } from "cloudflare:test";
+import { createExecutionContext, createScheduledController, env, waitOnExecutionContext } from "cloudflare:test";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { dumpToSql, runBackup } from "../src/backup";
@@ -59,6 +59,16 @@ describe("runBackup", () => {
     expect(keys).not.toContain("backups/kopit-2026-09-02.sql");
     expect(keys.at(-1)).toBe("backups/kopit-2026-10-19.sql");
     expect(await (await env.BACKUPS.get(key))!.text()).toContain('INSERT INTO "households"');
+  });
+});
+
+describe("scheduled job", () => {
+  it("does nothing when no backup bucket is attached", async () => {
+    const worker = (await import("../src/index")).default;
+    const ctx = createExecutionContext();
+    await worker.scheduled(createScheduledController(), { ...env, BACKUPS: undefined }, ctx);
+    await waitOnExecutionContext(ctx);
+    expect((await env.BACKUPS.list({ prefix: "backups/" })).objects).toHaveLength(0);
   });
 });
 

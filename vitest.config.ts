@@ -9,6 +9,8 @@ export default defineConfig(async () => {
         wrangler: { configPath: "./wrangler.jsonc" },
         miniflare: {
           bindings: { PIN_PEPPER: "test-pepper", TEST_MIGRATIONS: migrations },
+          // Backups are off in wrangler.jsonc, but the code stays tested so it can be switched on later.
+          r2Buckets: ["BACKUPS"],
         },
       }),
     ],
