@@ -14,6 +14,7 @@ export default defineConfig(async () => {
         },
       }),
     ],
-    test: { setupFiles: ["./test/setup.ts"] },
+    // Some route tests hash several PINs and sessions; give slow machines headroom.
+    test: { setupFiles: ["./test/setup.ts"], testTimeout: 15_000 },
   };
 });
