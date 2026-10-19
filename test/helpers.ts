@@ -2,6 +2,7 @@ import { env } from "cloudflare:test";
 import { app } from "../src/index";
 import { getDb } from "../src/db/client";
 import { households, profiles } from "../src/db/schema";
+import { hashPin } from "../src/lib/pin";
 
 let counter = 0;
 
@@ -12,9 +13,10 @@ export function db() {
 export async function seedHousehold(opts: { username?: string; pin?: string; profiles?: string[]; createdAt?: number } = {}) {
   const username = opts.username ?? `house${++counter}`;
   const createdAt = opts.createdAt ?? Date.now();
+  const { hash, salt } = await hashPin(env.PIN_PEPPER, opts.pin ?? "482913");
   const [h] = await db()
     .insert(households)
-    .values({ username, pinHash: "placeholder", pinSalt: "placeholder", createdAt })
+    .values({ username, pinHash: hash, pinSalt: salt, createdAt })
     .returning();
   const profileIds: number[] = [];
   for (const name of opts.profiles ?? ["Jon", "Partner"]) {
