@@ -4,6 +4,7 @@ import { getDb } from "./db/client";
 import { households } from "./db/schema";
 import type { AppEnv, Env } from "./env";
 import { requireProfile, requireSession } from "./middleware/auth";
+import { add } from "./routes/add";
 import { api } from "./routes/api";
 import { auth } from "./routes/auth";
 import { setup } from "./routes/setup";
@@ -20,7 +21,7 @@ app.route("/", setup);
 
 app.use("/api/*", requireSession, requireProfile);
 app.route("/api", api);
-app.get("/", requireSession, requireProfile, (c) => c.text("add screen coming soon"));
+app.route("/", add);
 
 async function scheduled(_controller: ScheduledController, _env: Env, _ctx: ExecutionContext) {}
 
