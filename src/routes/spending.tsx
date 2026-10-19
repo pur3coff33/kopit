@@ -61,7 +61,7 @@ function Filters({ view }: { view: View }) {
         <a class={k === "custom" ? "chip on" : "chip"} href={`/spending?${qs({ who: view.who, kind: "custom", ...(view.from ? base : customDefault) })}`}>Custom</a>
       </div>
       {k === "custom" && (
-        <form class="form inline" method="get" action="/spending">
+        <form class="form range-form" method="get" action="/spending">
           <input type="hidden" name="range" value="custom" />
           <input type="hidden" name="who" value={String(view.who)} />
           <label>

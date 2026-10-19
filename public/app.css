@@ -250,3 +250,8 @@ p { margin: 6px 0; }
 .history .day { font-size: 14px; font-weight: 800; margin: 16px 0 2px; opacity: 0.7; }
 .history .rows { margin: 0; }
 .more { display: block; text-align: center; padding: 12px; font-weight: 700; opacity: 0.7; }
+
+/* Custom range: From / To side by side, Show underneath — date inputs have a wide built-in minimum. */
+.range-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.range-form input[type="date"] { min-width: 0; width: 100%; font-size: 15px; padding: 9px 8px; }
+.range-form .save { grid-column: 1 / -1; margin-top: 0; padding: 9px; font-size: 15px; }
