@@ -74,3 +74,8 @@ export function rangeLabel(start: number, endExclusive: number, now: number): st
   const sameMonth = monthStart(start) === monthStart(last);
   return `${shortDate(start)} – ${sameMonth ? local(last).getUTCDate() : shortDate(last)}`;
 }
+
+/** "16:05" in Manila time. */
+export function clockTime(ms: number): string {
+  return local(ms).toISOString().slice(11, 16);
+}

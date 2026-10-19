@@ -3,6 +3,7 @@ import { app } from "../src/index";
 import { getDb } from "../src/db/client";
 import { households, profiles } from "../src/db/schema";
 import { hashPin } from "../src/lib/pin";
+import { PROFILE_COOKIE, SESSION_COOKIE, createSession } from "../src/lib/session";
 
 let counter = 0;
 
@@ -32,4 +33,28 @@ export function req(path: string, init: RequestInit & { cookie?: string } = {}) 
   const headers = new Headers(rest.headers);
   if (cookie) headers.set("Cookie", cookie);
   return app.request(path, { ...rest, headers }, env);
+}
+
+/** Real session (+ optional profile) as a Cookie header value. */
+export async function authCookie(householdId: number, profileId?: number): Promise<string> {
+  const token = await createSession(env, householdId, Date.now());
+  return `${SESSION_COOKIE}=${token}` + (profileId !== undefined ? `; ${PROFILE_COOKIE}=${profileId}` : "");
+}
+
+/** Response body with the common HTML entities decoded, for readable assertions. */
+export async function html(res: Response): Promise<string> {
+  return (await res.text())
+    .replace(/&#39;|&#x27;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
+
+export function form(data: Record<string, string>): RequestInit {
+  return {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(data).toString(),
+  };
 }

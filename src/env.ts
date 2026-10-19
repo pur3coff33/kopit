@@ -7,5 +7,5 @@ export type Env = {
 
 export type AppEnv = {
   Bindings: Env;
-  Variables: { householdId: number; profileId: number };
+  Variables: { householdId: number; profileId: number; profileName: string };
 };
