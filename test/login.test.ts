@@ -31,6 +31,15 @@ describe("verifyLogin", () => {
     expect(await verifyLogin(env, "jon", "482913", now + 899_999)).toEqual({ ok: false, reason: "locked", lockedUntil: now + 900_000 });
     expect((await verifyLogin(env, "jon", "482913", now + 900_000)).ok).toBe(true);
   });
+  it("tests at most 5 PINs even when guesses arrive all at once", async () => {
+    await seedHousehold({ username: "jon", pin: "482913" });
+    const guesses = Array.from({ length: 20 }, (_, i) => String(100000 + i));
+    const results = await Promise.all(guesses.map((g) => verifyLogin(env, "jon", g, now)));
+    expect(results.filter((r) => !r.ok && r.reason === "invalid").length).toBeLessThanOrEqual(4);
+    expect(results.filter((r) => !r.ok && r.reason === "locked").length).toBeGreaterThanOrEqual(16);
+    expect((await verifyLogin(env, "jon", "482913", now + 1000)).ok).toBe(false);
+  });
+
   it("normalizes usernames", () => {
     expect(normalizeUsername("  Jon ")).toBe("jon");
     expect(normalizeUsername("ab")).toBeNull();

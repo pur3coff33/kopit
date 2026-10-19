@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { getDb } from "../db/client";
-import { entries } from "../db/schema";
+import { deletedEntries, entries } from "../db/schema";
 import type { Env } from "../env";
 
 export type NewEntry = {
@@ -11,9 +11,14 @@ export type NewEntry = {
   spentAt: number;
 };
 
-/** Insert-or-ignore on id, so a resent offline save can never overwrite later edits. */
+/**
+ * Insert-or-ignore on id, so a resent offline save can never overwrite a later edit,
+ * and ids that were deleted stay deleted.
+ */
 export async function insertEntry(env: Env, householdId: number, e: NewEntry, now: number): Promise<"created" | "duplicate"> {
-  const result = await getDb(env)
+  const db = getDb(env);
+  if (await db.query.deletedEntries.findFirst({ where: eq(deletedEntries.id, e.id) })) return "duplicate";
+  const result = await db
     .insert(entries)
     .values({ ...e, householdId, createdAt: now, updatedAt: now })
     .onConflictDoNothing()
@@ -42,7 +47,10 @@ export async function updateEntry(
   return rows.length > 0;
 }
 
-export async function deleteEntry(env: Env, householdId: number, id: string): Promise<boolean> {
-  const rows = await getDb(env).delete(entries).where(scoped(householdId, id)).returning({ id: entries.id });
-  return rows.length > 0;
+export async function deleteEntry(env: Env, householdId: number, id: string, now = Date.now()): Promise<boolean> {
+  const db = getDb(env);
+  const rows = await db.delete(entries).where(scoped(householdId, id)).returning({ id: entries.id });
+  if (rows.length === 0) return false;
+  await db.insert(deletedEntries).values({ id, householdId, deletedAt: now }).onConflictDoNothing();
+  return true;
 }

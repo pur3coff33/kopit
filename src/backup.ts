@@ -1,3 +1,5 @@
+import { getTableColumns, getTableName, type Table } from "drizzle-orm";
+import { categories, deletedEntries, entries, households, profiles } from "./db/schema";
 import type { Env } from "./env";
 import { toDateInput } from "./lib/time";
 
@@ -5,31 +7,32 @@ export const BACKUP_PREFIX = "backups/";
 export const KEEP_BACKUPS = 30;
 
 // Parents before children so the dump replays cleanly into a fresh, migrated database.
-const TABLES = ["households", "profiles", "categories", "entries"] as const;
-const ORDER_BY: Record<(typeof TABLES)[number], string> = {
-  households: "id",
-  profiles: "id",
-  categories: "id",
-  entries: "created_at, id",
-};
+// Sessions are left out on purpose: after a restore everyone logs in again.
+const TABLES: Array<[Table, string]> = [
+  [households, "id"],
+  [profiles, "id"],
+  [categories, "id"],
+  [entries, "created_at, id"],
+  [deletedEntries, "deleted_at, id"],
+];
 
-function literal(v: unknown): string {
-  if (v === null || v === undefined) return "NULL";
-  if (typeof v === "number" || typeof v === "bigint") return String(v);
-  if (typeof v === "boolean") return v ? "1" : "0";
-  return `'${String(v).replace(/'/g, "''")}'`;
+/**
+ * SQLite builds each INSERT line itself (quote() handles escaping and NULL), so the Worker
+ * only joins strings — this keeps the nightly job inside the Free plan's CPU budget as data grows.
+ */
+function insertLinesQuery([table, orderBy]: [Table, string]): string {
+  const name = getTableName(table);
+  const cols = Object.values(getTableColumns(table)).map((c) => c.name);
+  const head = `INSERT INTO "${name}" (${cols.map((c) => `"${c}"`).join(", ")}) VALUES (`;
+  const values = cols.map((c) => `quote("${c}")`).join(" || ', ' || ");
+  return `SELECT '${head}' || ${values} || ');' FROM "${name}" ORDER BY ${orderBy}`;
 }
 
 /** Every table except sessions as INSERT statements, one per line. */
 export async function dumpToSql(env: Env): Promise<string> {
-  const results = await env.DB.batch(TABLES.map((t) => env.DB.prepare(`SELECT * FROM "${t}" ORDER BY ${ORDER_BY[t]}`)));
+  const results = await Promise.all(TABLES.map((t) => env.DB.prepare(insertLinesQuery(t)).raw<[string]>()));
   const lines = [`-- kopit backup ${new Date().toISOString()}`];
-  TABLES.forEach((table, i) => {
-    for (const row of results[i].results as Record<string, unknown>[]) {
-      const cols = Object.keys(row);
-      lines.push(`INSERT INTO "${table}" (${cols.map((c) => `"${c}"`).join(", ")}) VALUES (${cols.map((c) => literal(row[c])).join(", ")});`);
-    }
-  });
+  for (const rows of results) for (const [line] of rows) lines.push(line);
   return lines.join("\n") + "\n";
 }
 

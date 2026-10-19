@@ -46,6 +46,13 @@ export const entries = sqliteTable(
   (t) => [index("entries_household_spent").on(t.householdId, t.spentAt)],
 );
 
+/** Ids of deleted expenses, so a late offline resend can't bring one back. */
+export const deletedEntries = sqliteTable("deleted_entries", {
+  id: text("id").primaryKey(),
+  householdId: integer("household_id").notNull().references(() => households.id),
+  deletedAt: integer("deleted_at").notNull(),
+});
+
 export const sessions = sqliteTable("sessions", {
   tokenHash: text("token_hash").primaryKey(),
   householdId: integer("household_id").notNull().references(() => households.id),

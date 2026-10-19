@@ -2,6 +2,7 @@ import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { dumpToSql, runBackup } from "../src/backup";
+import { deleteEntry } from "../src/lib/entries";
 import { categories } from "../src/db/schema";
 import { hashPin, verifyPin } from "../src/lib/pin";
 import { hashPinCore } from "../src/lib/pin-core.js";
@@ -9,7 +10,7 @@ import { hashPinCore } from "../src/lib/pin-core.js";
 import { resetSql } from "../scripts/hash-pin-lib.mjs";
 import { addEntry, db, seedHousehold } from "./helpers";
 
-const TABLES = ["households", "profiles", "categories", "entries"] as const;
+const TABLES = ["households", "profiles", "categories", "entries", "deleted_entries"] as const;
 
 async function counts() {
   const out: Record<string, number> = {};
@@ -24,7 +25,9 @@ describe("dumpToSql", () => {
     await addEntry(h, { amount: 100, at: Date.now(), category: "Gifts" });
     await addEntry(h, { amount: 250, at: Date.now(), category: null });
     await addEntry(h, { amount: 999, at: Date.now(), category: "Food", profile: 1 });
+    await deleteEntry(env, h.householdId, await addEntry(h, { amount: 5, at: Date.now(), category: null }));
     const before = await counts();
+    expect(before.deleted_entries).toBe(1);
     const sql = await dumpToSql(env);
     expect(sql.split("\n")[0]).toMatch(/^-- kopit backup \d{4}-\d{2}-\d{2}T/);
     expect(sql).not.toContain("sessions");

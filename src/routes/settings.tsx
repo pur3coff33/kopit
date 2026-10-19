@@ -5,8 +5,10 @@ import { getDb } from "../db/client";
 import { households, profiles } from "../db/schema";
 import type { AppEnv } from "../env";
 import { cleanName, listCategories, renameCategory, setCategoryHidden } from "../lib/categories";
-import { recordFailure, recordSuccess } from "../lib/login";
-import { hashPin, isValidPin, verifyPin } from "../lib/pin";
+import { getCookie } from "hono/cookie";
+import { attemptPin } from "../lib/login";
+import { SESSION_COOKIE, deleteOtherSessions } from "../lib/session";
+import { hashPin, isValidPin } from "../lib/pin";
 import { clockTime } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Layout } from "../views/layout";
@@ -20,7 +22,7 @@ settings.use("/settings/*", requireSession, requireProfile);
 const OK: Record<string, string> = {
   people: "Saved.",
   cat: "Category saved.",
-  pin: "PIN changed.",
+  pin: "PIN changed. Other phones will need to log in again with the new PIN.",
 };
 
 async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: string }) {
@@ -146,15 +148,12 @@ settings.post("/settings/pin", async (c) => {
   const householdId = c.get("householdId");
   const h = (await getDb(c.env).query.households.findFirst({ where: eq(households.id, householdId) }))!;
   const now = Date.now();
-  if (h.lockedUntil !== null && now < h.lockedUntil) return page(c, `Too many tries. Try again at ${clockTime(h.lockedUntil)}.`, 400);
-  if (!(await verifyPin(c.env.PIN_PEPPER, current, h.pinSalt, h.pinHash))) {
-    const lockedUntil = await recordFailure(c.env, householdId, now);
-    return page(c, lockedUntil ? `Too many tries. Try again at ${clockTime(lockedUntil)}.` : "Current PIN didn't match.", 400);
-  }
+  const a = await attemptPin(c.env, h, current, now);
+  if (!a.ok) return page(c, a.lockedUntil ? `Too many tries. Try again at ${clockTime(a.lockedUntil)}.` : "Current PIN didn't match.", 400);
   if (!isValidPin(next)) return page(c, "PIN must be 6 digits.", 400);
   if (next !== confirm) return page(c, "PINs don't match. Try again?", 400);
   const { hash, salt } = await hashPin(c.env.PIN_PEPPER, next);
   await getDb(c.env).update(households).set({ pinHash: hash, pinSalt: salt }).where(eq(households.id, householdId));
-  await recordSuccess(c.env, householdId);
+  await deleteOtherSessions(c.env, householdId, getCookie(c, SESSION_COOKIE) ?? "");
   return c.redirect("/settings?ok=pin");
 });

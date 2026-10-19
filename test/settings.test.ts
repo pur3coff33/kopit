@@ -73,6 +73,16 @@ describe("change PIN", () => {
     expect((await verifyLogin(env, "jon", "482913", Date.now())).ok).toBe(false);
   });
 
+  it("logs out every other phone but keeps this one", async () => {
+    const { h, cookie } = await setup();
+    const otherPhone = await authCookie(h.householdId, h.profileIds[1]);
+    await req("/settings/pin", { ...form({ current: "482913", next: "135790", nextConfirm: "135790" }), cookie });
+    expect((await req("/spending", { cookie })).status).toBe(200);
+    const kicked = await req("/spending", { cookie: otherPhone });
+    expect(kicked.status).toBe(302);
+    expect(kicked.headers.get("Location")).toBe("/login");
+  });
+
   it("counts a wrong current PIN as a failed try and locks after 5", async () => {
     const { h, cookie } = await setup();
     const wrong = () => req("/settings/pin", { ...form({ current: "000000", next: "135790", nextConfirm: "135790" }), cookie });

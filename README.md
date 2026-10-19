@@ -54,11 +54,11 @@ Restore a dump:
 
 ```sh
 npx wrangler r2 object get kopit-backups/backups/kopit-2026-10-19.sql --file restore.sql --remote
-npx wrangler d1 execute kopit --remote --command "DELETE FROM entries; DELETE FROM categories; DELETE FROM sessions; DELETE FROM profiles; DELETE FROM households;"
+npx wrangler d1 execute kopit --remote --command "DELETE FROM deleted_entries; DELETE FROM entries; DELETE FROM categories; DELETE FROM sessions; DELETE FROM profiles; DELETE FROM households;"
 npx wrangler d1 execute kopit --remote --file restore.sql
 ```
 
-D1 also has 30-day point-in-time restore built in:
+The dump has SQLite build each line, so the Worker does very little work. Still, glance at **Workers → kopit → Logs** after the first few nightly runs: on the Free plan, a run that goes over its CPU limit fails quietly and writes no file. D1 also has 30-day point-in-time restore built in:
 
 ```sh
 npx wrangler d1 time-travel info kopit

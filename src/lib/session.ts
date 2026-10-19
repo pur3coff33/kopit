@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import type { Context } from "hono";
 import { deleteCookie, setCookie } from "hono/cookie";
 import { getDb } from "../db/client";
@@ -35,6 +35,13 @@ export async function lookupSession(env: Env, token: string, now: number): Promi
 
 export async function deleteSession(env: Env, token: string): Promise<void> {
   await getDb(env).delete(sessions).where(eq(sessions.tokenHash, await sha256Hex(token)));
+}
+
+/** Logs out every other device of the household, keeping the session with this token. */
+export async function deleteOtherSessions(env: Env, householdId: number, keepToken: string): Promise<void> {
+  await getDb(env)
+    .delete(sessions)
+    .where(and(eq(sessions.householdId, householdId), ne(sessions.tokenHash, await sha256Hex(keepToken))));
 }
 
 export function setLongCookie(c: Context, name: string, value: string): void {

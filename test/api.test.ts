@@ -59,6 +59,17 @@ describe("POST /api/entries", () => {
     expect(rows[0].amountCentavos).toBe(99900);
   });
 
+  it("never brings back a deleted expense when it is resent", async () => {
+    const { cookie, entry } = await setup();
+    const e = entry();
+    await post(cookie, e);
+    const del = await req(`/entries/${e.id}/delete`, { method: "POST", cookie });
+    expect(del.status).toBe(302);
+    const again = await post(cookie, e);
+    expect(((await again.json()) as any).status).toBe("duplicate");
+    expect(await db().select().from(entries)).toHaveLength(0);
+  });
+
   it("rejects ids from another household", async () => {
     const { cookie, entry } = await setup();
     const other = await seedHousehold();

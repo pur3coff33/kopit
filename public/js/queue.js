@@ -1,4 +1,6 @@
-// Expenses saved while offline wait here (IndexedDB "kopit" / "outbox") until they can be sent.
+// Every expense waits here (IndexedDB "kopit" / "outbox") until the server confirms it.
+import { sendQueued } from "./save.js";
+
 const DB = "kopit";
 const STORE = "outbox";
 
@@ -23,27 +25,21 @@ async function run(mode, fn) {
 
 export const enqueue = (entry) => run("readwrite", (s) => s.put(entry));
 export const count = () => run("readonly", (s) => s.count());
+export const remove = (id) => run("readwrite", (s) => s.delete(id));
 const all = () => run("readonly", (s) => s.getAll());
-const remove = (id) => run("readwrite", (s) => s.delete(id));
 
 let flushing = null;
 
-/** Sends queued entries oldest first. Stops at the first network error, 401 or 5xx. */
+/** Sends queued entries oldest first; stops at the first one that has to stay queued. */
 export function flush(post) {
   flushing ??= (async () => {
     let sent = 0;
     try {
       const pending = (await all()).sort((a, b) => a.spentAt - b.spentAt);
       for (const entry of pending) {
-        let res;
-        try {
-          res = await post(entry);
-        } catch {
-          break;
-        }
-        if (res.ok) sent++;
-        else if (res.status !== 400) break; // a 400 will never succeed, so drop it
-        await remove(entry.id);
+        const r = await sendQueued(entry, { remove, post });
+        if (r.status === "queued") break;
+        if (r.status === "saved") sent++;
       }
       return { sent, left: await count() };
     } finally {

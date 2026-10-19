@@ -5,6 +5,7 @@ const PRECACHE = [
   "/js/keypad.js",
   "/js/add.js",
   "/js/queue.js",
+  "/js/save.js",
   "/fonts/nunito-latin-wght-normal.woff2",
   "/fonts/nunito-latin-ext-wght-normal.woff2",
   "/icons/icon-192.png",
@@ -40,14 +41,24 @@ function offline() {
   return new Response(OFFLINE_PAGE, { headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
 
-async function addScreen(request) {
+// How long the add screen waits for the network before using the cached copy (weak signal).
+const NAV_TIMEOUT_MS = 3000;
+
+async function addScreen(event) {
   const cache = await caches.open(CACHE);
-  try {
-    const res = await fetch(request);
+  const cached = await cache.match("/");
+  const network = fetch(event.request).then(async (res) => {
     if (res.ok && !res.redirected) await cache.put("/", res.clone());
-    return clean(res);
+    return res;
+  });
+  if (!cached) return network.then(clean).catch(offline);
+  event.waitUntil(network.catch(() => {})); // keep refreshing the cache in the background
+  const timeout = new Promise((resolve) => setTimeout(resolve, NAV_TIMEOUT_MS, null));
+  try {
+    const res = await Promise.race([network, timeout]);
+    return res ? clean(res) : cached;
   } catch {
-    return (await cache.match("/")) ?? offline();
+    return cached;
   }
 }
 
@@ -73,7 +84,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
   if (request.mode === "navigate") {
-    event.respondWith(url.pathname === "/" ? addScreen(request) : fetch(request).then(clean).catch(offline));
+    event.respondWith(url.pathname === "/" ? addScreen(event) : fetch(request).then(clean).catch(offline));
     return;
   }
   if (PRECACHE.includes(url.pathname)) event.respondWith(staticFile(event));

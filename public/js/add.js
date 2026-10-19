@@ -1,5 +1,6 @@
 import { attachKeypad, display, toCentavos } from "./keypad.js";
-import { count, enqueue, flush } from "./queue.js";
+import { count, enqueue, flush, remove } from "./queue.js";
+import { saveEntry } from "./save.js";
 
 const $ = (sel) => document.querySelector(sel);
 const root = $("#add");
@@ -109,12 +110,13 @@ $("#newcat").addEventListener("submit", async (ev) => {
   }
 });
 
-/** Sends one entry; returns the Response, or throws on network failure. */
-export function postEntry(entry) {
+/** Sends one entry; returns the Response, or throws on network failure or abort. */
+export function postEntry(entry, signal) {
   return fetch("/api/entries", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(entry),
+    signal,
   });
 }
 
@@ -129,12 +131,6 @@ async function sync() {
   await showSync();
 }
 
-async function keepOnPhone(entry) {
-  await enqueue(entry);
-  toast("Saved on this phone ✓ · will sync when online");
-  await showSync();
-}
-
 async function onSave() {
   const entry = { id: crypto.randomUUID(), profileId, categoryId, amountCentavos: toCentavos(typed), spentAt: Date.now() };
   if (!entry.amountCentavos) return;
@@ -142,20 +138,16 @@ async function onSave() {
   select(null);
   resetMore();
   render();
-  let res;
-  try {
-    res = await postEntry(entry);
-  } catch {
-    return keepOnPhone(entry); // no signal
-  }
-  if (res.ok) {
-    toast((await res.json()).note);
+  const r = await saveEntry(entry, { enqueue, remove, post: postEntry });
+  if (r.status === "saved") {
+    toast(r.note);
     sync();
-  } else if (res.status === 401 || res.status >= 500) {
-    await keepOnPhone(entry);
+  } else if (r.status === "queued") {
+    toast("Saved on this phone ✓ · will sync when online");
   } else {
     toast("Couldn't save that one. Try again?");
   }
+  await showSync();
 }
 
 save.addEventListener("click", onSave);
