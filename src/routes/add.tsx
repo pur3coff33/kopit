@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../env";
 import { listCategories, topCategories } from "../lib/categories";
+import { noteSuggestions } from "../lib/notes";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Amount, CategoryTiles, Keypad, Tile, Toast } from "../views/components";
 import { Layout } from "../views/layout";
@@ -9,12 +10,30 @@ export const add = new Hono<AppEnv>();
 
 add.get("/", requireSession, requireProfile, async (c) => {
   const householdId = c.get("householdId");
-  const [top, all] = await Promise.all([topCategories(c.env, householdId), listCategories(c.env, householdId)]);
+  const [top, all, notes] = await Promise.all([
+    topCategories(c.env, householdId),
+    listCategories(c.env, householdId),
+    noteSuggestions(c.env, householdId),
+  ]);
   return c.html(
     <Layout title="kopit" tab="add" profileName={c.get("profileName")} scripts={["/js/add.js"]}>
-      <section id="add" data-profile-id={String(c.get("profileId"))} style="display:flex;flex-direction:column;flex:1">
+      <section
+        id="add"
+        data-profile-id={String(c.get("profileId"))}
+        data-notes={JSON.stringify(notes)}
+        style="display:flex;flex-direction:column;flex:1"
+      >
         <Amount />
         <CategoryTiles cats={top} />
+        <div class="note-row">
+          <button type="button" class="note-toggle" id="note-toggle">
+            ＋ note
+          </button>
+          <div class="note-box" id="note-box" hidden>
+            <input id="note" maxlength={60} placeholder="What was it? (optional)" autocomplete="off" enterkeyhint="done" aria-label="Note" />
+            <div class="suggest" id="suggest"></div>
+          </div>
+        </div>
         <Keypad />
         <button class="save" id="save" type="button" disabled>
           Save it ✓

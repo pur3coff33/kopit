@@ -8,6 +8,7 @@ export type NewEntry = {
   profileId: number;
   categoryId: number | null;
   amountCentavos: number;
+  note?: string | null;
   spentAt: number;
 };
 
@@ -36,7 +37,7 @@ export async function updateEntry(
   env: Env,
   householdId: number,
   id: string,
-  patch: { amountCentavos?: number; categoryId?: number | null; spentAt?: number },
+  patch: { amountCentavos?: number; categoryId?: number | null; note?: string | null; spentAt?: number },
   now: number,
 ): Promise<boolean> {
   const rows = await getDb(env)

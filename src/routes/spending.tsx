@@ -148,7 +148,7 @@ spending.get("/spending/category/:id", async (c) => {
   }
   const view = await readView(c, householdId);
   const rows = await getDb(c.env)
-    .select({ id: entries.id, amount: entries.amountCentavos, spentAt: entries.spentAt, who: profiles.name })
+    .select({ id: entries.id, amount: entries.amountCentavos, note: entries.note, spentAt: entries.spentAt, who: profiles.name })
     .from(entries)
     .innerJoin(profiles, eq(profiles.id, entries.profileId))
     .where(
@@ -179,13 +179,13 @@ spending.get("/spending/category/:id", async (c) => {
         <ul class="rows">
           {rows.map((r) => (
             <li>
-              <a class="row" href={`/entries/${r.id}/edit`}>
+              <a class="row" href={`/entries/${r.id}/edit?back=${encodeURIComponent(c.req.path + "?" + q)}`}>
                 <span class="mid">
                   <span class="nm">
-                    <span>{shortDay(r.spentAt)}</span>
+                    <span>{r.note ?? shortDay(r.spentAt)}</span>
                     <span>{formatPeso(r.amount)}</span>
                   </span>
-                  <span class="sub">{r.who}</span>
+                  <span class="sub">{r.note ? `${shortDay(r.spentAt)} · ${r.who}` : r.who}</span>
                 </span>
               </a>
             </li>

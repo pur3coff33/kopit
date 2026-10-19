@@ -15,6 +15,13 @@
       "when": 1792399836274,
       "tag": "0001_deleted_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792406351941,
+      "tag": "0002_entry_notes",
+      "breakpoints": true
     }
   ]
 }

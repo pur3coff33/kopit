@@ -4,8 +4,9 @@ import { getDb } from "../db/client";
 import { profiles } from "../db/schema";
 import type { AppEnv } from "../env";
 import { createCategory, getCategory } from "../lib/categories";
-import { insertEntry } from "../lib/entries";
+import { deleteEntry, insertEntry } from "../lib/entries";
 import { MAX_CENTAVOS, formatPeso } from "../lib/money";
+import { cleanNote } from "../lib/notes";
 import { weekCategoryTotal } from "../lib/stats";
 
 export const api = new Hono<AppEnv>();
@@ -30,6 +31,8 @@ api.post("/entries", async (c) => {
   const amount = b.amountCentavos;
   if (!Number.isInteger(amount) || (amount as number) < 1 || (amount as number) > MAX_CENTAVOS) return c.json({ error: "amountCentavos" }, 400);
   if (typeof b.spentAt !== "number" || !Number.isFinite(b.spentAt)) return c.json({ error: "spentAt" }, 400);
+  const entryNote = cleanNote(b.note);
+  if (entryNote === undefined) return c.json({ error: "note" }, 400);
   const profile = isId(b.profileId)
     ? await getDb(c.env).query.profiles.findFirst({ where: and(eq(profiles.id, b.profileId), eq(profiles.householdId, householdId)) })
     : undefined;
@@ -45,12 +48,18 @@ api.post("/entries", async (c) => {
   const status = await insertEntry(
     c.env,
     householdId,
-    { id: b.id.toLowerCase(), profileId: profile.id, categoryId, amountCentavos: amount as number, spentAt: Math.round(b.spentAt) },
+    { id: b.id.toLowerCase(), profileId: profile.id, categoryId, amountCentavos: amount as number, note: entryNote, spentAt: Math.round(b.spentAt) },
     now,
   );
   const total = formatPeso(await weekCategoryTotal(c.env, householdId, categoryId, now));
   const note = categoryName ? `Saved ✓ · ${categoryName} this week: ${total}` : `Saved ✓ · This week: ${total}`;
   return c.json({ status, note }, 201);
+});
+
+// Undo right after saving. Uses the same tombstone as a normal delete, so a resend can't bring it back.
+api.delete("/entries/:id", async (c) => {
+  const ok = await deleteEntry(c.env, c.get("householdId"), c.req.param("id").toLowerCase());
+  return ok ? c.json({ ok: true }) : c.json({ error: "not-found" }, 404);
 });
 
 api.post("/categories", async (c) => {

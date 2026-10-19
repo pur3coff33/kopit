@@ -39,6 +39,8 @@ export const entries = sqliteTable(
     profileId: integer("profile_id").notNull().references(() => profiles.id),
     categoryId: integer("category_id").references(() => categories.id),
     amountCentavos: integer("amount_centavos").notNull(),
+    /** Optional one-line description, up to 60 characters. */
+    note: text("note"),
     spentAt: integer("spent_at").notNull(),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),

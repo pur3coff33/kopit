@@ -37,7 +37,14 @@ export function CategoryTiles({ cats }: { cats: Cat[] }) {
 }
 
 export function Toast() {
-  return <div class="toast" id="toast" role="status" aria-live="polite"></div>;
+  return (
+    <div class="toast" id="toast" role="status" aria-live="polite">
+      <span id="toast-text"></span>
+      <button type="button" class="toast-undo" id="toast-undo" hidden>
+        Undo
+      </button>
+    </div>
+  );
 }
 
 export function Amount({ value = "0" }: { value?: string }) {

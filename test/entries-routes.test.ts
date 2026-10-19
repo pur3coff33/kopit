@@ -44,6 +44,24 @@ describe("edit expense", () => {
     expect((await getEntry(env, h.householdId, id))?.amountCentavos).toBe(35000);
   });
 
+  it("edits the note, and clears it when emptied", async () => {
+    const { h, cookie, id } = await setup();
+    await req(`/entries/${id}`, { ...form({ amount: "350", categoryId: "", date: "2026-10-15", note: "  Jollibee  " }), cookie });
+    expect((await getEntry(env, h.householdId, id))?.note).toBe("Jollibee");
+    expect(await html(await req(`/entries/${id}/edit`, { cookie }))).toContain('value="Jollibee"');
+    await req(`/entries/${id}`, { ...form({ amount: "350", categoryId: "", date: "2026-10-15", note: "" }), cookie });
+    expect((await getEntry(env, h.householdId, id))?.note).toBeNull();
+  });
+
+  it("goes back to where you came from after saving", async () => {
+    const { cookie, id } = await setup();
+    const back = "/history?who=all";
+    const res = await req(`/entries/${id}`, { ...form({ amount: "350", categoryId: "", date: "2026-10-15", back }), cookie });
+    expect(res.headers.get("Location")).toBe(back);
+    const evil = await req(`/entries/${id}`, { ...form({ amount: "350", categoryId: "", date: "2026-10-15", back: "//evil.example" }), cookie });
+    expect(evil.headers.get("Location")).toBe("/spending/category/none");
+  });
+
   it("deletes", async () => {
     const { h, cookie, id } = await setup();
     const res = await req(`/entries/${id}/delete`, { method: "POST", cookie });

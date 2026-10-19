@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { addMonths, dayStart, fromDateInput, monthStart } from "../src/lib/time";
-import { addEntry, authCookie, html, req, seedHousehold } from "./helpers";
+import { eq } from "drizzle-orm";
+import { entries } from "../src/db/schema";
+import { addEntry, authCookie, db, html, req, seedHousehold } from "./helpers";
 
 const DAY = 86_400_000;
 
@@ -66,7 +68,14 @@ describe("category detail", () => {
     expect(body).toContain("Partner");
     expect(body).not.toContain("₱77");
     expect(body).toContain("₱33");
-    expect(body).toMatch(/href="\/entries\/[0-9a-f-]{36}\/edit"/);
+    expect(body).toMatch(/href="\/entries\/[0-9a-f-]{36}\/edit\?back=%2Fspending%2Fcategory%2F/);
+  });
+
+  it("shows each expense's note", async () => {
+    const h = await seedHousehold();
+    const id = await addEntry(h, { amount: 1100, at: Date.now() - 1000, category: "Food" });
+    await db().update(entries).set({ note: "Jollibee with Ana" }).where(eq(entries.id, id));
+    expect(await page(`/spending/category/${h.categoryIds.Food}`, h)).toContain("Jollibee with Ana");
   });
 
   it("shows uncategorized expenses under /none", async () => {

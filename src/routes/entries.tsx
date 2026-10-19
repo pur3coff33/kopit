@@ -4,6 +4,7 @@ import type { AppEnv } from "../env";
 import { getCategory, listCategories } from "../lib/categories";
 import { deleteEntry, getEntry, updateEntry } from "../lib/entries";
 import { parseAmount } from "../lib/money";
+import { MAX_NOTE, cleanNote } from "../lib/notes";
 import { fromDateInput, toDateInput } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Amount, Keypad } from "../views/components";
@@ -14,6 +15,11 @@ export const entriesRoutes = new Hono<AppEnv>();
 entriesRoutes.use("/entries/*", requireSession, requireProfile);
 
 const NOON_MS = 12 * 3_600_000;
+
+/** Only same-site paths, so a crafted link can't bounce you to another website. */
+export function safeBack(raw: unknown): string | null {
+  return typeof raw === "string" && /^\/(?![/\\])/.test(raw) ? raw : null;
+}
 
 function typedFrom(centavos: number): string {
   const pesos = Math.floor(centavos / 100);
@@ -27,6 +33,8 @@ async function EditPage(props: {
   amount: string;
   categoryId: number | null;
   date: string;
+  note: string;
+  back: string | null;
   message?: string;
 }) {
   const cats = await listCategories(props.c.env, props.c.get("householdId"), { includeHidden: true });
@@ -37,6 +45,7 @@ async function EditPage(props: {
       <Amount value={props.amount} />
       <form class="form" method="post" action={`/entries/${props.id}`} id="edit">
         <input type="hidden" name="amount" id="amount" value={props.amount} />
+        {props.back && <input type="hidden" name="back" value={props.back} />}
         <label>
           Category
           <select name="categoryId">
@@ -49,6 +58,10 @@ async function EditPage(props: {
           </select>
         </label>
         <label>
+          Note
+          <input name="note" value={props.note} maxlength={MAX_NOTE} placeholder="What was it? (optional)" autocomplete="off" />
+        </label>
+        <label>
           Date
           <input type="date" name="date" value={props.date} required />
         </label>
@@ -56,6 +69,7 @@ async function EditPage(props: {
         <button class="save" type="submit">Save changes</button>
       </form>
       <form method="post" action={`/entries/${props.id}/delete`} onsubmit="return confirm('Delete this expense?')">
+        {props.back && <input type="hidden" name="back" value={props.back} />}
         <button class="save plain" type="submit" style="margin-top:14px">Delete</button>
       </form>
     </Layout>
@@ -65,7 +79,17 @@ async function EditPage(props: {
 entriesRoutes.get("/entries/:id/edit", async (c) => {
   const e = await getEntry(c.env, c.get("householdId"), c.req.param("id"));
   if (!e) return c.notFound();
-  return c.html(<EditPage c={c} id={e.id} amount={typedFrom(e.amountCentavos)} categoryId={e.categoryId} date={toDateInput(e.spentAt)} />);
+  return c.html(
+    <EditPage
+      c={c}
+      id={e.id}
+      amount={typedFrom(e.amountCentavos)}
+      categoryId={e.categoryId}
+      date={toDateInput(e.spentAt)}
+      note={e.note ?? ""}
+      back={safeBack(c.req.query("back"))}
+    />,
+  );
 });
 
 entriesRoutes.post("/entries/:id", async (c) => {
@@ -76,6 +100,8 @@ entriesRoutes.post("/entries/:id", async (c) => {
   const amountRaw = String(body.amount ?? "");
   const rawCat = String(body.categoryId ?? "");
   const date = String(body.date ?? "");
+  const noteRaw = String(body.note ?? "");
+  const back = safeBack(body.back);
   const amount = parseAmount(amountRaw);
   const day = fromDateInput(date);
   let categoryId: number | null = null;
@@ -84,16 +110,21 @@ entriesRoutes.post("/entries/:id", async (c) => {
     if (!cat) return c.text("Unknown category", 400);
     categoryId = cat.id;
   }
-  if (amount === null || day === null) {
-    const message = amount === null ? "Enter an amount between ₱0.01 and ₱1,000,000." : "Pick a date.";
-    return c.html(<EditPage c={c} id={e.id} amount={amountRaw || "0"} categoryId={categoryId} date={date} message={message} />, 400);
+  const note = cleanNote(noteRaw);
+  if (amount === null || day === null || note === undefined) {
+    const message =
+      amount === null ? "Enter an amount between ₱0.01 and ₱1,000,000." : day === null ? "Pick a date." : `Notes can be up to ${MAX_NOTE} characters.`;
+    return c.html(
+      <EditPage c={c} id={e.id} amount={amountRaw || "0"} categoryId={categoryId} date={date} note={noteRaw} back={back} message={message} />,
+      400,
+    );
   }
   const spentAt = toDateInput(e.spentAt) === date ? e.spentAt : day + NOON_MS;
-  await updateEntry(c.env, householdId, e.id, { amountCentavos: amount, categoryId, spentAt }, Date.now());
-  return c.redirect(`/spending/category/${categoryId ?? "none"}`);
+  await updateEntry(c.env, householdId, e.id, { amountCentavos: amount, categoryId, note, spentAt }, Date.now());
+  return c.redirect(back ?? `/spending/category/${categoryId ?? "none"}`);
 });
 
 entriesRoutes.post("/entries/:id/delete", async (c) => {
   if (!(await deleteEntry(c.env, c.get("householdId"), c.req.param("id")))) return c.notFound();
-  return c.redirect("/spending");
+  return c.redirect(safeBack((await c.req.parseBody()).back) ?? "/spending");
 });

@@ -70,6 +70,27 @@ describe("POST /api/entries", () => {
     expect(await db().select().from(entries)).toHaveLength(0);
   });
 
+  it("undoes a save, and the undone expense stays gone even if resent", async () => {
+    const { cookie, entry } = await setup();
+    const e = entry();
+    await post(cookie, e);
+    const undo = await req(`/api/entries/${e.id}`, { method: "DELETE", cookie });
+    expect(undo.status).toBe(200);
+    expect(await db().select().from(entries)).toHaveLength(0);
+    expect(((await (await post(cookie, e)).json()) as any).status).toBe("duplicate");
+    expect((await req(`/api/entries/${e.id}`, { method: "DELETE", cookie })).status).toBe(404);
+  });
+
+  it("won't undo another household's expense", async () => {
+    const { cookie, entry } = await setup();
+    const e = entry();
+    await post(cookie, e);
+    const other = await seedHousehold();
+    const res = await req(`/api/entries/${e.id}`, { method: "DELETE", cookie: await authCookie(other.householdId, other.profileIds[0]) });
+    expect(res.status).toBe(404);
+    expect(await db().select().from(entries)).toHaveLength(1);
+  });
+
   it("rejects ids from another household", async () => {
     const { cookie, entry } = await setup();
     const other = await seedHousehold();

@@ -130,6 +130,29 @@ p { margin: 6px 0; }
   opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.show.has-undo { pointer-events: auto; }
+.toast { display: flex; align-items: center; gap: 10px; }
+.toast-undo {
+  border: 1.5px solid var(--ink); background: var(--paper); border-radius: 9px;
+  padding: 3px 10px; font-size: 13px; font-weight: 800; cursor: pointer; flex: none;
+}
+.toast-undo[hidden] { display: none; }
+
+/* ---------- note ---------- */
+.note-row { margin: 2px 0 8px; }
+.note-toggle {
+  border: 1.5px dashed var(--chip-dash); background: transparent; border-radius: 16px;
+  padding: 3px 12px; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.note-toggle[hidden], .note-box[hidden] { display: none; }
+.note-box input {
+  width: 100%; padding: 9px 12px; border: 1.5px solid var(--key-border); border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7); font-size: 16px; font-weight: 600;
+}
+.note-box input:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.suggest .chip { background: var(--note); border-style: solid; border-color: var(--key-border); cursor: pointer; font-size: 13px; }
+.row .note { display: block; font-size: 12px; opacity: 0.75; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .sheet {
   border: 2px solid var(--ink); border-radius: 18px; padding: 16px; width: min(400px, calc(100% - 32px));
