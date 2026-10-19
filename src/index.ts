@@ -7,7 +7,9 @@ import { requireProfile, requireSession } from "./middleware/auth";
 import { add } from "./routes/add";
 import { api } from "./routes/api";
 import { auth } from "./routes/auth";
+import { entriesRoutes } from "./routes/entries";
 import { setup } from "./routes/setup";
+import { spending } from "./routes/spending";
 
 const app = new Hono<AppEnv>();
 
@@ -22,6 +24,8 @@ app.route("/", setup);
 app.use("/api/*", requireSession, requireProfile);
 app.route("/api", api);
 app.route("/", add);
+app.route("/", spending);
+app.route("/", entriesRoutes);
 
 async function scheduled(_controller: ScheduledController, _env: Env, _ctx: ExecutionContext) {}
 
