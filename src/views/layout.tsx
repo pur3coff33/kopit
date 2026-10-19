@@ -1,3 +1,4 @@
+import { raw } from "hono/html";
 import type { Child } from "hono/jsx";
 
 type Tab = "add" | "spending";
@@ -5,7 +6,7 @@ type Tab = "add" | "spending";
 export function Layout(props: { title: string; tab?: Tab; profileName?: string; scripts?: string[]; children?: Child }) {
   return (
     <>
-      {"<!doctype html>"}
+      {raw("<!doctype html>")}
       <html lang="en">
         <head>
           <meta charset="utf-8" />
@@ -14,6 +15,7 @@ export function Layout(props: { title: string; tab?: Tab; profileName?: string; 
           <meta name="theme-color" content="#FBF7EF" />
           <link rel="manifest" href="/manifest.webmanifest" />
           <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+          <link rel="icon" type="image/png" href="/icons/icon-192.png" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-title" content="kopit" />
@@ -34,11 +36,16 @@ export function Layout(props: { title: string; tab?: Tab; profileName?: string; 
             <main>{props.children}</main>
             {props.tab && <Nav tab={props.tab} />}
           </div>
-          <script>{`if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js')`}</script>
+          <InlineScript code="if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js')" />
         </body>
       </html>
     </>
   );
+}
+
+/** Script bodies must not be HTML-escaped. Only ever pass constant code, never user input. */
+export function InlineScript({ code }: { code: string }) {
+  return <script dangerouslySetInnerHTML={{ __html: code }}></script>;
 }
 
 export function Nav({ tab }: { tab: Tab }) {

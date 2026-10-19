@@ -4,7 +4,7 @@ import type { AppEnv } from "../env";
 import { verifyLogin } from "../lib/login";
 import { PROFILE_COOKIE, SESSION_COOKIE, clearCookie, createSession, deleteSession, setLongCookie } from "../lib/session";
 import { clockTime } from "../lib/time";
-import { Layout } from "../views/layout";
+import { InlineScript, Layout } from "../views/layout";
 
 export const auth = new Hono<AppEnv>();
 
@@ -35,6 +35,7 @@ function LoginPage(props: { username?: string; message?: string; bye?: boolean }
       <p class="muted">
         New here? <a href="/setup">Set up a household</a>
       </p>
+      {props.bye && <InlineScript code="if(self.caches)caches.open('kopit-v1').then(function(c){return c.delete('/')})" />}
     </Layout>
   );
 }

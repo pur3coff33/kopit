@@ -121,7 +121,8 @@ p { margin: 6px 0; }
 
 /* ---------- toast + sheet ---------- */
 .toast {
-  position: fixed; left: 50%; bottom: calc(90px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(10px);
+  position: fixed; left: 50%; top: calc(12px + env(safe-area-inset-top)); transform: translateX(-50%) translateY(-10px);
+  box-shadow: 2px 2px 0 var(--ink); z-index: 10;
   background: var(--accent); border: 1.5px solid var(--ink); border-radius: 12px;
   padding: 8px 14px; font-size: 14px; font-weight: 700; max-width: calc(100% - 32px); text-align: center;
   opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease;
@@ -154,11 +155,11 @@ p { margin: 6px 0; }
   width: 32px; height: 32px; flex: none; display: flex; align-items: center; justify-content: center;
   font-size: 16px; border-radius: 8px; background: var(--note);
 }
-.row .mid { flex: 1; min-width: 0; }
+.row .mid { display: block; flex: 1; min-width: 0; }
 .row .nm { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; font-weight: 700; }
 .row .nm span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row .sub { font-size: 12px; opacity: 0.6; font-weight: 600; }
-.bar { height: 8px; margin-top: 5px; border-radius: 6px; background: var(--track); overflow: hidden; }
+.row .sub { display: block; font-size: 12px; opacity: 0.6; font-weight: 600; }
+.bar { display: block; height: 8px; margin-top: 5px; border-radius: 6px; background: var(--track); overflow: hidden; }
 .bar i { display: block; height: 100%; border-radius: 6px; background: var(--swoosh); }
 
 /* ---------- forms ---------- */

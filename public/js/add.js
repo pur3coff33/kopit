@@ -1,4 +1,5 @@
 import { attachKeypad, display, toCentavos } from "./keypad.js";
+import { count, enqueue, flush } from "./queue.js";
 
 const $ = (sel) => document.querySelector(sel);
 const root = $("#add");
@@ -117,6 +118,23 @@ export function postEntry(entry) {
   });
 }
 
+async function showSync() {
+  const n = await count().catch(() => 0);
+  $("#sync").textContent = n > 0 ? `${n} waiting to sync` : "";
+}
+
+async function sync() {
+  const { sent } = await flush(postEntry).catch(() => ({ sent: 0 }));
+  if (sent > 0) toast(`Synced ${sent} saved expense${sent === 1 ? "" : "s"} ✓`);
+  await showSync();
+}
+
+async function keepOnPhone(entry) {
+  await enqueue(entry);
+  toast("Saved on this phone ✓ · will sync when online");
+  await showSync();
+}
+
 async function onSave() {
   const entry = { id: crypto.randomUUID(), profileId, categoryId, amountCentavos: toCentavos(typed), spentAt: Date.now() };
   if (!entry.amountCentavos) return;
@@ -124,14 +142,26 @@ async function onSave() {
   select(null);
   resetMore();
   render();
+  let res;
   try {
-    const res = await postEntry(entry);
-    if (!res.ok) throw new Error(String(res.status));
-    toast((await res.json()).note);
+    res = await postEntry(entry);
   } catch {
-    toast("Couldn't save. Try again?");
+    return keepOnPhone(entry); // no signal
+  }
+  if (res.ok) {
+    toast((await res.json()).note);
+    sync();
+  } else if (res.status === 401 || res.status >= 500) {
+    await keepOnPhone(entry);
+  } else {
+    toast("Couldn't save that one. Try again?");
   }
 }
 
 save.addEventListener("click", onSave);
+window.addEventListener("online", sync);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") sync();
+});
 render();
+sync();
