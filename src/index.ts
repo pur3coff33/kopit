@@ -9,6 +9,7 @@ import { add } from "./routes/add";
 import { api } from "./routes/api";
 import { auth } from "./routes/auth";
 import { entriesRoutes } from "./routes/entries";
+import { history } from "./routes/history";
 import { settings } from "./routes/settings";
 import { setup } from "./routes/setup";
 import { spending } from "./routes/spending";
@@ -27,6 +28,7 @@ app.use("/api/*", requireSession, requireProfile);
 app.route("/api", api);
 app.route("/", add);
 app.route("/", spending);
+app.route("/", history);
 app.route("/", entriesRoutes);
 app.route("/", settings);
 

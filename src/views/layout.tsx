@@ -1,7 +1,7 @@
 import { raw } from "hono/html";
 import type { Child } from "hono/jsx";
 
-type Tab = "add" | "spending";
+type Tab = "add" | "spending" | "history";
 
 export function Layout(props: { title: string; tab?: Tab; profileName?: string; scripts?: string[]; children?: Child }) {
   return (
@@ -76,6 +76,7 @@ export function Nav({ tab }: { tab: Tab }) {
     <nav class="nav">
       <a href="/" class={tab === "add" ? "on" : ""}>add</a>
       <a href="/spending" class={tab === "spending" ? "on" : ""}>spending</a>
+      <a href="/history" class={tab === "history" ? "on" : ""}>history</a>
     </nav>
   );
 }
