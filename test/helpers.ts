@@ -2,7 +2,7 @@ import { env } from "cloudflare:test";
 import { app } from "../src/index";
 import { getDb } from "../src/db/client";
 import { eq } from "drizzle-orm";
-import { categories, households, profiles } from "../src/db/schema";
+import { categories, entries, households, profiles } from "../src/db/schema";
 import { seedCategories } from "../src/lib/households";
 import { hashPin } from "../src/lib/pin";
 import { PROFILE_COOKIE, SESSION_COOKIE, createSession } from "../src/lib/session";
@@ -30,6 +30,27 @@ export async function seedHousehold(opts: { username?: string; pin?: string; pro
   const categoryIds: Record<string, number> = {};
   for (const c of await db().select().from(categories).where(eq(categories.householdId, h.id))) categoryIds[c.name] = c.id;
   return { householdId: h.id, profileIds, categoryIds };
+}
+
+type Seeded = Awaited<ReturnType<typeof seedHousehold>>;
+
+/** Inserts an expense directly. `category` is a starter name or null; `profile` an index into profileIds. */
+export async function addEntry(h: Seeded, o: { amount: number; at: number; category: string | null; profile?: number }) {
+  const id = crypto.randomUUID();
+  const now = Date.now();
+  await db()
+    .insert(entries)
+    .values({
+      id,
+      householdId: h.householdId,
+      profileId: h.profileIds[o.profile ?? 0],
+      categoryId: o.category === null ? null : h.categoryIds[o.category],
+      amountCentavos: o.amount,
+      spentAt: o.at,
+      createdAt: now,
+      updatedAt: now,
+    });
+  return id;
 }
 
 export function req(path: string, init: RequestInit & { cookie?: string } = {}) {
