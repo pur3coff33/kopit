@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RULES, TEMPLATES, TYPE_NAMES } from "../src/lib/missions";
+import { ALIGNED } from "../src/lib/aligned";
 import { authCookie, html, req, seedHousehold } from "./helpers";
 
 describe("guide", () => {
@@ -19,13 +19,14 @@ describe("guide", () => {
     expect(body).not.toContain("/js/sky.js");
   });
 
-  it("lists every current mission with an example", async () => {
+  it("lists every current mission with an example, and the starters a new household gets", async () => {
     const body = await html(await req("/guide"));
-    const current = TEMPLATES.filter((t) => (t.since ?? 1) <= RULES);
-    for (const t of current) expect(body, t.type).toContain(TYPE_NAMES[t.type]);
-    expect(body).toContain("“Keep 🍜 Food under ₱150”");
-    expect(body).toContain("“Nothing spent after 10 pm”");
-    expect(body.match(/“[^”]+”/g)!.length).toBe(current.length);
+    for (const d of ALIGNED) expect(body, d.type).toContain(d.name);
+    expect(body).toContain("“Keep 🍜 Food under ₱250”");
+    expect(body).toContain("“Nothing spent after 9 pm”");
+    expect(body).toContain("about 7 of 10");
+    expect(body).toContain("While your garden is new");
+    expect(body).toContain("“Nothing spent before 10 am”");
   });
 
   it("links GitHub for help, privately for security, and the legal pages", async () => {

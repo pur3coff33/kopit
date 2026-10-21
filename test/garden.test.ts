@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { dayMissions, gardenDays } from "../src/db/schema";
 import { deleteEntry, insertEntry, updateEntry } from "../src/lib/entries";
 import { dayResults, frozenBaselines, gardenMonths, monthGarden, todayGarden, todayMissions, wholePastMonth } from "../src/lib/garden";
-import { baseline } from "../src/lib/missions";
+import { RULES, baseline } from "../src/lib/missions";
 import { dayKey, resolveRange } from "../src/lib/time";
 import { addEntry, db, seedHousehold } from "./helpers";
 
@@ -165,6 +165,22 @@ describe("today", () => {
     // Without the stored copy, today's missions would have come out differently.
     await db().delete(dayMissions).where(eq(dayMissions.householdId, h.householdId));
     expect(await titles()).not.toEqual(first);
+  });
+
+  it("move today alone up to the current rule set: past days keep the missions they were given", async () => {
+    const h = await seedHousehold({ createdAt: manila(9, 1, 9) });
+    const today = dayKey(now);
+    const old = (day: number) => ({ ...baseline([], day, []), rules: 2, usualCount: 9 });
+    await frozenBaselines(env, h.householdId, [today - 1, today], old);
+    await todayMissions(env, h.householdId, now);
+    const stored = new Map(
+      (await db().select().from(dayMissions).where(eq(dayMissions.householdId, h.householdId))).map((r) => [r.day, JSON.parse(r.baseline)]),
+    );
+    expect(stored.get(today).rules).toBe(RULES);
+    expect(stored.get(today - 1)).toMatchObject({ rules: 2, usualCount: 9 });
+    // Only once: a second open reads the upgraded copy back.
+    const again = await frozenBaselines(env, h.householdId, [today], () => ({ ...baseline([], today, []), usualCount: 5 }), today);
+    expect(again.get(today)).toEqual(stored.get(today));
   });
 
   it("are the same for two phones opening at once, and stored once", async () => {

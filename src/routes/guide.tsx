@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../env";
-import { RULES, TEMPLATES, TYPE_NAMES, type Baseline } from "../lib/missions";
+import { ALIGNED, MIN_SPENDING_DAYS } from "../lib/aligned";
+import { TEMPLATES, type Baseline } from "../lib/missions";
 import { Plant, Sky, type Weather } from "../views/garden";
 import { Layout } from "../views/layout";
 
@@ -8,30 +9,17 @@ export const guide = new Hono<AppEnv>();
 
 export const REPO_URL = "https://github.com/pur3coff33/kopit";
 
-/** A made-up household's last 28 days, so every mission can show a real-looking example. */
-const DEMO: Baseline = {
-  day: 20_382, // a Wednesday
-  rules: RULES,
-  historyDays: 28,
-  usualDay: 80_000,
-  usualCount: 3,
-  bigBuy: 50_000,
-  yesterdayTotal: 90_000,
-  lastWeekTotal: 85_000,
-  cats: [
-    { cat: { id: 1, name: "Food", emoji: "🍜" }, daysWith: 26, usualOnDay: 15_000, buysOnDay: 1.6 },
-    { cat: { id: 2, name: "Groceries", emoji: "🛒" }, daysWith: 12, usualOnDay: 40_000, buysOnDay: 1 },
-    { cat: { id: 3, name: "Transport", emoji: "🚌" }, daysWith: 9, usualOnDay: 8_000, buysOnDay: 2 },
-    { cat: { id: 4, name: "Shopping", emoji: "🛍️" }, daysWith: 5, usualOnDay: 120_000, buysOnDay: 1 },
-  ],
-};
-
-function missionExamples(level: 1 | 2) {
-  return TEMPLATES.filter((t) => t.level === level && (t.since ?? 1) <= RULES).map((t) => ({
-    name: TYPE_NAMES[t.type],
-    example: t.make(DEMO, () => 0)?.title,
-  }));
+/** Every mission of the current set, with an example setting from a made-up household. */
+function missionExamples() {
+  return ALIGNED.map((d) => ({ name: d.name, example: d.build(d.demo).title }));
 }
+
+/** What a household still new gets until it has enough days to try missions on. */
+function starterExamples() {
+  return TEMPLATES.filter((t) => !t.needsHistory && (t.since ?? 1) <= 2 && t.level === 1).map((t) => t.make(STARTER_DEMO, () => 0)!.title);
+}
+
+const STARTER_DEMO: Baseline = { day: 20_382, rules: 2, historyDays: 0, usualDay: 0, usualCount: 0, bigBuy: 0, yesterdayTotal: 0, lastWeekTotal: 0, cats: [] };
 
 const STAGES = [
   { plant: <Plant leaves={0} width={84} />, title: "Sprout", text: "Every month starts as a sprout." },
@@ -50,8 +38,8 @@ const SKIES: Array<{ night: boolean; weather: Weather; label: string }> = (["day
 );
 
 guide.get("/guide", (c) => {
-  const easy = missionExamples(1);
-  const medium = missionExamples(2);
+  const missions = missionExamples();
+  const starters = starterExamples();
   return c.html(
     <Layout title="Guide">
       <p>
@@ -118,31 +106,39 @@ guide.get("/guide", (c) => {
       <section class="card guide-sec" id="missions">
         <h2>Missions</h2>
         <p>
-          Every day the household gets 3 to 5 of these, at least two of them easy. Amounts come from your own last 28 days, so
-          the examples below use a made-up household. Missions about amounts and categories start after about two weeks of
-          expenses.
+          Every day the household gets 3 to 5 missions, at least two of them easy. They're made from your own last 28 days:
+          the amounts, hours, counts and categories all come from how your household really spends.
         </p>
-        <h3>Easy</h3>
+        <p>
+          Each one is tried on those days first. An <b>easy</b> mission is one you'd have met on about 7 of 10 of them, a{" "}
+          <b>medium</b> one on about 4 of 10. Anything you'd almost never have met isn't given, and neither is anything
+          you'd always meet. So a household that eats late gets a later "nothing after" hour than one that's done by six.
+        </p>
         <ul class="missions-list">
-          {easy.map((m) => (
+          {missions.map((m) => (
             <li>
               <b>{m.name}</b>
-              {m.example && <span class="muted">“{m.example}”</span>}
+              <span class="muted">“{m.example}”</span>
             </li>
           ))}
         </ul>
-        <h3>Medium</h3>
+        <p class="muted">The examples are from a made-up household; yours use your own numbers.</p>
+        <h3>While your garden is new</h3>
+        <p>
+          Until the household has {MIN_SPENDING_DAYS} days with spending in its last 28, there's not enough to go on yet, so
+          the missions are simple ones like these:
+        </p>
         <ul class="missions-list">
-          {medium.map((m) => (
+          {starters.map((t) => (
             <li>
-              <b>{m.name}</b>
-              {m.example && <span class="muted">“{m.example}”</span>}
+              <span class="muted">“{t}”</span>
             </li>
           ))}
         </ul>
         <p class="muted">
           Half of the day's missions met is a good day (a leaf). All of them is a perfect day (a flower). Spending nothing
-          always meets every mission, but it's never needed. A day's missions don't change once the day has started.
+          always meets every mission, but it's never needed. A day's missions don't change once the day has started. To
+          look back at a day's missions, open History and tap the line under the day.
         </p>
       </section>
 

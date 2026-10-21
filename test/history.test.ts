@@ -156,3 +156,28 @@ describe("history page", () => {
     expect(res.status).toBe(302);
   });
 });
+
+describe("history's missions", () => {
+  it("fold each day's missions under its heading, for the whole household", async () => {
+    const now = Date.now();
+    const h = await seedHousehold({ createdAt: now - 10 * DAY });
+    await addEntry(h, { amount: 15_000, at: now - 3 * DAY, category: "Food" });
+    await addEntry(h, { amount: 900_000, at: now - 2 * DAY, category: "Shopping" });
+    const body = await view("/history?who=all", h);
+    const lines = body.match(/<details class="missions day-missions">/g) ?? [];
+    expect(lines).toHaveLength(2);
+    expect(body).toMatch(/\d of \d missions met/);
+    expect(body).toMatch(/class="m (met|missed)"/);
+    // A person's history is theirs; the missions are the household's, so they stay out of it.
+    const mine = await view(`/history?who=${h.profileIds[0]}`, h);
+    expect(mine).not.toContain("day-missions");
+  });
+
+  it("show today's as on track so far", async () => {
+    const now = Date.now();
+    const h = await seedHousehold({ createdAt: now - 10 * DAY });
+    await addEntry(h, { amount: 1_000, at: now - 60_000, category: "Food" });
+    const body = await view("/history?who=all", h);
+    expect(body).toMatch(/\d of \d missions on track so far/);
+  });
+});

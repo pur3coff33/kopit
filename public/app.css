@@ -598,6 +598,14 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 .missions .missed .st { background: rgba(31, 51, 38, 0.1); color: var(--muted); }
 .missions .missed .t { color: var(--muted); }
 .missions .t small { display: block; font-size: 12px; color: var(--muted); font-weight: 700; }
+.missions .met .st { background: var(--leaf); color: #fff; }
+/* A day's missions in history: folded into one line under the day, opened with a tap. */
+.day-missions { margin: 4px 0 6px; padding: 0 14px; border-radius: 16px; box-shadow: none; }
+.day-missions summary { display: flex; align-items: center; gap: 6px; min-height: 44px; cursor: pointer; font-size: 13px; font-weight: 800; color: var(--muted); list-style: none; }
+.day-missions summary::-webkit-details-marker { display: none; }
+.day-missions summary::after { content: "›"; margin-left: auto; font-size: 18px; transition: rotate 0.15s; }
+.day-missions[open] summary::after { rotate: 90deg; }
+.day-missions ul { padding-bottom: 6px; }
 /* Words for screen readers only (the dashed circle / dash say the same to sighted people). */
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 

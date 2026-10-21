@@ -3,13 +3,13 @@
 // blooms on top. Always the whole household's, whatever person filter a screen has on.
 //
 // A day's missions are fixed the first time they're needed (day_missions, see frozenBaselines). Finished days'
-// results are cached in garden_days (working one out means reading up to 28 earlier days of expenses); today is
-// always judged live.
+// results are cached in garden_days (working one out means reading up to 35 earlier days of expenses); today is
+// always judged live. Today alone moves up to a newer rule set: it has no leaf yet, so nothing earned can change.
 import { and, count, eq, gte, inArray, lt, sql, sum } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { categories, entries, gardenDays } from "../db/schema";
 import type { Env } from "../env";
-import { TYPE_NAMES, baseline, judgeDay, missionsFor, type Baseline, type CatInfo, type DayExpense, type DayFacts } from "./missions";
+import { ALIGNED_FROM, RULES, TYPE_NAMES, baseline, judgeDay, missionsFor, type Baseline, type CatInfo, type DayExpense, type DayFacts } from "./missions";
 import { DAY_MS, MANILA_OFFSET_MS, addMonths, dayKey, dayStart, monthStart, toDateInput, type Range } from "./time";
 
 export const MONTH_NAMES: readonly string[] = [
@@ -21,7 +21,8 @@ export function monthName(ms: number): string {
   return MONTH_NAMES[Number(toDateInput(ms).slice(5, 7)) - 1];
 }
 
-const BASELINE_DAYS = 28;
+/** Days of expenses a day's missions are drawn from: 28 tried (aligned.ts), and the week some of them compare with. */
+const BASELINE_DAYS = 35;
 /** New days worked out per request at most (about a month: a few ms of CPU), so a long history fills in over a few visits. */
 const MAX_NEW_DAYS = 31;
 /** How long after an expense write a day's result isn't cached yet (covers a write racing the calculation). */
@@ -73,8 +74,10 @@ function historyBefore(on: (day: number) => DayExpense[], day: number): DayExpen
  * Each of `days`' baseline (what its missions are drawn from), fixed the first time it's needed: normally the
  * household's first open that day. `make` works out the ones not stored yet. Two phones opening at once both keep
  * whichever copy was stored first: the inserts are INSERT OR IGNORE, read back in the same transaction.
+ * `today`'s stored baseline, if it's from an older rule set, is worked out again under the current one (only once:
+ * the update checks the stored rule set itself, so a second phone reads back the first one's copy).
  */
-export async function frozenBaselines(env: Env, householdId: number, days: number[], make: (day: number) => Baseline) {
+export async function frozenBaselines(env: Env, householdId: number, days: number[], make: (day: number) => Baseline, today?: number) {
   const out = new Map<number, Baseline>();
   if (days.length === 0) return out;
   const wanted = new Set(days);
@@ -87,12 +90,22 @@ export async function frozenBaselines(env: Env, householdId: number, days: numbe
     for (const r of rows) if (wanted.has(r.day)) out.set(r.day, JSON.parse(r.baseline) as Baseline);
   };
   keep((await read.all<{ day: number; baseline: string }>()).results);
+  const stale = today !== undefined && wanted.has(today) && (out.get(today)?.rules ?? RULES) < RULES;
+  if (stale) out.delete(today);
   const missing = days.filter((d) => !out.has(d));
   if (missing.length === 0) return out;
   const put = env.DB.prepare("INSERT OR IGNORE INTO day_missions (household_id, day, baseline, created_at) VALUES (?, ?, ?, ?)");
+  const redo = env.DB.prepare(
+    `UPDATE day_missions SET baseline = ?, created_at = ?
+     WHERE household_id = ? AND day = ? AND coalesce(json_extract(baseline, '$.rules'), 1) < ?`,
+  );
   const createdAt = Date.now();
   const results = await env.DB.batch<{ day: number; baseline: string }>([
-    ...missing.map((d) => put.bind(householdId, d, JSON.stringify(make(d)), createdAt)),
+    ...missing.map((d) =>
+      stale && d === today
+        ? redo.bind(JSON.stringify(make(d)), createdAt, householdId, d, RULES)
+        : put.bind(householdId, d, JSON.stringify(make(d)), createdAt),
+    ),
     read,
   ]);
   keep(results[results.length - 1].results);
@@ -100,8 +113,9 @@ export async function frozenBaselines(env: Env, householdId: number, days: numbe
 }
 
 /** The fixed baselines for `days`, working out any not stored yet from `on` (expenses by day) and `cats`. */
-function baselinesFor(env: Env, householdId: number, days: number[], on: (day: number) => DayExpense[], cats: CatInfo[]) {
-  return frozenBaselines(env, householdId, days, (day) => baseline(historyBefore(on, day), day, cats));
+function baselinesFor(env: Env, householdId: number, days: number[], on: (day: number) => DayExpense[], cats: CatInfo[], today?: number) {
+  const make = (day: number) => baseline(historyBefore(on, day), day, cats, day < ALIGNED_FROM && day !== today ? 2 : RULES);
+  return frozenBaselines(env, householdId, days, make, today);
 }
 
 /** How each of `days` went on its fixed missions. Pure. */
@@ -271,12 +285,44 @@ export async function todayMissions(env: Env, householdId: number, now: number) 
   const [all, cats] = await Promise.all([expensesBetween(env, householdId, today - BASELINE_DAYS, today + 1), visibleCats(env, householdId)]);
   const on = byDay(all);
   const facts = factsOn(on, today);
-  const fixed = (await baselinesFor(env, householdId, [today], on, cats)).get(today)!;
+  const fixed = (await baselinesFor(env, householdId, [today], on, cats, today)).get(today)!;
   const items: TodayMission[] = missionsFor(householdId, today, fixed).map((m) => {
     const r = m.check(facts);
     return { title: m.title, level: m.level, status: r.ok ? "track" : "missed", note: r.note };
   });
   return { today: toDateInput(now), items, onTrack: items.filter((m) => m.status === "track").length };
+}
+
+/** One mission of a day in history: met or not (today: still on track or not), and how it went. */
+export type PastMission = { title: string; level: 1 | 2; ok: boolean; note: string };
+export type DayMissions = { items: PastMission[]; done: number };
+
+/** Older rule sets wrote their notes for today ("₱180 so far"); a finished day reads better without the "so far". */
+export function pastNote(note: string): string {
+  return note === "so far so good" || note === "none yet" ? "none" : note.replace(/ so far$/, "");
+}
+
+/** Each of `days`' missions and how they went, for history. Days before the household began are left out. */
+export async function missionDays(env: Env, householdId: number, createdAt: number, days: number[], now: number) {
+  const out = new Map<number, DayMissions>();
+  const today = dayKey(now);
+  const wanted = days.filter((d) => d >= dayKey(createdAt) && d <= today);
+  if (wanted.length === 0) return out;
+  const [all, cats] = await Promise.all([
+    expensesBetween(env, householdId, Math.min(...wanted) - BASELINE_DAYS, Math.max(...wanted) + 1),
+    visibleCats(env, householdId),
+  ]);
+  const on = byDay(all);
+  const fixed = await baselinesFor(env, householdId, wanted, on, cats, wanted.includes(today) ? today : undefined);
+  for (const day of wanted) {
+    const facts = factsOn(on, day);
+    const items = missionsFor(householdId, day, fixed.get(day)!).map((m) => {
+      const r = m.check(facts);
+      return { title: m.title, level: m.level, ok: r.ok, note: day === today ? r.note : pastNote(r.note) };
+    });
+    out.set(day, { items, done: items.filter((m) => m.ok).length });
+  }
+  return out;
 }
 
 export type TodayGarden = {

@@ -23,10 +23,10 @@ Logging an expense takes a few seconds: type the amount, tap a category if you l
 
 - Quick add screen with a number keypad, category tiles and an optional one-line note
 - Garden screen with totals per category and your pace against last month
-- A money garden: every day the household gets 3–5 small "spend less" missions, at least two of them easy, checked automatically from what you log. Meet at least half and the plant grows a leaf; meet them all and the leaf gets a small flower. A month that ends lower than the one before blooms. It only ever rewards, never scolds
+- A money garden: every day the household gets 3–5 small "spend less" missions, at least two of them easy, checked automatically from what you log. They're made from the household's own last 28 days, so the amounts, hours and categories fit how you really spend: an easy one is something you'd have managed on about 7 of 10 of those days, a medium one on about 4. Meet at least half and the plant grows a leaf; meet them all and the leaf gets a small flower. A month that ends lower than the one before blooms. It only ever rewards, never scolds
 - A gallery of every month's plant, and a Wrapped recap when a month ends
 - This month's plant stands under today's sky: day or night, and the weather where you are (sun, clouds, rain, a thunderstorm)
-- History of every expense, newest first, grouped by day, with a filter by person
+- History of every expense, newest first, grouped by day, with a filter by person. Each day folds its missions underneath: tap to see which were met
 - An eye by the garden's total hides all but its first digit, like ₱1•,••• (on the garden screen and each category's page). It's set per person, so it follows them to any phone they pick themselves on. Tap it again to show the total
 - One household, several people. Each phone picks who it belongs to
 - Installs to the home screen like an app

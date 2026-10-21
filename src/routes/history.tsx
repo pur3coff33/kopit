@@ -4,6 +4,7 @@ import { getDb } from "../db/client";
 import { categories, entries, profiles } from "../db/schema";
 import type { AppEnv } from "../env";
 import { categoryColor } from "../lib/colors";
+import { missionDays, type DayMissions } from "../lib/garden";
 import { formatPeso } from "../lib/money";
 import { DAY_MS, MANILA_OFFSET_MS, clockTime, dayKey, fromDateInput, rangeLabel, toDateInput } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
@@ -11,6 +12,37 @@ import { Layout } from "../views/layout";
 import { householdProfiles } from "./setup";
 
 export const history = new Hono<AppEnv>();
+
+/** A day's missions under its heading: a one-line summary that opens into the list. The household's, so Everyone only. */
+function DayMissionsLine({ m, today }: { m: DayMissions; today: boolean }) {
+  const n = m.items.length;
+  if (n === 0) return null;
+  const icon = today ? "🌱" : m.done === n ? "🌸" : m.done * 2 >= n ? "🍃" : "·";
+  const summary = today ? `${m.done} of ${n} missions on track so far` : `${m.done} of ${n} missions met`;
+  return (
+    <details class="missions day-missions">
+      <summary>
+        <span aria-hidden="true">{icon}</span> {summary}
+      </summary>
+      <ul>
+        {m.items.map((i) => (
+          <li class={`m ${i.ok ? (today ? "track" : "met") : "missed"}`}>
+            <span class="st" aria-hidden="true">
+              {i.ok ? (today ? "" : "✓") : "–"}
+            </span>
+            <span class="t">
+              {i.title}
+              <small>
+                <span class="sr">{i.ok ? (today ? "On track: " : "Met: ") : "Not met: "}</span>
+                {i.note}
+              </small>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
 history.use("/history", requireSession, requireProfile);
 
 /** How many days with spending each batch of history loads. A day is never split across batches. */
@@ -131,6 +163,8 @@ history.get("/history", async (c) => {
   const low = more && oldest !== undefined ? Math.max(oldest, floor) : floor;
   const high = Math.min(dayKey(now) - 1, (before ?? Infinity) - 1);
   const items = historyItems(days, low, high);
+  const missions = who === "all" ? await missionDays(c.env, householdId, c.get("householdCreatedAt"), days, now) : null;
+  const today = dayKey(now);
 
   const nextHref = more && oldest !== undefined ? `/history?who=${who}&before=${toDateInput(startOf(oldest))}` : null;
   const back = encodeURIComponent(`/history?who=${who}`);
@@ -167,6 +201,7 @@ history.get("/history", async (c) => {
                   <span>{dayHeading(startOf(item.day), now)}</span>
                   <span>{formatPeso(list.reduce((s, r) => s + r.amount, 0))}</span>
                 </h2>
+                {missions?.has(item.day) && <DayMissionsLine m={missions.get(item.day)!} today={item.day === today} />}
                 <ul class="rows">
                   {list.map((r) => {
                     const what = r.category ?? "Uncategorized";
