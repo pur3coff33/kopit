@@ -6,7 +6,7 @@ By sending a pull request, you agree that your contribution is licensed under th
 
 ## Setup
 
-You need Node and npm 11. npm 10.9 crashes while resolving the vitest peer dependencies.
+You need Node and npm 11. npm 10.9 crashes while resolving the vitest peer dependencies. If you use [Volta](https://volta.sh), it picks up the versions pinned in `package.json` automatically.
 
 ```sh
 npm install
