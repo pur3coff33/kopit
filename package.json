@@ -1,6 +1,7 @@
 {
   "name": "kopit",
   "version": "1.0.0",
+  "license": "MIT",
   "scripts": {
     "dev": "wrangler dev",
     "test": "vitest run",
