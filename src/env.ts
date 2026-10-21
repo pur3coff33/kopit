@@ -11,9 +11,11 @@ export type AppEnv = {
   Variables: {
     householdId: number;
     householdCreatedAt: number;
-    profile: { id: number; name: string; index: number } | null;
+    profile: { id: number; name: string; index: number; hideAmounts: boolean } | null;
     profileId: number;
     profileName: string;
     profileIndex: number;
+    /** This phone's person tapped the eye: show every amount as ₱••••. */
+    hideAmounts: boolean;
   };
 };

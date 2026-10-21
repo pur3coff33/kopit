@@ -5,7 +5,7 @@ import { profiles } from "../db/schema";
 import type { AppEnv } from "../env";
 import { createCategory, getCategory } from "../lib/categories";
 import { deleteEntry, insertEntry } from "../lib/entries";
-import { MAX_CENTAVOS, formatPeso } from "../lib/money";
+import { MAX_CENTAVOS, amounts } from "../lib/money";
 import { cleanNote } from "../lib/notes";
 import { weekCategoryTotal } from "../lib/stats";
 
@@ -51,7 +51,7 @@ api.post("/entries", async (c) => {
     { id: b.id.toLowerCase(), profileId: profile.id, categoryId, amountCentavos: amount as number, note: entryNote, spentAt: Math.round(b.spentAt) },
     now,
   );
-  const total = formatPeso(await weekCategoryTotal(c.env, householdId, categoryId, now));
+  const total = amounts(c.get("hideAmounts")).peso(await weekCategoryTotal(c.env, householdId, categoryId, now));
   const note = categoryName ? `Saved ✓ · ${categoryName} this week: ${total}` : `Saved ✓ · This week: ${total}`;
   return c.json({ status, note }, 201);
 });

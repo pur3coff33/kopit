@@ -14,6 +14,7 @@ import { clockTime } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Avatar, Welcome } from "../views/garden";
 import { InlineScript, Layout } from "../views/layout";
+import { safeBack } from "./entries";
 import { REPO_URL } from "./guide";
 import { householdProfiles } from "./setup";
 
@@ -176,6 +177,16 @@ settings.post("/settings/categories/:id/hidden", async (c) => {
   const hidden = String((await c.req.parseBody()).hidden ?? "") === "1";
   if (!(await setCategoryHidden(c.env, c.get("householdId"), Number(c.req.param("id")), hidden))) return c.notFound();
   return c.redirect("/settings?ok=cat");
+});
+
+// The eye by the totals. Per person, so it follows them to any phone they pick themselves on.
+settings.post("/settings/amounts", async (c) => {
+  const body = await c.req.parseBody();
+  await getDb(c.env)
+    .update(profiles)
+    .set({ hideAmounts: String(body.hide ?? "") === "1" })
+    .where(and(eq(profiles.id, c.get("profileId")), eq(profiles.householdId, c.get("householdId"))));
+  return c.redirect(safeBack(body.back) ?? "/spending");
 });
 
 settings.post("/settings/pin", async (c) => {

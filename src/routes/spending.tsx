@@ -6,10 +6,11 @@ import type { AppEnv } from "../env";
 import { getCategory } from "../lib/categories";
 import { categoryColor } from "../lib/colors";
 import { monthGarden, monthName, rangeDays, todayMissions, wholePastMonth } from "../lib/garden";
-import { formatPeso } from "../lib/money";
+import { amounts } from "../lib/money";
 import { breakdown, categoryPace, pace, paceText, rangeTotal, weeklyTotals } from "../lib/stats";
 import { addMonths, dayStart, isNight, rangeLabel, resolveRange, toDateInput, type Range, type RangeKind } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
+import { AmountsEye, herePath } from "../views/components";
 import { Plant, Sky } from "../views/garden";
 import { Layout } from "../views/layout";
 import { householdProfiles } from "./setup";
@@ -100,6 +101,9 @@ spending.get("/spending", async (c) => {
   const pastMonth = wholePastMonth(view.range, now);
   // The garden (leaves, bud, bloom) is always the whole household's, whoever is picked; the pace pill follows the pick.
   const thisMonth = view.range.kind === "this";
+  const hidden = c.get("hideAmounts");
+  const { peso, text } = amounts(hidden);
+  const eye = <AmountsEye hidden={hidden} back={herePath(c.req.url)} />;
   const [b, p, householdPace, days, g, missions] = await Promise.all([
     breakdown(c.env, filter),
     thisMonth ? pace(c.env, householdId, profileId, now) : Promise.resolve(null),
@@ -140,12 +144,15 @@ spending.get("/spending", async (c) => {
                     ? `${monthName(g.start)} stayed a sprout`
                     : `${monthName(g.start)} grew ${plural(g.goodDays, "leaf", "leaves")}`}
               </p>
-              <div class="total">{formatPeso(b.total)}</div>
+              <div class="total">
+                {peso(b.total)}
+                {eye}
+              </div>
               {g.bloomed && g.prevTotal !== null ? (
                 <p class="muted">
                   {view.who === "all" ? "" : "The household spent "}
-                  {formatPeso(g.total)}
-                  {view.who === "all" ? " spent" : ""}, {formatPeso(g.prevTotal - g.total)} less than {monthName(addMonths(g.start, -1))}.
+                  {peso(g.total)}
+                  {view.who === "all" ? " spent" : ""}, {peso(g.prevTotal - g.total)} less than {monthName(addMonths(g.start, -1))}.
                 </p>
               ) : (
                 <p class="muted">{plural(b.count, "expense", "expenses")}</p>
@@ -154,12 +161,15 @@ spending.get("/spending", async (c) => {
           ) : (
             <>
               <p class="muted">Spent {label}</p>
-              <div class="total">{formatPeso(b.total)}</div>
+              <div class="total">
+                {peso(b.total)}
+                {eye}
+              </div>
               {p &&
                 (p.diff < 0 && profileId === null ? (
-                  <span class="pill">↓ {formatPeso(-p.diff)} · 🌸 on track</span>
+                  <span class="pill">↓ {peso(-p.diff)} · 🌸 on track</span>
                 ) : (
-                  <span class="pill neutral">{paceText(p.diff)}</span>
+                  <span class="pill neutral">{text(paceText(p.diff))}</span>
                 ))}
               <p class="muted tally">🍃 {tally}</p>
             </>
@@ -194,10 +204,10 @@ spending.get("/spending", async (c) => {
                   {m.status === "missed" ? "–" : ""}
                 </span>
                 <span class="t">
-                  {m.title}
+                  {text(m.title)}
                   <small>
                     <span class="sr">{m.status === "track" ? "On track: " : "Not today: "}</span>
-                    {m.status === "missed" ? `${m.note} · not today` : m.note}
+                    {text(m.status === "missed" ? `${m.note} · not today` : m.note)}
                   </small>
                 </span>
               </li>
@@ -218,7 +228,7 @@ spending.get("/spending", async (c) => {
                   <span class="mid">
                     <span class="nm">
                       <span>{r.name}</span>
-                      <span>{formatPeso(r.amount)}</span>
+                      <span>{peso(r.amount)}</span>
                     </span>
                     <span class="bar">
                       <i style={`width:${Math.max(2, Math.round((r.amount / top) * 100))}%`}></i>
@@ -275,8 +285,10 @@ spending.get("/spending/category/:id", async (c) => {
   const q = qs({ kind: view.range.kind, who: view.who, from: view.from, to: view.to });
   const col = categoryColor(categoryId);
   const whoName = view.people.find((p) => p.id === view.who)?.name ?? "Everyone";
+  const hidden = c.get("hideAmounts");
+  const { peso } = amounts(hidden);
   const share = everything > 0 ? Math.round((total / everything) * 100) : 0;
-  const change = delta && delta.diff !== 0 ? ` · ${delta.diff > 0 ? "↑" : "↓"} ${formatPeso(Math.abs(delta.diff))} vs ${delta.prevMonth}` : "";
+  const change = delta && delta.diff !== 0 ? ` · ${delta.diff > 0 ? "↑" : "↓"} ${peso(Math.abs(delta.diff))} vs ${delta.prevMonth}` : "";
   const tallest = Math.max(1, ...weeks.map((w) => w.total));
   const thisWeek = weeks.at(-1)?.start;
   return c.html(
@@ -293,7 +305,10 @@ spending.get("/spending/category/:id", async (c) => {
           </p>
         </div>
       </div>
-      <div class="total" style="margin-top:6px">{formatPeso(total)}</div>
+      <div class="total" style="margin-top:6px">
+        {peso(total)}
+        <AmountsEye hidden={hidden} back={herePath(c.req.url)} />
+      </div>
       {total > 0 && (
         <span class="pill neutral">
           {share}% of everything{change}
@@ -319,7 +334,7 @@ spending.get("/spending/category/:id", async (c) => {
                 <span class="mid">
                   <span class="nm">
                     <span>{r.note ?? shortDay(r.spentAt)}</span>
-                    <span>{formatPeso(r.amount)}</span>
+                    <span>{peso(r.amount)}</span>
                   </span>
                   <span class="sub">{r.note ? `${shortDay(r.spentAt)} · ${r.who}` : r.who}</span>
                 </span>

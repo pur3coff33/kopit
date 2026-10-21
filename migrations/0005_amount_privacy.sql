@@ -1,0 +1,1 @@
+ALTER TABLE `profiles` ADD `hide_amounts` integer DEFAULT false NOT NULL;

@@ -27,6 +27,7 @@ Logging an expense takes a few seconds: type the amount, tap a category if you l
 - A gallery of every month's plant, and a Wrapped recap when a month ends
 - This month's plant stands under today's sky: day or night, and the weather where you are (sun, clouds, rain, a thunderstorm)
 - History of every expense, newest first, grouped by day, with a filter by person
+- An eye by the totals hides every amount as ₱•••• (totals, expenses, missions, the note after saving). It's set per person, so it follows them to any phone they pick themselves on. Tap it again to show the amounts
 - One household, several people. Each phone picks who it belongs to
 - Installs to the home screen like an app
 - A guide in the app: how the plant grows, every sky, and every mission with an example. Privacy policy and terms sit next to it

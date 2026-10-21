@@ -59,3 +59,26 @@ export function Amount({ value = "0" }: { value?: string }) {
     </>
   );
 }
+
+/** The eye by a total: hides every amount for this phone's person (or shows them again), then comes back to `back`. */
+export function AmountsEye({ hidden, back }: { hidden: boolean; back: string }) {
+  return (
+    <form class="eye" method="post" action="/settings/amounts">
+      <input type="hidden" name="hide" value={hidden ? "0" : "1"} />
+      <input type="hidden" name="back" value={back} />
+      <button type="submit" aria-label={hidden ? "Show amounts" : "Hide amounts"} title={hidden ? "Show amounts" : "Hide amounts"}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+          <circle cx="12" cy="12" r="3" />
+          {hidden && <path d="M4 4l16 16" />}
+        </svg>
+      </button>
+    </form>
+  );
+}
+
+/** The path and query of the screen on show, for an AmountsEye to come back to. */
+export const herePath = (url: string) => {
+  const u = new URL(url);
+  return u.pathname + u.search;
+};

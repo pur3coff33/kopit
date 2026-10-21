@@ -25,5 +25,6 @@ export const requireProfile = createMiddleware<AppEnv>(async (c, next) => {
   c.set("profileId", profile.id);
   c.set("profileName", profile.name);
   c.set("profileIndex", profile.index);
+  c.set("hideAmounts", profile.hideAmounts);
   await next();
 });

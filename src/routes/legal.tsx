@@ -42,7 +42,7 @@ legal.get("/privacy", (c) =>
       <h2>What kop.it keeps</h2>
       <ul>
         <li>Your household's username, and its PIN as a salted hash (never the PIN itself).</li>
-        <li>The names of the people in the household.</li>
+        <li>The names of the people in the household, and whether each one has hidden amounts with the eye.</li>
         <li>Every expense: the amount, its category, the optional note, who logged it and when.</li>
         <li>Your categories, and how each day's missions went (to grow the plant).</li>
         <li>Logins (as hashed tokens) and failed PIN tries, to keep the household safe.</li>
