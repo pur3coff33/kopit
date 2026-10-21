@@ -37,7 +37,7 @@ export function Avatar(props: { index: number; name: string; size?: number }) {
 }
 
 /**
- * The household's plant in its pot: one leaf per no-spend day (up to 20 drawn), alternating left and right up a stem
+ * The household's plant in its pot: one leaf per good day (up to 20 drawn), alternating left and right up a stem
  * that grows with them. No leaves yet → a small sprout. `perfect`: that many leaves carry a small flower (perfect days).
  * `bud`: the month's flower is on track. `bloom`: the month bloomed.
  */
@@ -127,14 +127,17 @@ export function Welcome() {
   );
 }
 
+export type Weather = "clear" | "cloudy" | "rain" | "storm";
+
 /**
  * Today's sky behind the live plant: day or night from the Manila clock, then /js/sky.js swaps in the real weather
  * and sunset for where the phone is. Every layer is drawn; data-phase and data-weather pick what shows (app.css).
+ * `still`: a fixed sky for showing the looks (the guide); /js/sky.js leaves it alone.
  */
-export function Sky(props: { night: boolean; children?: Child }) {
+export function Sky(props: { night: boolean; weather?: Weather; still?: boolean; children?: Child }) {
   const drops = Array.from({ length: 10 }, () => <i></i>);
   return (
-    <div class="sky" data-sky="" data-phase={props.night ? "night" : "day"} data-weather="clear">
+    <div class="sky" data-sky={props.still ? undefined : ""} data-phase={props.night ? "night" : "day"} data-weather={props.weather ?? "clear"}>
       <div class="sky-back" aria-hidden="true">
         <span class="sun"></span>
         <span class="moon"></span>

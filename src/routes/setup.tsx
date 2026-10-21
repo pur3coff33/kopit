@@ -62,6 +62,9 @@ function SetupPage(props: { username?: string; message?: string }) {
       <p class="muted">
         Already set up? <a href="/login">Log in</a>
       </p>
+      <p class="fine">
+        Creating a household means you agree to the <a href="/terms">terms</a> and <a href="/privacy">privacy policy</a>.
+      </p>
     </Layout>
   );
 }

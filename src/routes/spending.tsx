@@ -173,6 +173,9 @@ spending.get("/spending", async (c) => {
             <a class="chip gallery-link" href="/gallery">
               🪴 Gallery
             </a>
+            <a class="chip" href="/guide">
+              📖 Guide
+            </a>
           </div>
         </div>
       </section>

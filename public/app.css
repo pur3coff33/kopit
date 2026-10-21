@@ -630,3 +630,41 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 .wrapped .card { width: min(216px, 52vw); height: auto; border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35); margin-bottom: 10px; }
 .wrapped .save { max-width: 320px; }
 .wrapped .save.plain { color: #fff; border-color: rgba(255, 255, 255, 0.55); }
+
+/* ---------- small print: legal links on the login and setup pages ---------- */
+.fine { font-size: 12px; color: var(--muted); text-align: center; margin: 14px 0 4px; }
+.fine a { color: inherit; }
+
+/* ---------- deleting the household: out of the way, then unmistakable ---------- */
+.far-away { text-align: center; margin: 56px 0 6px; font-size: 12px; }
+.far-away a { color: var(--muted); opacity: 0.75; }
+.danger-card { border: 1.5px solid rgba(176, 58, 46, 0.35); }
+.danger-card ul { margin: 6px 0; padding-left: 20px; }
+.danger-card li { margin: 3px 0; }
+.save.danger { background: linear-gradient(160deg, #d0564a, #a5372c); box-shadow: 0 6px 16px rgba(165, 55, 44, 0.3); }
+.save.danger:focus-visible { outline-color: rgba(165, 55, 44, 0.5); }
+/* Greyed out until the PIN and DELETE are both in (the browser checks the patterns). */
+.delete-form:invalid .save.danger { opacity: 0.4; box-shadow: none; }
+
+/* ---------- guide ---------- */
+.toc { margin: 4px 0 6px; }
+.guide-sec { scroll-margin-top: 12px; }
+.guide-sec h2 { margin-top: 4px; }
+.guide-sec h3 { font-size: 14px; font-weight: 900; margin: 14px 0 6px; }
+.guide-sec p { line-height: 1.5; }
+.stages, .skies, .missions-list, .plain-links { list-style: none; margin: 8px 0; padding: 0; }
+.stages { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px 10px; }
+.stages li { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; font-size: 13px; }
+.stages .muted { font-size: 12px; line-height: 1.35; }
+.skies { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 6px; }
+.skies li { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; text-align: center; }
+.missions-list li { display: flex; flex-direction: column; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.missions-list li:last-child { border-bottom: 0; }
+.missions-list .muted { font-size: 13px; }
+.plain-links li { padding: 4px 0; font-weight: 800; }
+
+/* ---------- privacy and terms ---------- */
+.legal { line-height: 1.55; max-width: 62ch; }
+.legal h2 { margin-top: 20px; }
+.legal ul { padding-left: 20px; }
+.legal li { margin: 4px 0; }

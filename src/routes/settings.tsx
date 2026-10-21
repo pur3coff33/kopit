@@ -1,18 +1,20 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { getDb } from "../db/client";
-import { households, profiles } from "../db/schema";
+import { entries, households, profiles } from "../db/schema";
 import type { AppEnv } from "../env";
 import { cleanName, listCategories, renameCategory, setCategoryHidden } from "../lib/categories";
 import { getCookie } from "hono/cookie";
+import { deleteHousehold } from "../lib/households";
 import { attemptPin } from "../lib/login";
-import { SESSION_COOKIE, deleteOtherSessions } from "../lib/session";
+import { PROFILE_COOKIE, SESSION_COOKIE, clearCookie, deleteOtherSessions } from "../lib/session";
 import { hashPin, isValidPin } from "../lib/pin";
 import { clockTime } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
-import { Avatar } from "../views/garden";
-import { Layout } from "../views/layout";
+import { Avatar, Welcome } from "../views/garden";
+import { InlineScript, Layout } from "../views/layout";
+import { REPO_URL } from "./guide";
 import { householdProfiles } from "./setup";
 
 export const settings = new Hono<AppEnv>();
@@ -117,9 +119,25 @@ async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: stri
 
       </section>
 
+      <section class="card">
+        <h2>Help and info</h2>
+        <div class="chips">
+          <a class="chip" href="/guide">📖 Guide</a>
+          <a class="chip" href="/privacy">Privacy</a>
+          <a class="chip" href="/terms">Terms</a>
+        </div>
+        <p class="muted">
+          Want to help, or found a problem? <a href={REPO_URL}>kop.it is on GitHub</a>.
+        </p>
+      </section>
+
       <form method="post" action="/logout" style="margin-top:22px">
         <button class="save plain" type="submit">Log out of this phone</button>
       </form>
+      {/* Kept out of the way on purpose: small, grey, last, and behind its own page with two confirmations. */}
+      <p class="far-away">
+        <a href="/settings/delete">Delete household…</a>
+      </p>
     </Layout>
   );
 }
@@ -174,4 +192,89 @@ settings.post("/settings/pin", async (c) => {
   await getDb(c.env).update(households).set({ pinHash: hash, pinSalt: salt }).where(eq(households.id, householdId));
   await deleteOtherSessions(c.env, householdId, getCookie(c, SESSION_COOKIE) ?? "");
   return c.redirect("/settings?ok=pin");
+});
+
+// ---------- deleting the household: a page of its own, the PIN again, and DELETE typed out ----------
+
+async function DeletePage({ c, message }: { c: Context<AppEnv>; message?: string }) {
+  const householdId = c.get("householdId");
+  const db = getDb(c.env);
+  const [home, people, spent] = await Promise.all([
+    db.select({ username: households.username }).from(households).where(eq(households.id, householdId)).get(),
+    householdProfiles(c.env, householdId),
+    db.select({ n: count() }).from(entries).where(eq(entries.householdId, householdId)).get(),
+  ]);
+  const n = spent?.n ?? 0;
+  return (
+    <Layout title="Delete household" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")}>
+      <p>
+        <a href="/settings">‹ Garden shed</a>
+      </p>
+      <h1>Delete the {home?.username} household?</h1>
+      <section class="card danger-card">
+        <p>This erases everything, for everyone in the household:</p>
+        <ul>
+          <li>
+            {people.length === 1 ? "1 person" : `${people.length} people`}: {people.map((p) => p.name).join(", ")}
+          </li>
+          <li>{n === 0 ? "no expenses yet" : n === 1 ? "1 expense, with its note" : `${n} expenses, with their notes`}</li>
+          <li>your categories</li>
+          <li>the garden: every leaf, flower and month, and the Wrapped recaps</li>
+        </ul>
+        <p>
+          Every phone is logged out. <b>This can't be undone in the app.</b>
+        </p>
+      </section>
+      {message && <p class="msg">{message}</p>}
+      <form class="form delete-form" method="post" action="/settings/delete">
+        <label>
+          Household PIN
+          <input name="pin" type="password" inputmode="numeric" autocomplete="current-password" pattern="\d{6}" maxlength={6} required />
+        </label>
+        <label>
+          Type DELETE to confirm
+          <input name="confirm" autocomplete="off" autocapitalize="characters" spellcheck={false} pattern="DELETE" required />
+        </label>
+        <button class="save danger" type="submit">
+          Delete household forever
+        </button>
+      </form>
+      <a class="save plain" href="/settings" style="text-align:center;text-decoration:none">
+        Keep my household
+      </a>
+    </Layout>
+  );
+}
+
+/** Shown once, right after the delete: also clears what this phone kept (offline copy, unsent expenses, notes). */
+function DeletedPage() {
+  return (
+    <Layout title="Household deleted" bare>
+      <Welcome />
+      <h1>Your household was deleted</h1>
+      <p class="muted">Everything in it is gone from kop.it, and every phone is logged out. Thanks for gardening with us.</p>
+      <a class="save" href="/setup" style="text-align:center;text-decoration:none;margin-top:14px">
+        Start a new household
+      </a>
+      <InlineScript code="try{if(self.caches)caches.delete('kopit-v1');if(self.indexedDB)indexedDB.deleteDatabase('kopit');for(var k of Object.keys(localStorage))if(k.indexOf('kopit')===0)localStorage.removeItem(k)}catch(e){}" />
+    </Layout>
+  );
+}
+
+const deletePage = (c: Context<AppEnv>, message?: string, status: 200 | 400 = 200) => c.html(<DeletePage c={c} message={message} />, status);
+
+settings.get("/settings/delete", (c) => deletePage(c));
+
+settings.post("/settings/delete", async (c) => {
+  const body = await c.req.parseBody();
+  // The typed word first, so a typo doesn't use up one of the PIN tries.
+  if (String(body.confirm ?? "").trim() !== "DELETE") return deletePage(c, "Type DELETE in capitals to confirm.", 400);
+  const householdId = c.get("householdId");
+  const h = (await getDb(c.env).query.households.findFirst({ where: eq(households.id, householdId) }))!;
+  const a = await attemptPin(c.env, h, String(body.pin ?? ""), Date.now());
+  if (!a.ok) return deletePage(c, a.lockedUntil ? `Too many tries. Try again at ${clockTime(a.lockedUntil)}.` : "That PIN didn't match.", 400);
+  await deleteHousehold(c.env, householdId);
+  clearCookie(c, SESSION_COOKIE);
+  clearCookie(c, PROFILE_COOKIE);
+  return c.html(<DeletedPage />);
 });

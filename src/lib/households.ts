@@ -1,6 +1,6 @@
 import { count, eq } from "drizzle-orm";
 import { getDb } from "../db/client";
-import { categories, households } from "../db/schema";
+import { categories, dayMissions, deletedEntries, entries, gardenDays, households, profiles, sessions } from "../db/schema";
 import type { Env } from "../env";
 import { normalizeUsername } from "./login";
 import { hashPin, isValidPin } from "./pin";
@@ -53,4 +53,22 @@ export async function createHousehold(
   const [h] = await db.insert(households).values({ username, pinHash: hash, pinSalt: salt, createdAt: now }).returning();
   await seedCategories(env, h.id, now);
   return { ok: true, householdId: h.id };
+}
+
+/**
+ * Erases a household and everything in it, in one transaction: children before parents, so the foreign keys hold.
+ * Every phone's login goes with it. Nothing is kept; only the database's own restore history still has it for a while.
+ */
+export async function deleteHousehold(env: Env, householdId: number): Promise<void> {
+  const db = getDb(env);
+  await db.batch([
+    db.delete(entries).where(eq(entries.householdId, householdId)),
+    db.delete(deletedEntries).where(eq(deletedEntries.householdId, householdId)),
+    db.delete(sessions).where(eq(sessions.householdId, householdId)),
+    db.delete(gardenDays).where(eq(gardenDays.householdId, householdId)),
+    db.delete(dayMissions).where(eq(dayMissions.householdId, householdId)),
+    db.delete(categories).where(eq(categories.householdId, householdId)),
+    db.delete(profiles).where(eq(profiles.householdId, householdId)),
+    db.delete(households).where(eq(households.id, householdId)),
+  ]);
 }

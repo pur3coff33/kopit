@@ -10,8 +10,10 @@ import { api } from "./routes/api";
 import { auth } from "./routes/auth";
 import { entriesRoutes } from "./routes/entries";
 import { gallery } from "./routes/gallery";
+import { guide } from "./routes/guide";
 import { wrapped } from "./routes/wrapped";
 import { history } from "./routes/history";
+import { legal } from "./routes/legal";
 import { settings } from "./routes/settings";
 import { setup } from "./routes/setup";
 import { spending } from "./routes/spending";
@@ -25,6 +27,8 @@ app.get("/healthz", async (c) => {
 
 app.route("/", auth);
 app.route("/", setup);
+app.route("/", guide);
+app.route("/", legal);
 
 app.use("/api/*", requireSession, requireProfile);
 app.route("/api", api);

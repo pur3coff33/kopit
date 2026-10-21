@@ -23,12 +23,25 @@ Logging an expense takes a few seconds: type the amount, tap a category if you l
 
 - Quick add screen with a number keypad, category tiles and an optional one-line note
 - Garden screen with totals per category and your pace against last month
-- A money garden: every day the household gets 3–5 small "spend less" missions, checked automatically from what you log. Meet at least half and the plant grows a leaf; meet them all and the leaf gets a small flower. A month that ends lower than the one before blooms. It only ever rewards, never scolds
+- A money garden: every day the household gets 3–5 small "spend less" missions, at least two of them easy, checked automatically from what you log. Meet at least half and the plant grows a leaf; meet them all and the leaf gets a small flower. A month that ends lower than the one before blooms. It only ever rewards, never scolds
 - A gallery of every month's plant, and a Wrapped recap when a month ends
 - This month's plant stands under today's sky: day or night, and the weather where you are (sun, clouds, rain, a thunderstorm)
 - History of every expense, newest first, grouped by day, with a filter by person
 - One household, several people. Each phone picks who it belongs to
 - Installs to the home screen like an app
+- A guide in the app: how the plant grows, every sky, and every mission with an example. Privacy policy and terms sit next to it
+
+## The garden's sky
+
+<p align="center"><img src="docs/screenshots/sky.webp" alt="The plant under eight skies: clear, cloudy, rain and storm, by day and by night" width="574"></p>
+
+This month's plant on the garden screen stands under the sky where you are right now.
+
+- **Day or night** follows the real sunrise and sunset. Nights bring a moon, stars and a few fireflies.
+- **Cloudy:** clouds drift past and the sun fades. **Rain:** drops fall and the leaves look wet. **Storm:** heavier rain, a gusty sway and the odd lightning flash.
+- The weather comes from [Open-Meteo](https://open-meteo.com), a free weather service built on national forecasts. The phone asks it every 30 minutes, sending only a rounded location (about a kilometre).
+- Location is asked for once. Say no, or have no signal, and the sky stays clear and follows the clock (6 AM to 6 PM is day).
+- Past months and the gallery keep a plain plant. With reduced motion on, the sky holds still.
 
 ## Putting it on your phone
 
@@ -43,9 +56,14 @@ iPhones don't sync in the background, so expenses saved offline are sent when yo
 
 - Amounts are in pesos, up to ₱1,000,000 per expense. Dates follow Manila time.
 - A wrong PIN 5 times in a row locks the household for 15 minutes. You can change the PIN in the **garden shed** (tap your name at the top) → **Change PIN**.
+- To delete the whole household, go to the very bottom of the garden shed → **Delete household…**. It asks for the PIN and for DELETE to be typed, then erases every person, expense and leaf and logs out every phone. The database's restore history keeps a copy for up to 30 days.
 - Adding a new category needs internet. Saving an expense doesn't.
 - The garden's sky asks for your location once, to show the weather where you are. Only a rounded location (about a kilometre) goes to [Open-Meteo](https://open-meteo.com) for the forecast. Say no and the sky just follows day and night.
 - One deployment holds at most 15 households.
+
+## Help and contributing
+
+Found a problem or have an idea? [Open an issue](https://github.com/pur3coff33/kopit/issues). Security problems go [privately](https://github.com/pur3coff33/kopit/security/advisories/new) instead (see [SECURITY.md](SECURITY.md)). Pull requests are welcome; [CONTRIBUTING.md](CONTRIBUTING.md) has the setup.
 
 ## Running your own
 
