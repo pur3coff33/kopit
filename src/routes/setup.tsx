@@ -6,6 +6,7 @@ import type { AppEnv, Env } from "../env";
 import { createHousehold, isFull } from "../lib/households";
 import { PROFILE_COOKIE, SESSION_COOKIE, createSession, setLongCookie } from "../lib/session";
 import { requireSession } from "../middleware/auth";
+import { Avatar, Welcome } from "../views/garden";
 import { Layout } from "../views/layout";
 
 export const setup = new Hono<AppEnv>();
@@ -23,8 +24,9 @@ export function householdProfiles(env: Env, householdId: number) {
 
 function Full() {
   return (
-    <Layout title="Set up">
-      <h1>kopit is full right now</h1>
+    <Layout title="Set up" bare>
+      <Welcome />
+      <h1>kop.it is full right now</h1>
       <p class="muted">No new households can be created. Already have one?</p>
       <a class="save plain" href="/login" style="text-align:center;text-decoration:none">
         Log in
@@ -35,7 +37,8 @@ function Full() {
 
 function SetupPage(props: { username?: string; message?: string }) {
   return (
-    <Layout title="Set up">
+    <Layout title="Set up" bare>
+      <Welcome />
       <h1>Start a household</h1>
       <p class="muted">You'll both log in with this username and PIN.</p>
       {props.message && <p class="msg">{props.message}</p>}
@@ -84,9 +87,9 @@ function ProfilesPage(props: { names: string[]; message?: string }) {
       <p class="muted">Add one name per person. Each phone picks one.</p>
       {props.names.length > 0 && (
         <ul class="rows">
-          {props.names.map((n) => (
+          {props.names.map((n, i) => (
             <li class="row">
-              <span class="ic">🙂</span>
+              <Avatar index={i} name={n} size={34} />
               <span class="mid">{n}</span>
             </li>
           ))}
@@ -132,12 +135,14 @@ setup.get("/profile", requireSession, async (c) => {
   return c.html(
     <Layout title="Who are you?">
       <h1>Who's using this phone?</h1>
+      <p class="muted">Each phone remembers its gardener.</p>
       <div class="pick">
-        {ps.map((p) => (
+        {ps.map((p, i) => (
           <form method="post" action="/profile">
             <input type="hidden" name="profileId" value={String(p.id)} />
-            <button class="save" type="submit">
-              {p.name}
+            <button class="who-card" type="submit">
+              <Avatar index={i} name={p.name} size={64} />
+              <span>{p.name}</span>
             </button>
           </form>
         ))}

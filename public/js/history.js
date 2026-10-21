@@ -1,43 +1,49 @@
-// Loads older expenses automatically when "Show more" scrolls into view (the link still works without JS).
-const list = document.querySelector("#history");
-let more = document.querySelector("#more-history");
+// Loads the next 5 days automatically when "Show more" scrolls into view (the link still works without JS).
+// Each batch holds whole days, so it can simply be added to the end.
 
-async function loadMore() {
-  if (!more || more.dataset.loading) return;
-  more.dataset.loading = "1";
-  more.textContent = "Loading…";
-  try {
-    const res = await fetch(more.href);
-    if (!res.ok) throw new Error(String(res.status));
-    const doc = new DOMParser().parseFromString(await res.text(), "text/html");
-    const incoming = doc.querySelector("#history");
-    if (incoming) {
-      // A day can continue across pages: merge into the last group instead of repeating its heading.
-      const firstHeading = incoming.querySelector(".day");
-      const lastHeading = [...list.querySelectorAll(".day")].at(-1);
-      if (firstHeading && lastHeading && firstHeading.textContent === lastHeading.textContent) {
-        const rows = firstHeading.nextElementSibling;
-        list.lastElementChild.append(...rows.children);
-        firstHeading.remove();
-        rows.remove();
+/** Starts the history screen; returns a function that stops it. Each visit keeps its own state, so a batch
+ * still loading when you leave can't land in a later visit's list. */
+export function mount() {
+  const list = document.querySelector("#history");
+  let more = document.querySelector("#more-history");
+  let stopped = false;
+  if (!list || !more || !("IntersectionObserver" in window)) return;
+
+  async function loadMore() {
+    if (!more || more.dataset.loading) return;
+    more.dataset.loading = "1";
+    more.textContent = "Loading…";
+    try {
+      const res = await fetch(more.href);
+      if (!res.ok) throw new Error(String(res.status));
+      const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+      if (stopped) return;
+      const incoming = doc.querySelector("#history");
+      if (incoming) list.append(...incoming.children);
+      const next = doc.querySelector("#more-history");
+      if (next) {
+        more.href = next.href;
+        more.textContent = "Show more";
+        delete more.dataset.loading;
+      } else {
+        seen.disconnect();
+        more.remove();
+        more = null;
       }
-      list.append(...incoming.children);
-    }
-    const next = doc.querySelector("#more-history");
-    if (next) {
-      more.href = next.href;
+    } catch {
+      if (stopped || !more) return;
       more.textContent = "Show more";
       delete more.dataset.loading;
-    } else {
-      more.remove();
-      more = null;
     }
-  } catch {
-    more.textContent = "Show more";
-    delete more.dataset.loading;
   }
+
+  const seen = new IntersectionObserver((s) => s.some((e) => e.isIntersecting) && loadMore(), { rootMargin: "300px" });
+  seen.observe(more);
+  return () => {
+    stopped = true;
+    seen.disconnect();
+  };
 }
 
-if (list && more && "IntersectionObserver" in window) {
-  new IntersectionObserver((seen) => seen.some((e) => e.isIntersecting) && loadMore(), { rootMargin: "300px" }).observe(more);
-}
+// An older page without the router (still in the phone's cache) starts itself.
+if (typeof document !== "undefined" && !globalThis.kopitRouter) mount();

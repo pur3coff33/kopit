@@ -11,8 +11,9 @@ export type AppEnv = {
   Variables: {
     householdId: number;
     householdCreatedAt: number;
-    profile: { id: number; name: string } | null;
+    profile: { id: number; name: string; index: number } | null;
     profileId: number;
     profileName: string;
+    profileIndex: number;
   };
 };

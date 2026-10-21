@@ -91,3 +91,53 @@ export function noSpendText(n: number, kind: RangeKind): string | null {
   const when = kind === "this" ? "this month" : kind === "last" ? "last month" : "in this range";
   return `${n} no-spend day${n === 1 ? "" : "s"} ${when}`;
 }
+
+/** Total spent in a range (same filter as the breakdown). */
+export async function rangeTotal(env: Env, f: Filter): Promise<number> {
+  return (await total(env, f.householdId, f.profileId, f.start, f.end)).total;
+}
+
+const categoryIs = (categoryId: number | null) => (categoryId === null ? isNull(entries.categoryId) : eq(entries.categoryId, categoryId));
+
+/** One category per Manila week (Monday start) across the range up to now: the newest 6 weeks, oldest first, empty ones included. */
+export async function weeklyTotals(env: Env, f: Filter, categoryId: number | null, now: number): Promise<Array<{ start: number; total: number }>> {
+  const end = Math.min(f.end, now);
+  if (end <= f.start) return [];
+  const day = sql<number>`(${entries.spentAt} + 28800000) / 86400000`;
+  const rows = await getDb(env)
+    .select({ day, total: sum(entries.amountCentavos) })
+    .from(entries)
+    .where(where(f.householdId, f.profileId, f.start, end, categoryIs(categoryId)))
+    .groupBy(day);
+  const weeks = new Map<number, number>();
+  for (let w = weekStart(f.start); w < end; w += 7 * DAY_MS) weeks.set(w, 0);
+  for (const r of rows) {
+    const w = weekStart(Number(r.day) * DAY_MS);
+    weeks.set(w, (weeks.get(w) ?? 0) + Number(r.total ?? 0));
+  }
+  return [...weeks].map(([start, t]) => ({ start, total: t })).slice(-6);
+}
+
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** `pace` for one category: this month so far against last month up to the same point. Null if last month had none. */
+export async function categoryPace(
+  env: Env,
+  householdId: number,
+  profileId: number | null,
+  categoryId: number | null,
+  now: number,
+): Promise<{ diff: number; prevMonth: string } | null> {
+  const thisStart = monthStart(now);
+  const prevStart = addMonths(now, -1);
+  const lastEnd = Math.min(prevStart + (now - thisStart), thisStart);
+  const cat = categoryIs(categoryId);
+  const [lastWhole, thisSoFar, lastSoFar] = await Promise.all([
+    total(env, householdId, profileId, prevStart, thisStart, cat),
+    total(env, householdId, profileId, thisStart, now, cat),
+    total(env, householdId, profileId, prevStart, lastEnd, cat),
+  ]);
+  if (lastWhole.count === 0) return null;
+  const prevMonth = SHORT_MONTHS[new Date(prevStart + 8 * 3_600_000).getUTCMonth()];
+  return { diff: thisSoFar.total - lastSoFar.total, prevMonth };
+}

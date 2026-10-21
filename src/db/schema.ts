@@ -1,4 +1,4 @@
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const households = sqliteTable("households", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -61,3 +61,21 @@ export const sessions = sqliteTable("sessions", {
   createdAt: integer("created_at").notNull(),
   expiresAt: integer("expires_at").notNull(),
 });
+
+/**
+ * How each finished day went on its missions: a cache, rebuilt from the expenses whenever needed. Rows are
+ * cleared when an expense on or up to 28 days before that day changes (missions use a 28-day baseline).
+ */
+export const gardenDays = sqliteTable(
+  "garden_days",
+  {
+    householdId: integer("household_id").notNull().references(() => households.id),
+    /** Manila day key: days since the epoch in Manila time. */
+    day: integer("day").notNull(),
+    missions: integer("missions").notNull(),
+    done: integer("done").notNull(),
+    /** Comma-separated mission types met that day, for the month's "most beaten" mission. */
+    doneTypes: text("done_types").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.day] })],
+);

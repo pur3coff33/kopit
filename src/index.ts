@@ -9,6 +9,8 @@ import { add } from "./routes/add";
 import { api } from "./routes/api";
 import { auth } from "./routes/auth";
 import { entriesRoutes } from "./routes/entries";
+import { gallery } from "./routes/gallery";
+import { wrapped } from "./routes/wrapped";
 import { history } from "./routes/history";
 import { settings } from "./routes/settings";
 import { setup } from "./routes/setup";
@@ -29,6 +31,8 @@ app.route("/api", api);
 app.route("/", add);
 app.route("/", spending);
 app.route("/", history);
+app.route("/", gallery);
+app.route("/", wrapped);
 app.route("/", entriesRoutes);
 app.route("/", settings);
 

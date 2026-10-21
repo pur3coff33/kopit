@@ -1,9 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#FBF7EF"/>
-  <g transform="rotate(-4 256 256)">
-    <rect x="128" y="124" width="256" height="264" rx="10" fill="#E2D9C6" transform="translate(6 10)"/>
-    <rect x="128" y="124" width="256" height="264" rx="10" fill="#F1EBDD" stroke="#3A322A" stroke-width="6"/>
-    <path d="M214 172 v150 M214 262 l76 -76 M240 238 l58 84" fill="none" stroke="#3A322A" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M176 352 C 216 338, 256 362, 296 346 S 330 344, 340 348" fill="none" stroke="#7FB08C" stroke-width="12" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E4F1E2"/>
+      <stop offset="1" stop-color="#CFE5D2"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8FC79B"/>
+      <stop offset="1" stop-color="#3E7A4A"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="120" cy="96" r="150" fill="#FFE3CF" opacity=".55"/>
+  <circle cx="430" cy="440" r="160" fill="#FBEBB8" opacity=".45"/>
+  <rect x="96" y="96" width="320" height="320" rx="88" fill="#FFFFFF" opacity=".55"/>
+  <g transform="rotate(8 256 256)">
+    <path d="M256 128 C 356 128 384 228 384 328 C 284 328 186 300 166 214 C 152 160 196 128 256 128 Z" transform="rotate(-45 275 228)" fill="url(#leaf)"/>
+    <path d="M190 330 C 230 280 280 240 340 200" fill="none" stroke="#EEF4EA" stroke-width="12" stroke-linecap="round" opacity=".8"/>
   </g>
 </svg>

@@ -69,5 +69,9 @@ describe("profiles", () => {
     const page = await html(await req("/profile", { cookie: await authCookie(householdId) }));
     expect(page).toContain("Jon");
     expect(page).toContain("Ana");
+    expect(page).toContain("Who's using this phone?");
+    expect(page).toContain("Each phone remembers its gardener.");
+    expect(page).toContain("#F2B25C"); // Jon's sunflower
+    expect(page).toContain("#F0A3B5"); // Ana's blossom
   });
 });

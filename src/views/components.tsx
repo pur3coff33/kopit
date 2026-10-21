@@ -1,4 +1,5 @@
 import type { Cat } from "../lib/categories";
+import { categoryColor } from "../lib/colors";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back"];
 
@@ -16,7 +17,7 @@ export function Keypad() {
 
 export function Tile({ cat, id }: { cat: Cat; id?: string }) {
   return (
-    <button type="button" class="cat" id={id} data-id={String(cat.id)} data-name={cat.name} data-emoji={cat.emoji}>
+    <button type="button" class="cat" id={id} data-id={String(cat.id)} data-name={cat.name} data-emoji={cat.emoji} style={`--tint:${categoryColor(cat.id).tint}`}>
       <span class="e">{cat.emoji}</span>
       {cat.name}
     </button>

@@ -1,26 +1,42 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../env";
 import { listCategories, topCategories } from "../lib/categories";
+import { todayGarden } from "../lib/garden";
+import { DAY_MS, fromDateInput, weekdayDate } from "../lib/time";
 import { noteSuggestions } from "../lib/notes";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Amount, CategoryTiles, Keypad, Tile, Toast } from "../views/components";
+import { Plant } from "../views/garden";
 import { Layout } from "../views/layout";
 
 export const add = new Hono<AppEnv>();
 
+/** 1st, 2nd, 3rd, 4th … 11th, 12th, 13th … 21st. */
+export function ordinal(n: number): string {
+  const tens = n % 100;
+  const suffix = tens >= 11 && tens <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] ?? "th";
+  return `${n}${suffix}`;
+}
+
 add.get("/", requireSession, requireProfile, async (c) => {
   const householdId = c.get("householdId");
-  const [top, all, notes] = await Promise.all([
+  const now = Date.now();
+  const [top, all, notes, garden] = await Promise.all([
     topCategories(c.env, householdId),
     listCategories(c.env, householdId),
     noteSuggestions(c.env, householdId),
+    todayGarden(c.env, householdId, c.get("householdCreatedAt"), now),
   ]);
+  const leafAt = garden.leafDay ? (fromDateInput(garden.leafDay) ?? now - DAY_MS) : null;
   return c.html(
-    <Layout title="kopit" tab="add" profileName={c.get("profileName")} scripts={["/js/add.js"]}>
+    <Layout title="kop.it" tab="add" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/add.js"]}>
       <section
         id="add"
         data-profile-id={String(c.get("profileId"))}
         data-notes={JSON.stringify(notes)}
+        data-day={garden.today}
+        data-leaf={garden.leafDay ?? undefined}
+        data-wrapped={garden.wrappedMonth ?? undefined}
         style="display:flex;flex-direction:column;flex:1"
       >
         <Amount />
@@ -69,6 +85,24 @@ add.get("/", requireSession, requireProfile, async (c) => {
           Connect to the internet to add a category.
         </p>
       </dialog>
+      {garden.leafDay && leafAt !== null && (
+        <dialog class="sheet leaf-sheet" id="leaf-sheet" aria-labelledby="leaf-title">
+          <Plant leaves={garden.leafNumber} newLeaf width={140} />
+          <h2 id="leaf-title">{garden.perfect ? "A perfect day! 🌸" : "A new leaf! 🍃"}</h2>
+          <p>
+            {garden.perfect
+              ? "Every mission done yesterday"
+              : `You finished ${garden.leafDone} of ${garden.leafMissions} missions yesterday`}{" "}
+            (<span class="nowrap">{weekdayDate(leafAt)}</span>). That's your {ordinal(garden.leafNumber)} leaf{" "}
+            {garden.leafMonthIsCurrent ? "this month" : `in ${garden.leafMonth}`}.
+          </p>
+          <form method="dialog">
+            <button class="save" type="submit">
+              Nice, thanks
+            </button>
+          </form>
+        </dialog>
+      )}
       <Toast />
     </Layout>,
   );

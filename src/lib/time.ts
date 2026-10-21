@@ -63,6 +63,13 @@ export function resolveRange(kind: RangeKind, now: number, from?: string, to?: s
   return { kind: "this", start: monthStart(now), end: addMonths(now, 1) };
 }
 
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** "Mon, Oct 20" in Manila time. */
+export function weekdayDate(ms: number): string {
+  return `${WEEKDAYS[local(ms).getUTCDay()]}, ${shortDate(ms)}`;
+}
+
 function shortDate(ms: number): string {
   const d = local(ms);
   return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;

@@ -9,7 +9,7 @@ describe("installable app", () => {
     const res = await asset("/manifest.webmanifest");
     expect(res.status).toBe(200);
     const m = JSON.parse(await res.text());
-    expect(m).toMatchObject({ name: "kopit", short_name: "kopit", start_url: "/", scope: "/", display: "standalone", background_color: "#FBF7EF", theme_color: "#FBF7EF" });
+    expect(m).toMatchObject({ name: "kop.it", short_name: "kop.it", description: "Your household's money garden.", start_url: "/", scope: "/", display: "standalone", background_color: "#EEF4EA", theme_color: "#EEF4EA" });
     expect(m.icons.map((i: { sizes: string }) => i.sizes).sort()).toEqual(["192x192", "512x512"]);
   });
 
@@ -22,8 +22,11 @@ describe("installable app", () => {
     const sw = await asset("/sw.js");
     expect(sw.status).toBe(200);
     expect(sw.headers.get("Content-Type")).toContain("javascript");
-    expect(await sw.text()).toContain("kopit-v1");
+    const swText = await sw.text();
+    expect(swText).toContain("kopit-v1");
+    expect(swText).toContain('"/js/router.js"'); // precached, so screens still switch with no signal
     expect((await asset("/js/queue.js")).status).toBe(200);
+    expect((await asset("/js/router.js")).status).toBe(200);
   });
 
   it("links the manifest and icon from pages", async () => {

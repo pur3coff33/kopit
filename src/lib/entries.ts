@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { deletedEntries, entries } from "../db/schema";
 import type { Env } from "../env";
+import { invalidateGarden } from "./garden";
 
 export type NewEntry = {
   id: string;
@@ -24,7 +25,9 @@ export async function insertEntry(env: Env, householdId: number, e: NewEntry, no
     .values({ ...e, householdId, createdAt: now, updatedAt: now })
     .onConflictDoNothing()
     .run();
-  return result.meta.changes > 0 ? "created" : "duplicate";
+  if (result.meta.changes === 0) return "duplicate";
+  await invalidateGarden(env, householdId, e.spentAt);
+  return "created";
 }
 
 const scoped = (householdId: number, id: string) => and(eq(entries.id, id), eq(entries.householdId, householdId));
@@ -40,18 +43,24 @@ export async function updateEntry(
   patch: { amountCentavos?: number; categoryId?: number | null; note?: string | null; spentAt?: number },
   now: number,
 ): Promise<boolean> {
+  const before = await getEntry(env, householdId, id);
+  if (!before) return false;
   const rows = await getDb(env)
     .update(entries)
     .set({ ...patch, updatedAt: now })
     .where(scoped(householdId, id))
-    .returning({ id: entries.id });
-  return rows.length > 0;
+    .returning({ spentAt: entries.spentAt });
+  if (rows.length === 0) return false;
+  await invalidateGarden(env, householdId, before.spentAt);
+  if (rows[0].spentAt !== before.spentAt) await invalidateGarden(env, householdId, rows[0].spentAt);
+  return true;
 }
 
 export async function deleteEntry(env: Env, householdId: number, id: string, now = Date.now()): Promise<boolean> {
   const db = getDb(env);
-  const rows = await db.delete(entries).where(scoped(householdId, id)).returning({ id: entries.id });
+  const rows = await db.delete(entries).where(scoped(householdId, id)).returning({ spentAt: entries.spentAt });
   if (rows.length === 0) return false;
+  await invalidateGarden(env, householdId, rows[0].spentAt);
   await db.insert(deletedEntries).values({ id, householdId, deletedAt: now }).onConflictDoNothing();
   return true;
 }

@@ -37,7 +37,8 @@ type Seeded = Awaited<ReturnType<typeof seedHousehold>>;
 /** Inserts an expense directly. `category` is a starter name or null; `profile` an index into profileIds. */
 export async function addEntry(h: Seeded, o: { amount: number; at: number; category: string | null; profile?: number }) {
   const id = crypto.randomUUID();
-  const now = Date.now();
+  // Seeded expenses look like they were written when they were spent (not "just now"), as real history would.
+  const now = Math.min(Date.now(), o.at);
   await db()
     .insert(entries)
     .values({

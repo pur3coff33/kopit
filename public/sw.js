@@ -10,6 +10,9 @@ const PRECACHE = [
   "/js/save.js",
   "/js/install.js",
   "/js/notes.js",
+  "/js/router.js",
+  "/js/leaf.js",
+  "/js/wrapped.js",
   "/fonts/nunito-latin-wght-normal.woff2",
   "/fonts/nunito-latin-ext-wght-normal.woff2",
   "/icons/icon-192.png",
@@ -18,10 +21,15 @@ const PRECACHE = [
 ];
 
 const OFFLINE_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>kopit</title>
-<link rel="stylesheet" href="/app.css"></head><body><div class="app"><header class="top"><a class="logo" href="/">kopit</a></header>
-<main><h1>No signal</h1><p>kopit needs internet for this page.</p>
-<a class="save" href="/" style="text-align:center;text-decoration:none;margin-top:18px">Back to add</a></main></div></body></html>`;
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>kop.it</title>
+<link rel="stylesheet" href="/app.css"></head><body><div class="app"><header class="top"><a class="logo" href="/">
+<span class="wm" role="img" aria-label="kop.it">kop<i aria-hidden="true"></i>it</span></a></header>
+<main style="align-items:center;text-align:center;justify-content:center">
+<svg viewBox="0 0 120 150" width="96" aria-hidden="true"><path d="M40 148 L80 148 L75 128 L45 128 Z" fill="#C98B5E"/>
+<rect x="42" y="122" width="36" height="8" rx="4" fill="#B07548"/><path d="M60 124 C60 112 59 108 61 100" stroke="#3E7A4A" stroke-width="3" fill="none"/>
+<ellipse cx="52" cy="106" rx="8" ry="4" fill="#8FC19B" transform="rotate(-30 52 106)"/><ellipse cx="68" cy="102" rx="8" ry="4" fill="#7FB08C" transform="rotate(30 68 102)"/></svg>
+<h1>No signal</h1><p class="muted">kop.it needs internet for this page.</p>
+<a class="save" href="/" style="margin-top:18px">Back to add</a></main></div></body></html>`;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));

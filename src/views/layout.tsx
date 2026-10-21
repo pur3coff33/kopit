@@ -1,9 +1,19 @@
 import { raw } from "hono/html";
 import type { Child } from "hono/jsx";
+import { Avatar, Wordmark } from "./garden";
 
 type Tab = "add" | "spending" | "history";
 
-export function Layout(props: { title: string; tab?: Tab; profileName?: string; scripts?: string[]; children?: Child }) {
+/** `bare`: no header — for the log-in page, where the big wordmark stands in for it. */
+export function Layout(props: {
+  title: string;
+  tab?: Tab;
+  profileName?: string;
+  profileIndex?: number;
+  scripts?: string[];
+  bare?: boolean;
+  children?: Child;
+}) {
   return (
     <>
       {raw("<!doctype html>")}
@@ -11,48 +21,44 @@ export function Layout(props: { title: string; tab?: Tab; profileName?: string; 
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-          <title>{props.title === "kopit" ? "kopit" : `${props.title} · kopit`}</title>
-          {/* Status bar follows the phone's light/dark setting; the app itself stays paper. */}
-          <meta name="theme-color" content="#FBF7EF" media="(prefers-color-scheme: light)" />
-          <meta name="theme-color" content="#3A322A" media="(prefers-color-scheme: dark)" />
+          <title>{props.title === "kop.it" ? "kop.it" : `${props.title} · kop.it`}</title>
+          {/* Status bar follows the phone's light/dark setting; the app itself is light only. */}
+          <meta name="theme-color" content="#EEF4EA" media="(prefers-color-scheme: light)" />
+          <meta name="theme-color" content="#1F3326" media="(prefers-color-scheme: dark)" />
           <meta name="apple-mobile-web-app-status-bar-style" content="default" />
           <link rel="manifest" href="/manifest.webmanifest" />
           <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
           <link rel="icon" type="image/png" href="/icons/icon-192.png" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="mobile-web-app-capable" content="yes" />
-          <meta name="apple-mobile-web-app-title" content="kopit" />
+          <meta name="apple-mobile-web-app-title" content="kop.it" />
           <link rel="preload" href="/fonts/nunito-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin="" />
           <link rel="stylesheet" href="/app.css" />
           <script type="module" src="/js/install.js"></script>
-          {props.scripts?.map((src) => <script type="module" src={src}></script>)}
+          {/* The router runs first; it starts each page script (data-page) and stops it when you leave. */}
+          <script type="module" src="/js/router.js"></script>
+          {props.scripts?.map((src) => <script type="module" src={src} data-page=""></script>)}
         </head>
         <body>
           <div class="app">
             <InstallBadge />
-            <header class="top">
-              <a class="logo" href="/">kopit</a>
-              {props.profileName && (
-                <a class="me" href="/settings">
-                  {props.profileName}
+            {!props.bare && (
+              <header class="top">
+                <a class="logo" href="/">
+                  <Wordmark />
                 </a>
-              )}
-            </header>
+                {props.profileName && (
+                  <a class="me" href="/settings">
+                    <Avatar index={props.profileIndex ?? 0} name={props.profileName} size={22} />
+                    <span>{props.profileName}</span>
+                  </a>
+                )}
+              </header>
+            )}
             <main>{props.children}</main>
             {props.tab && <Nav tab={props.tab} />}
           </div>
           <InlineScript code="if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js')" />
-          {props.tab && (
-            // Start loading a tab as soon as a finger lands on it (Chrome on Android), so switching feels instant.
-            <script
-              type="speculationrules"
-              dangerouslySetInnerHTML={{
-                __html: JSON.stringify({
-                  prerender: [{ where: { href_matches: ["/spending", "/history"] }, eagerness: "moderate" }],
-                }),
-              }}
-            ></script>
-          )}
         </body>
       </html>
     </>
@@ -68,9 +74,9 @@ export function InlineScript({ code }: { code: string }) {
 function InstallBadge() {
   return (
     <div class="install" id="install" hidden>
-      <span class="if-prompt">📲 Install kopit on this phone</span>
+      <span class="if-prompt">📲 Install kop.it on this phone</span>
       <span class="if-ios">
-        📲 Install kopit: tap <b>Share</b>, then <b>Add to Home Screen</b>
+        📲 Install kop.it: tap <b>Share</b>, then <b>Add to Home Screen</b>
       </span>
       <button type="button" class="install-btn if-prompt" data-install>
         Install
@@ -82,12 +88,27 @@ function InstallBadge() {
   );
 }
 
+/** Floating bottom bar: garden, the big round Add button in the middle, history. */
 export function Nav({ tab }: { tab: Tab }) {
   return (
     <nav class="nav">
-      <a href="/" class={tab === "add" ? "on" : ""}>add</a>
-      <a href="/spending" class={tab === "spending" ? "on" : ""}>spending</a>
-      <a href="/history" class={tab === "history" ? "on" : ""}>history</a>
+      <a href="/spending" class={tab === "spending" ? "tab on" : "tab"}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 21V11M12 11C12 7 9 5 5 5c0 4 3 6 7 6zm0 3c0-4 3-6 7-6 0 4-3 6-7 6z" />
+        </svg>
+        garden
+      </a>
+      <a href="/" class={tab === "add" ? "add on" : "add"} aria-label="Add">
+        <span aria-hidden="true">＋</span>
+      </a>
+      <a href="/history" class={tab === "history" ? "tab on" : "tab"}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="7" cy="6" r="2.5" />
+          <circle cx="16" cy="12" r="2.5" />
+          <circle cx="8" cy="19" r="2.5" />
+        </svg>
+        history
+      </a>
     </nav>
   );
 }

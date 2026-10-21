@@ -1,6 +1,7 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { getEntry } from "../src/lib/entries";
+import { safeBack } from "../src/routes/entries";
 import { addEntry, authCookie, form, html, req, seedHousehold } from "./helpers";
 
 async function setup() {
@@ -17,8 +18,9 @@ describe("edit expense", () => {
     const body = await html(await req(`/entries/${id}/edit`, { cookie }));
     expect(body).toContain('value="2026-10-15"');
     expect(body).toContain('id="amt">350<');
-    expect(body).toMatch(/<option value="\d+" selected="">🍜 Food<\/option>|<option selected="" value="\d+">🍜 Food<\/option>/);
-    expect(body).toContain("No category");
+    expect(body).toMatch(/<input type="radio" name="categoryId" value="\d+" checked=""\/>\s*🍜 Food/);
+    expect(body).toMatch(/<input type="radio" name="categoryId" value=""\/>\s*No category/);
+    expect(body).not.toContain("<select");
   });
 
   it("changes the amount and category, keeping the time when the date is unchanged", async () => {
@@ -85,5 +87,16 @@ describe("edit expense", () => {
     const res = await req(`/entries/${id}`, { ...form({ amount: "1", categoryId: String(other.categoryIds.Food), date: "2026-10-15" }), cookie });
     expect(res.status).toBe(400);
     expect((await getEntry(env, h.householdId, id))?.categoryId).toBe(h.categoryIds.Food);
+  });
+});
+
+describe("safeBack", () => {
+  it("keeps same-site paths and refuses anything a browser could read as another site", () => {
+    expect(safeBack("/history?who=all")).toBe("/history?who=all");
+    expect(safeBack("//evil.com")).toBeNull();
+    expect(safeBack("/\\evil.com")).toBeNull();
+    expect(safeBack("/\t/evil.com")).toBeNull(); // browsers drop the tab and land on //evil.com
+    expect(safeBack("/\n/evil.com")).toBeNull();
+    expect(safeBack("https://evil.com")).toBeNull();
   });
 });

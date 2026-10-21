@@ -4,14 +4,15 @@ import type { AppEnv } from "../env";
 import { verifyLogin } from "../lib/login";
 import { PROFILE_COOKIE, SESSION_COOKIE, clearCookie, createSession, deleteSession, setLongCookie } from "../lib/session";
 import { clockTime } from "../lib/time";
+import { Welcome } from "../views/garden";
 import { InlineScript, Layout } from "../views/layout";
 
 export const auth = new Hono<AppEnv>();
 
 function LoginPage(props: { username?: string; message?: string; bye?: boolean }) {
   return (
-    <Layout title="Log in">
-      <h1>Welcome back</h1>
+    <Layout title="Log in" bare>
+      <Welcome />
       {props.message && <p class="msg">{props.message}</p>}
       <form class="form" method="post" action="/login">
         <label>
@@ -30,10 +31,10 @@ function LoginPage(props: { username?: string; message?: string; bye?: boolean }
             required
           />
         </label>
-        <button class="save" type="submit">Log in</button>
+        <button class="save" type="submit">Open the garden</button>
       </form>
       <p class="muted">
-        New here? <a href="/setup">Set up a household</a>
+        New here? <a href="/setup">Start a household</a>
       </p>
       {props.bye && <InlineScript code="if(self.caches)caches.open('kopit-v1').then(function(c){return c.delete('/')})" />}
     </Layout>

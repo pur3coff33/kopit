@@ -24,5 +24,6 @@ export const requireProfile = createMiddleware<AppEnv>(async (c, next) => {
   if (!profile) return isApi(c.req.path) ? c.json({ error: "profile" }, 401) : c.redirect("/profile");
   c.set("profileId", profile.id);
   c.set("profileName", profile.name);
+  c.set("profileIndex", profile.index);
   await next();
 });

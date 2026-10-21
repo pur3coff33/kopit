@@ -8,6 +8,7 @@ import { MAX_NOTE, cleanNote } from "../lib/notes";
 import { fromDateInput, toDateInput } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Amount, Keypad } from "../views/components";
+import { categoryColor } from "../lib/colors";
 import { Layout } from "../views/layout";
 
 export const entriesRoutes = new Hono<AppEnv>();
@@ -16,9 +17,12 @@ entriesRoutes.use("/entries/*", requireSession, requireProfile);
 
 const NOON_MS = 12 * 3_600_000;
 
-/** Only same-site paths, so a crafted link can't bounce you to another website. */
+/**
+ * Only same-site paths, so a crafted link can't bounce you to another website. Control characters are refused too:
+ * browsers drop tabs and newlines from URLs, so "/\t/evil.com" would become "//evil.com".
+ */
 export function safeBack(raw: unknown): string | null {
-  return typeof raw === "string" && /^\/(?![/\\])/.test(raw) ? raw : null;
+  return typeof raw === "string" && /^\/(?![/\\])[^\x00-\x1f\x7f]*$/.test(raw) ? raw : null;
 }
 
 function typedFrom(centavos: number): string {
@@ -39,32 +43,39 @@ async function EditPage(props: {
 }) {
   const cats = await listCategories(props.c.env, props.c.get("householdId"), { includeHidden: true });
   return (
-    <Layout title="Edit" tab="spending" profileName={props.c.get("profileName")} scripts={["/js/edit.js"]}>
+    <Layout title="Edit" tab="spending" profileName={props.c.get("profileName")} profileIndex={props.c.get("profileIndex")} scripts={["/js/edit.js"]}>
+      <p>
+        <a href={props.back ?? "/history"}>‹ Back</a>
+      </p>
       <h1>Edit expense</h1>
       {props.message && <p class="msg">{props.message}</p>}
       <Amount value={props.amount} />
       <form class="form" method="post" action={`/entries/${props.id}`} id="edit">
         <input type="hidden" name="amount" id="amount" value={props.amount} />
         {props.back && <input type="hidden" name="back" value={props.back} />}
-        <label>
-          Category
-          <select name="categoryId">
-            <option value="" selected={props.categoryId === null}>No category</option>
-            {cats.map((cat) => (
-              <option value={String(cat.id)} selected={cat.id === props.categoryId}>
-                {`${cat.emoji} ${cat.name}`}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Note
-          <input name="note" value={props.note} maxlength={MAX_NOTE} placeholder="What was it? (optional)" autocomplete="off" />
-        </label>
-        <label>
-          Date
-          <input type="date" name="date" value={props.date} required />
-        </label>
+        <div class="field-label" id="cat-label">Category</div>
+        <div class="cat-chips" role="radiogroup" aria-labelledby="cat-label">
+          <label class="chip">
+            <input type="radio" name="categoryId" value="" checked={props.categoryId === null} />
+            No category
+          </label>
+          {cats.map((cat) => (
+            <label class="chip" style={`--tint:${categoryColor(cat.id).tint}`}>
+              <input type="radio" name="categoryId" value={String(cat.id)} checked={cat.id === props.categoryId} />
+              {`${cat.emoji} ${cat.name}`}
+            </label>
+          ))}
+        </div>
+        <div class="pair">
+          <label>
+            Note
+            <input name="note" value={props.note} maxlength={MAX_NOTE} placeholder="What was it? (optional)" autocomplete="off" />
+          </label>
+          <label>
+            Date
+            <input type="date" name="date" value={props.date} required />
+          </label>
+        </div>
         <Keypad />
         <button class="save" type="submit">Save changes</button>
       </form>

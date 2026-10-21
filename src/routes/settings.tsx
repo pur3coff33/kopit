@@ -11,6 +11,7 @@ import { SESSION_COOKIE, deleteOtherSessions } from "../lib/session";
 import { hashPin, isValidPin } from "../lib/pin";
 import { clockTime } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
+import { Avatar } from "../views/garden";
 import { Layout } from "../views/layout";
 import { householdProfiles } from "./setup";
 
@@ -27,80 +28,97 @@ const OK: Record<string, string> = {
 
 async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: string }) {
   const householdId = c.get("householdId");
-  const [people, cats] = await Promise.all([
+  const [people, cats, home] = await Promise.all([
     householdProfiles(c.env, householdId),
     listCategories(c.env, householdId, { includeHidden: true }),
+    getDb(c.env).select({ username: households.username }).from(households).where(eq(households.id, householdId)).get(),
   ]);
   const ok = OK[c.req.query("ok") ?? ""];
   return (
-    <Layout title="Settings" profileName={c.get("profileName")}>
+    <Layout title="Garden shed" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")}>
       <p>
         <a href="/">‹ Back</a>
       </p>
-      <h1>Settings</h1>
+      <h1>Garden shed</h1>
+      <p class="muted">Settings for the {home?.username} household</p>
       {(message ?? ok) && <p class="msg">{message ?? ok}</p>}
 
-      <h2>This phone is</h2>
-      <p>
-        {c.get("profileName")} · <a href="/profile">switch</a>
-      </p>
-
-      <h2>People</h2>
-      {people.map((p) => (
-        <form class="form inline" method="post" action={`/settings/profiles/${p.id}`}>
-          <label>
-            <input name="name" value={p.name} maxlength={24} required aria-label="Name" />
-          </label>
-          <button class="save" type="submit">Rename</button>
-        </form>
-      ))}
-      <form class="form inline" method="post" action="/settings/profiles">
-        <label>
-          <input name="name" maxlength={24} required placeholder="Add a person" aria-label="New person" />
-        </label>
-        <button class="save" type="submit">Add</button>
-      </form>
-
-      <h2>Categories</h2>
-      <p class="muted">Hidden categories stay on old expenses but leave the add screen.</p>
-      {cats.map((cat) => (
-        <div style={cat.hidden ? "opacity:.55" : ""}>
-          <form class="form inline" method="post" action={`/settings/categories/${cat.id}`} style="margin-bottom:4px">
-            <label style="flex:0 0 58px">
-              <input name="emoji" value={cat.emoji} maxlength={8} aria-label="Emoji" />
-            </label>
-            <label>
-              <input name="name" value={cat.name} maxlength={24} required aria-label="Name" />
-            </label>
-            <button class="save" type="submit">Save</button>
-          </form>
-          <form method="post" action={`/settings/categories/${cat.id}/hidden`} style="margin:0 0 10px">
-            <input type="hidden" name="hidden" value={cat.hidden ? "0" : "1"} />
-            <button class="linkbtn" type="submit">{cat.hidden ? "Show on add screen" : "Hide"}</button>
-          </form>
+      <div class="card gardener">
+        <Avatar index={c.get("profileIndex")} name={c.get("profileName")} size={42} />
+        <div>
+          <b>{c.get("profileName")}</b>
+          <span class="muted">This phone's gardener</span>
         </div>
-      ))}
+        <a class="chip" href="/profile">
+          Switch
+        </a>
+      </div>
 
-      <h2>Change PIN</h2>
-      <form class="form" method="post" action="/settings/pin">
-        <label>
-          Current PIN
-          <input name="current" type="password" inputmode="numeric" autocomplete="current-password" pattern="\d{6}" maxlength={6} required />
-        </label>
-        <label>
-          New PIN
-          <input name="next" type="password" inputmode="numeric" autocomplete="new-password" pattern="\d{6}" maxlength={6} required />
-        </label>
-        <label>
-          New PIN again
-          <input name="nextConfirm" type="password" inputmode="numeric" autocomplete="new-password" pattern="\d{6}" maxlength={6} required />
-        </label>
-        <button class="save" type="submit">Change PIN</button>
-      </form>
 
-      <h2>Log out</h2>
-      <form method="post" action="/logout">
-        <button class="save plain" type="submit">Log out on this phone</button>
+      <section class="card">
+        <h2>People</h2>
+        {people.map((p) => (
+          <form class="form inline" method="post" action={`/settings/profiles/${p.id}`}>
+            <label>
+              <input name="name" value={p.name} maxlength={24} required aria-label="Name" />
+            </label>
+            <button class="save" type="submit">Rename</button>
+          </form>
+        ))}
+        <form class="form inline" method="post" action="/settings/profiles">
+          <label>
+            <input name="name" maxlength={24} required placeholder="Add a person" aria-label="New person" />
+          </label>
+          <button class="save" type="submit">Add</button>
+        </form>
+
+      </section>
+
+      <section class="card">
+        <h2>Categories</h2>
+        <p class="muted">Hidden categories stay on old expenses but leave the add screen.</p>
+        {cats.map((cat) => (
+          <div style={cat.hidden ? "opacity:.55" : ""}>
+            <form class="form inline" method="post" action={`/settings/categories/${cat.id}`} style="margin-bottom:4px">
+              <label style="flex:0 0 58px">
+                <input name="emoji" value={cat.emoji} maxlength={8} aria-label="Emoji" />
+              </label>
+              <label>
+                <input name="name" value={cat.name} maxlength={24} required aria-label="Name" />
+              </label>
+              <button class="save" type="submit">Save</button>
+            </form>
+            <form method="post" action={`/settings/categories/${cat.id}/hidden`} style="margin:0 0 10px">
+              <input type="hidden" name="hidden" value={cat.hidden ? "0" : "1"} />
+              <button class="linkbtn" type="submit">{cat.hidden ? "Show on add screen" : "Hide"}</button>
+            </form>
+          </div>
+        ))}
+
+      </section>
+
+      <section class="card">
+        <h2>Change PIN</h2>
+        <form class="form" method="post" action="/settings/pin">
+          <label>
+            Current PIN
+            <input name="current" type="password" inputmode="numeric" autocomplete="current-password" pattern="\d{6}" maxlength={6} required />
+          </label>
+          <label>
+            New PIN
+            <input name="next" type="password" inputmode="numeric" autocomplete="new-password" pattern="\d{6}" maxlength={6} required />
+          </label>
+          <label>
+            New PIN again
+            <input name="nextConfirm" type="password" inputmode="numeric" autocomplete="new-password" pattern="\d{6}" maxlength={6} required />
+          </label>
+          <button class="save" type="submit">Change PIN</button>
+        </form>
+
+      </section>
+
+      <form method="post" action="/logout" style="margin-top:22px">
+        <button class="save plain" type="submit">Log out of this phone</button>
       </form>
     </Layout>
   );

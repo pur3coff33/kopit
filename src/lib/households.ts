@@ -5,7 +5,7 @@ import type { Env } from "../env";
 import { normalizeUsername } from "./login";
 import { hashPin, isValidPin } from "./pin";
 
-export const MAX_HOUSEHOLDS = 5;
+export const MAX_HOUSEHOLDS = 15;
 
 export const STARTER_CATEGORIES: ReadonlyArray<{ emoji: string; name: string }> = [
   { emoji: "🛒", name: "Groceries" },

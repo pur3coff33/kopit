@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { households, profiles } from "../src/db/schema";
 import { listCategories, topCategories } from "../src/lib/categories";
 import { verifyLogin } from "../src/lib/login";
+import { addMonths } from "../src/lib/time";
 import { authCookie, db, form, html, req, seedHousehold } from "./helpers";
 
 async function setup() {
@@ -11,11 +12,26 @@ async function setup() {
   return { h, cookie: await authCookie(h.householdId, h.profileIds[0]) };
 }
 
+describe("garden shed", () => {
+  it("is called the garden shed, for this household", async () => {
+    const { cookie } = await setup();
+    const body = await html(await req("/settings", { cookie }));
+    expect(body).toContain("<title>Garden shed · kop.it</title>");
+    expect(body).toContain("Settings for the jon household");
+  });
+
+  it("no longer keeps a greenhouse shelf: the gallery replaced it", async () => {
+    const h = await seedHousehold({ createdAt: addMonths(Date.now(), -8) });
+    const body = await html(await req("/settings", { cookie: await authCookie(h.householdId, h.profileIds[0]) }));
+    expect(body).not.toContain('class="greenhouse"');
+  });
+});
+
 describe("settings page", () => {
   it("has every section", async () => {
     const { cookie } = await setup();
     const body = await html(await req("/settings", { cookie }));
-    for (const s of ["This phone is", "People", "Categories", "Change PIN", "Log out", 'action="/logout"', 'href="/profile"']) {
+    for (const s of ["This phone's gardener", "People", "Categories", "Change PIN", "Log out of this phone", 'action="/logout"', 'href="/profile"']) {
       expect(body, s).toContain(s);
     }
   });
@@ -26,7 +42,7 @@ describe("people", () => {
     const { h, cookie } = await setup();
     const res = await req(`/settings/profiles/${h.profileIds[0]}`, { ...form({ name: "Jonathan" }), cookie });
     expect(res.status).toBe(302);
-    expect(await html(await req("/settings", { cookie }))).toContain('class="me" href="/settings">Jonathan<');
+    expect(await html(await req("/settings", { cookie }))).toMatch(/class="me" href="\/settings">[\s\S]*?<span>Jonathan<\/span>/);
   });
 
   it("adds a profile", async () => {

@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import { breakdown, noSpendDays, noSpendText, pace, paceText } from "../src/lib/stats";
+import { breakdown, categoryPace, noSpendDays, noSpendText, pace, paceText, weeklyTotals } from "../src/lib/stats";
 import { resolveRange } from "../src/lib/time";
 import { addEntry, seedHousehold } from "./helpers";
 
@@ -85,5 +85,30 @@ describe("no-spend days", () => {
     expect(noSpendText(1, "this")).toBe("1 no-spend day this month");
     expect(noSpendText(6, "last")).toBe("6 no-spend days last month");
     expect(noSpendText(2, "custom")).toBe("2 no-spend days in this range");
+  });
+});
+
+describe("weeklyTotals", () => {
+  it("totals one category per Manila week, Monday start, empty weeks included", async () => {
+    const h = await seedHousehold();
+    await addEntry(h, { amount: 10000, at: manila(9, 2), category: "Food" });
+    await addEntry(h, { amount: 30000, at: manila(9, 14), category: "Food" });
+    await addEntry(h, { amount: 99900, at: manila(9, 14), category: "Bills" });
+    const oct21 = manila(9, 21);
+    const { start, end } = resolveRange("this", oct21);
+    const weeks = await weeklyTotals(env, { householdId: h.householdId, profileId: null, start, end }, h.categoryIds.Food, oct21);
+    expect(weeks.map((w) => w.total)).toEqual([10000, 0, 30000, 0]);
+    expect(weeks[0].start).toBe(manila(8, 28, 0)); // Mon Sep 28
+  });
+});
+
+describe("categoryPace", () => {
+  it("compares one category with last month up to the same point", async () => {
+    const h = await seedHousehold();
+    await addEntry(h, { amount: 10000, at: manila(8, 3), category: "Food" });
+    await addEntry(h, { amount: 30000, at: manila(9, 3), category: "Food" });
+    await addEntry(h, { amount: 50000, at: manila(9, 3), category: "Bills" });
+    expect(await categoryPace(env, h.householdId, null, h.categoryIds.Food, now)).toEqual({ diff: 20000, prevMonth: "Sep" });
+    expect(await categoryPace(env, h.householdId, null, h.categoryIds.Bills, now)).toBeNull(); // no Bills last month
   });
 });

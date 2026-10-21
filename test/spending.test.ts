@@ -18,13 +18,20 @@ describe("spending screen", () => {
     await addEntry(h, { amount: 790000, at: now - 1000, category: "Groceries" });
     await addEntry(h, { amount: 2000000, at: addMonths(now, -1) + 60_000, category: "Bills" });
     const body = await page("/spending", h);
-    expect(body).toMatch(/class="chip on"[^>]*>This month</);
+    expect(body).toContain("<title>Garden · kop.it</title>");
+    expect(body).toMatch(/<a class="on"[^>]*>This month</);
     expect(body).toMatch(/class="chip on"[^>]*>Everyone</);
     expect(body).toContain("₱12,250");
     expect(body).toContain("2 expenses");
     expect(body.indexOf("Groceries")).toBeLessThan(body.indexOf("Food"));
-    expect(body).toContain("🌱 ₱7,750 less than this time last month");
-    if (dayStart(now) > monthStart(now)) expect(body).toContain("no-spend day");
+    expect(body).toContain("↓ ₱7,750 · 🌸 on track");
+    expect(body).toContain('class="bud"');
+    expect(body).toMatch(/class="row"[^>]*style="--fill:#[0-9A-F]{6};--tint:#[0-9A-F]{6}38"/);
+    expect(body).toMatch(/🍃 \d+ good days? · \d+ perfect · 2 expenses/);
+    expect(body).toContain('class="missions');
+    expect(body).toContain("Today's missions");
+    expect(body).toMatch(/\d of \d on track/);
+    expect(body).toContain('href="/gallery"');
     expect(body).toMatch(/href="\/spending\/category\/\d+\?range=this&amp;who=all"|href="\/spending\/category\/\d+\?range=this&who=all"/);
   });
 
@@ -49,9 +56,78 @@ describe("spending screen", () => {
     expect(body).toMatch(/class="chip on"[^>]*>Partner</);
   });
 
-  it("says when nothing is logged", async () => {
+  it("says when nothing is logged, with a sprout", async () => {
     const h = await seedHousehold();
-    expect(await page("/spending", h)).toContain("Nothing logged yet.");
+    const body = await page("/spending", h);
+    expect(body).toContain("Nothing logged yet.");
+    expect(body).toContain('class="sprout"');
+  });
+
+  it("keeps it neutral when spending runs ahead of last month", async () => {
+    const now = Date.now();
+    const h = await seedHousehold({ createdAt: addMonths(now, -2) });
+    await addEntry(h, { amount: 1000, at: addMonths(now, -1) + 60_000, category: "Bills" });
+    await addEntry(h, { amount: 9000, at: now - 1000, category: "Food" });
+    const body = await page("/spending", h);
+    expect(body).toMatch(/class="pill neutral">₱80 more than this time last month</);
+    expect(body).not.toContain('class="bud"');
+  });
+
+  it("shows last month in bloom when it ended lower than the month before", async () => {
+    const now = Date.now();
+    const h = await seedHousehold({ createdAt: addMonths(now, -3) });
+    await addEntry(h, { amount: 50000, at: addMonths(now, -2) + DAY, category: "Bills" });
+    await addEntry(h, { amount: 40000, at: addMonths(now, -1) + DAY, category: "Bills" });
+    const body = await page("/spending?range=last", h);
+    expect(body).toContain("bloomed 🌸");
+    expect(body).toContain('class="flower"');
+    expect(body).toContain("₱400 spent, ₱100 less than");
+    expect(body).toMatch(/href="\/wrapped\/\d{4}-\d{2}"[^>]*>[^<]*Replay Wrapped/);
+    expect(body).not.toContain("Today's missions"); // only this month has missions
+  });
+
+  it("lets a month that ended higher just stay green", async () => {
+    const now = Date.now();
+    const h = await seedHousehold({ createdAt: addMonths(now, -3) });
+    await addEntry(h, { amount: 40000, at: addMonths(now, -2) + DAY, category: "Bills" });
+    await addEntry(h, { amount: 50000, at: addMonths(now, -1) + DAY, category: "Bills" });
+    const body = await page("/spending?range=last", h);
+    expect(body).not.toContain("bloomed");
+    expect(body).not.toContain('class="flower"');
+    expect(body).toMatch(/grew \d+ lea(f|ves)|stayed a sprout/);
+  });
+
+  it("shows the picked person's own pace, while the bud stays the household's", async () => {
+    const now = Date.now();
+    const h = await seedHousehold({ createdAt: addMonths(now, -2) });
+    await addEntry(h, { amount: 10000, at: addMonths(now, -1) + 60_000, category: "Bills", profile: 0 });
+    await addEntry(h, { amount: 1000, at: addMonths(now, -1) + 60_000, category: "Food", profile: 1 });
+    await addEntry(h, { amount: 5000, at: now - 1000, category: "Food", profile: 1 });
+    const body = await page(`/spending?who=${h.profileIds[1]}`, h);
+    expect(body).toContain('class="bud"'); // the household is ₱60 under last month
+    expect(body).toMatch(/class="pill neutral">₱40 more than this time last month</); // Partner alone is ₱40 over
+  });
+
+  it("calls a finished month's comparison the household's when one person is picked", async () => {
+    const now = Date.now();
+    const h = await seedHousehold({ createdAt: addMonths(now, -3) });
+    await addEntry(h, { amount: 50000, at: addMonths(now, -2) + DAY, category: "Bills" });
+    await addEntry(h, { amount: 40000, at: addMonths(now, -1) + DAY, category: "Bills" });
+    const body = await page(`/spending?range=last&who=${h.profileIds[1]}`, h);
+    expect(body).toContain("The household spent ₱400, ₱100 less than");
+  });
+
+  it("doesn't grade a month from before the household began", async () => {
+    const h = await seedHousehold({ createdAt: Date.now() });
+    const body = await page("/spending?range=last", h);
+    expect(body).toContain("Before your garden began");
+    expect(body).not.toContain("stayed a sprout");
+  });
+
+  it("labels the plant as the household's when one person is picked", async () => {
+    const h = await seedHousehold();
+    await addEntry(h, { amount: 2000, at: Date.now() - 1000, category: "Food", profile: 1 });
+    expect(await page(`/spending?who=${h.profileIds[1]}`, h)).toContain("the household's garden");
   });
 });
 
@@ -84,6 +160,23 @@ describe("category detail", () => {
     const body = await page("/spending/category/none", h);
     expect(body).toContain("Uncategorized");
     expect(body).toContain("₱44");
+  });
+
+  it("shows its share of everything, its change against last month, and its weeks", async () => {
+    const now = Date.now();
+    const h = await seedHousehold({ createdAt: addMonths(now, -2) });
+    await addEntry(h, { amount: 1000, at: addMonths(now, -1) + 60_000, category: "Food" });
+    await addEntry(h, { amount: 3000, at: monthStart(now) + 60_000, category: "Food" });
+    await addEntry(h, { amount: 1000, at: monthStart(now) + 120_000, category: "Bills" });
+    const body = await page(`/spending/category/${h.categoryIds.Food}`, h);
+    expect(body).toContain("‹ Garden");
+    expect(body).toContain("75% of everything");
+    expect(body).toContain("↑ ₱20 vs");
+
+    const from = new Date(now - 20 * DAY + 8 * 3_600_000).toISOString().slice(0, 10);
+    const to = new Date(now + 8 * 3_600_000).toISOString().slice(0, 10);
+    await addEntry(h, { amount: 500, at: now - 15 * DAY, category: "Food" });
+    expect(await page(`/spending/category/${h.categoryIds.Food}?range=custom&from=${from}&to=${to}`, h)).toContain('class="weeks"');
   });
 
   it("is a 404 for another household's category", async () => {
