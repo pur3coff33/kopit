@@ -10,9 +10,6 @@ export function parseAmount(input: string): number | null {
   return centavos;
 }
 
-/** What an amount reads as while its person has hidden amounts: no digits, so not even its size shows. */
-export const MASKED = "₱••••";
-
 export function formatPeso(centavos: number): string {
   const sign = centavos < 0 ? "-" : "";
   const abs = Math.abs(centavos);
@@ -21,12 +18,8 @@ export function formatPeso(centavos: number): string {
   return `${sign}₱${pesos}${cents ? "." + String(cents).padStart(2, "0") : ""}`;
 }
 
-/** Every peso amount in a finished line ("Keep 🍔 Food under ₱200", "₱1,250 so far") as ₱••••. */
-export function maskAmounts(text: string): string {
-  return text.replace(/-?₱\d[\d,]*(?:\.\d+)?/g, MASKED);
-}
-
-/** The formatters for one screen: the usual ones, or masking ones when its person has hidden amounts. */
-export function amounts(hide: boolean): { peso: (centavos: number) => string; text: (line: string) => string } {
-  return hide ? { peso: () => MASKED, text: maskAmounts } : { peso: formatPeso, text: (line) => line };
+/** A total its person has hidden: the first digit and the shape, the rest dotted out (₱12,250.50 → ₱1•,•••). */
+export function maskPeso(centavos: number): string {
+  let first = true;
+  return formatPeso(Math.trunc(centavos / 100) * 100).replace(/\d/g, (d) => (first ? ((first = false), d) : "•"));
 }

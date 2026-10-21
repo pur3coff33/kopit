@@ -212,13 +212,11 @@ p { margin: 6px 0; }
 .chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
 
 .total { display: flex; align-items: center; gap: 4px; font-size: 38px; font-weight: 900; margin: 14px 0 0; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-/* The eye that hides amounts: a small icon, with a full 44px tap target around it. */
+/* The eye that hides the total: a small icon, with a full 44px tap target around it. */
 .eye { display: inline-flex; margin: 0; }
 .eye button { display: grid; place-items: center; width: 44px; height: 44px; margin: -6px -8px; border: 0; background: none; color: inherit; opacity: 0.55; cursor: pointer; }
 .eye button:hover, .eye button:focus-visible { opacity: 1; }
 .eye svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.chips .eye { margin-left: auto; }
-.chips .eye button { margin: 0; }
 .nudge { background: var(--glass); border: 1px solid var(--edge); border-radius: 14px; padding: 7px 12px; margin: 6px 0; font-size: 14px; font-weight: 800; }
 
 .rows {

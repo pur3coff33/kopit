@@ -14,7 +14,7 @@ export const profiles = sqliteTable("profiles", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   householdId: integer("household_id").notNull().references(() => households.id),
   name: text("name").notNull(),
-  /** The eye by the totals: this person sees every amount as ₱•••• until they tap it again. */
+  /** The eye by the total: this person sees the garden's totals as ₱1•,••• until they tap it again. */
   hideAmounts: integer("hide_amounts", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at").notNull(),
 });

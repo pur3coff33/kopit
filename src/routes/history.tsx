@@ -4,10 +4,9 @@ import { getDb } from "../db/client";
 import { categories, entries, profiles } from "../db/schema";
 import type { AppEnv } from "../env";
 import { categoryColor } from "../lib/colors";
-import { amounts } from "../lib/money";
+import { formatPeso } from "../lib/money";
 import { DAY_MS, MANILA_OFFSET_MS, clockTime, dayKey, fromDateInput, rangeLabel, toDateInput } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
-import { AmountsEye } from "../views/components";
 import { Layout } from "../views/layout";
 import { householdProfiles } from "./setup";
 
@@ -136,8 +135,6 @@ history.get("/history", async (c) => {
   const nextHref = more && oldest !== undefined ? `/history?who=${who}&before=${toDateInput(startOf(oldest))}` : null;
   const back = encodeURIComponent(`/history?who=${who}`);
   const nothing = whoName && who !== "all" ? `nothing by ${whoName}` : "nothing spent";
-  const hidden = c.get("hideAmounts");
-  const { peso } = amounts(hidden);
 
   return c.html(
     <Layout title="History" tab="history" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/history.js"]}>
@@ -146,8 +143,6 @@ history.get("/history", async (c) => {
         {people.map((p) => (
           <a class={who === p.id ? "chip on" : "chip"} href={`/history?who=${p.id}`}>{p.name}</a>
         ))}
-        {/* Back to the top of history: a "Show more" batch isn't a screen of its own. */}
-        <AmountsEye hidden={hidden} back={`/history?who=${who}`} />
       </div>
       {days.length === 0 && before === null ? (
         <p class="muted" style="margin-top:18px">Nothing logged yet.</p>
@@ -170,7 +165,7 @@ history.get("/history", async (c) => {
               <div class="day-group">
                 <h2 class="day">
                   <span>{dayHeading(startOf(item.day), now)}</span>
-                  <span>{peso(list.reduce((s, r) => s + r.amount, 0))}</span>
+                  <span>{formatPeso(list.reduce((s, r) => s + r.amount, 0))}</span>
                 </h2>
                 <ul class="rows">
                   {list.map((r) => {
@@ -182,7 +177,7 @@ history.get("/history", async (c) => {
                           <span class="mid">
                             <span class="nm">
                               <span>{r.note ?? what}</span>
-                              <span>{peso(r.amount)}</span>
+                              <span>{formatPeso(r.amount)}</span>
                             </span>
                             <span class="sub">{[r.note ? what : null, r.who, clockTime(r.spentAt)].filter(Boolean).join(" · ")}</span>
                           </span>

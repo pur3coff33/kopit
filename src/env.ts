@@ -15,7 +15,7 @@ export type AppEnv = {
     profileId: number;
     profileName: string;
     profileIndex: number;
-    /** This phone's person tapped the eye: show every amount as ₱••••. */
+    /** This phone's person tapped the eye: show the totals as ₱1•,•••. */
     hideAmounts: boolean;
   };
 };
