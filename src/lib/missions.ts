@@ -1,4 +1,4 @@
-// Daily missions: 3–5 small "spend less" goals a day (easy or medium), checked automatically from what the household logs.
+// Daily missions: 3–5 small "spend less" goals a day (easy or medium, at least two easy), checked automatically from what the household logs.
 // Pure code (no database): garden.ts feeds it expenses and stores the results.
 //
 // Adding a mission: add one entry to TEMPLATES. Its make() gets the household's 28-day baseline and returns a
@@ -14,6 +14,8 @@ export type CatBaseline = { cat: CatInfo; daysWith: number; usualOnDay: number; 
 export type Baseline = {
   /** The day (Manila day key) this baseline is for. */
   day: number;
+  /** Which rule set the day draws from (RULES when it was made). Missing on days stored before rule sets: set 1. */
+  rules?: number;
   /** Days since the first expense in the last 28 (missions that need a baseline wait for 14). */
   historyDays: number;
   usualDay: number;
@@ -42,8 +44,20 @@ export type Template = {
   type: string;
   level: 1 | 2;
   needsHistory: boolean;
+  /** The rule set it joined (missing: 1, the original 14). A day only draws from the sets up to its own. */
+  since?: number;
+  /** Rules that would say nearly the same thing (8 am and 10 am mornings): one per family a day. */
+  family?: string;
   make(b: Baseline, rnd: () => number): Mission | null;
 };
+
+/**
+ * The current rule set. A day's baseline is stored the first time it's needed, and its missions are drawn again from it
+ * each time, so adding rules or changing the draw needs a new set, or days already given missions would get new ones.
+ * Set 1: the original 14, at least one easy a day. Set 2: six more easy ones, at least two easy a day, one per family.
+ */
+export const RULES = 2;
+const EASY_PER_DAY: Record<number, number> = { 1: 1, 2: 2 };
 
 const HISTORY_DAYS = 28;
 const MIN_HISTORY = 14;
@@ -91,6 +105,7 @@ export function baseline(history: DayExpense[], day: number, cats: CatInfo[]): B
   amounts.sort((a, b) => a - b);
   return {
     day,
+    rules: RULES,
     historyDays,
     usualDay: total / span,
     usualCount: amounts.length / span,
@@ -180,6 +195,13 @@ function simple(type: string, level: 1 | 2, title: string, check: Mission["check
   return { type, level, needsHistory: false, make: () => ({ type, level, title, catIds: [], check }) };
 }
 
+function atMostCats(type: string, level: 1 | 2, n: number): Template {
+  return simple(type, level, `Spend in at most ${n} categories`, (f) => {
+    const used = new Set(f.expenses.map((e) => e.categoryId)).size;
+    return { ok: used <= n, note: `${used} so far` };
+  });
+}
+
 function noneAt(type: string, level: 1 | 2, title: string, bad: (h: number) => boolean): Template {
   return simple(type, level, title, (f) => {
     const n = f.expenses.filter((e) => bad(hour(e.spentAt))).length;
@@ -209,7 +231,12 @@ function lessThan(type: string, level: 1 | 2, of: "yesterday" | "lastWeek", shar
   };
 }
 
-/** The rule types, easy and medium only (no hard ones for now). 14, each with variations from the household's categories and amounts. */
+const tagged = (t: Template, tags: Pick<Template, "since" | "family">): Template => ({ ...t, ...tags });
+
+/**
+ * The rule types, easy and medium only (no hard ones for now). 20, each with variations from the household's categories
+ * and amounts. Set 1's order must stay as it is (the draw shuffles it), so new rules go at the end.
+ */
 export const TEMPLATES: ReadonlyArray<Template> = [
   // easy
   noCats("no-cat", 1, (b, rnd) => {
@@ -250,10 +277,10 @@ export const TEMPLATES: ReadonlyArray<Template> = [
       };
     },
   },
-  noneAt("quiet-morning", 1, "Nothing spent before 10 am", (h) => h < 10),
+  tagged(noneAt("quiet-morning", 1, "Nothing spent before 10 am", (h) => h < 10), { family: "morning" }),
   // medium
   lessThan("less-than-yesterday", 2, "yesterday", 1, () => "Spend less than yesterday"),
-  dayLimit("day-under-usual", 2, 1, (limit) => `Keep today under your usual ${peso(limit)}`),
+  tagged(dayLimit("day-under-usual", 2, 1, (limit) => `Keep today under your usual ${peso(limit)}`), { family: "day-limit" }),
   catLimit("cat-under-tight", 2, 0.7),
   simple("no-small-buys", 2, "No small buys under ₱50", (f) => {
     const n = f.expenses.filter((e) => e.amount < 5_000).length;
@@ -279,11 +306,8 @@ export const TEMPLATES: ReadonlyArray<Template> = [
       };
     },
   },
-  simple("two-cats", 2, "Spend in at most 2 categories", (f) => {
-    const n = new Set(f.expenses.map((e) => e.categoryId)).size;
-    return { ok: n <= 2, note: `${n} so far` };
-  }),
-  noneAt("quiet-evening", 2, "Nothing spent after 8 pm", (h) => h >= 20),
+  tagged(atMostCats("two-cats", 2, 2), { family: "categories" }),
+  tagged(noneAt("quiet-evening", 2, "Nothing spent after 8 pm", (h) => h >= 20), { family: "evening" }),
   noCats("two-no-cats", 2, (b, rnd) => {
     const pool = occasional(b);
     if (pool.length < 2) return null;
@@ -291,6 +315,21 @@ export const TEMPLATES: ReadonlyArray<Template> = [
     const rest = pool.filter((c) => c !== a);
     return [a, pick(rest, rnd)!];
   }),
+  // easy, set 2: roomier siblings of the rules above, so most good days can come from easy ones alone
+  tagged(noneAt("quiet-night", 1, "Nothing spent after 10 pm", (h) => h >= 22), { since: 2, family: "evening" }),
+  tagged(noneAt("quiet-early", 1, "Nothing spent before 8 am", (h) => h < 8), { since: 2, family: "morning" }),
+  tagged(dayLimit("day-under-roomy", 1, 1.5, (limit) => `Keep today under ${peso(limit)}`), { since: 2, family: "day-limit" }),
+  tagged(catLimit("cat-under-roomy", 1, 1.5), { since: 2 }),
+  tagged(atMostCats("three-cats", 1, 3), { since: 2, family: "categories" }),
+  tagged(
+    simple("cat-two-buys", 1, "No more than 2 buys in any one category", (f) => {
+      const per = new Map<number | null, number>();
+      for (const e of f.expenses) per.set(e.categoryId, (per.get(e.categoryId) ?? 0) + 1);
+      const most = Math.max(0, ...per.values());
+      return { ok: most <= 2, note: most ? `most in one: ${most}` : "none yet" };
+    }),
+    { since: 2 },
+  ),
 ];
 
 /** A friendly name per rule type, for "the mission you beat most" in a month's Wrapped. */
@@ -309,6 +348,12 @@ export const TYPE_NAMES: Readonly<Record<string, string>> = {
   "two-cats": "Two categories at most",
   "quiet-evening": "Quiet evenings",
   "two-no-cats": "Skipping two categories",
+  "quiet-night": "Quiet nights",
+  "quiet-early": "Quiet early mornings",
+  "day-under-roomy": "A roomy day budget",
+  "cat-under-roomy": "A roomy category budget",
+  "three-cats": "Three categories at most",
+  "cat-two-buys": "Two buys per category at most",
   // Retired hard rules: past days' results can still name them in a month's Wrapped.
   "half-day": "Half your usual day",
   "no-spend": "No-spend days",
@@ -330,26 +375,31 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/** The day's 3–5 missions: at least one easy, no rule or category twice. */
+/** The day's 3–5 missions from its rule set: at least one easy (two from set 2), no rule, category or family twice. */
 export function missionsFor(householdId: number, day: number, b: Baseline): Mission[] {
+  const rules = b.rules ?? 1;
   const rnd = mulberry32(Math.imul(householdId, 0x9e3779b1) ^ Math.imul(day, 0x85ebca6b));
   const want = 3 + Math.floor(rnd() * 3);
-  const order = TEMPLATES.filter((t) => b.historyDays >= MIN_HISTORY || !t.needsHistory);
+  const order = TEMPLATES.filter((t) => (t.since ?? 1) <= rules && (b.historyDays >= MIN_HISTORY || !t.needsHistory));
   for (let i = order.length - 1; i > 0; i--) {
     const j = Math.floor(rnd() * (i + 1));
     [order[i], order[j]] = [order[j], order[i]];
   }
   const picked: Mission[] = [];
   const usedCats = new Set<number>();
+  const families = new Set<string>();
   const take = (t: Template) => {
-    if (picked.some((m) => m.type === t.type)) return false;
+    if (picked.some((m) => m.type === t.type) || (t.family && families.has(t.family))) return false;
     const m = t.make(b, rnd);
     if (!m || m.catIds.some((id) => usedCats.has(id))) return false;
     picked.push(m);
     m.catIds.forEach((id) => usedCats.add(id));
+    if (t.family) families.add(t.family);
     return true;
   };
-  for (const t of order) if (t.level === 1 && take(t)) break; // one easy one, always
+  // The easy ones first, then the rest in the shuffled order.
+  let easy = 0;
+  for (const t of order) if (easy < (EASY_PER_DAY[rules] ?? 2) && t.level === 1 && take(t)) easy++;
   for (const t of order) if (picked.length < want) take(t);
   return picked;
 }

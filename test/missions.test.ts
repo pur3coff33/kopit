@@ -33,9 +33,10 @@ function history(d: number): DayExpense[] {
 const rich = (d: number, cats = CATS) => baseline(history(d), d, cats);
 
 describe("mission rules", () => {
-  it("has 14 rule types, easy or medium only, each with its own name", () => {
-    expect(TEMPLATES).toHaveLength(14);
-    expect(new Set(TEMPLATES.map((t) => t.type)).size).toBe(14);
+  it("has 20 rule types, 11 of them easy, easy or medium only, each with its own name", () => {
+    expect(TEMPLATES).toHaveLength(20);
+    expect(new Set(TEMPLATES.map((t) => t.type)).size).toBe(20);
+    expect(TEMPLATES.filter((t) => t.level === 1)).toHaveLength(11);
     for (const t of TEMPLATES) expect(t.level, t.type).toBeLessThanOrEqual(2);
     for (const t of TEMPLATES) expect(TYPE_NAMES[t.type], t.type).toBeTruthy();
   });
@@ -52,6 +53,40 @@ describe("mission rules", () => {
     expect(m.title).toBe("Keep 🍜 Food under ₱150");
     expect(m.check({ expenses: [spend(D, 2, 12_000)], yesterday: [], lastWeek: [] })).toEqual({ ok: true, note: "₱120 so far" });
     expect(m.check({ expenses: [spend(D, 2, 16_000)], yesterday: [], lastWeek: [] }).ok).toBe(false);
+  });
+
+  it("has roomier easy versions of the day and category limits", () => {
+    const day = TEMPLATES.find((t) => t.type === "day-under-roomy")!.make(rich(D), () => 0)!;
+    const usual = TEMPLATES.find((t) => t.type === "day-under-usual")!.make(rich(D), () => 0)!;
+    expect(usual.title).toBe("Keep today under your usual ₱800");
+    expect(day.title).toBe("Keep today under ₱1,200");
+    expect(day.check({ expenses: [spend(D, 2, 110_000)], yesterday: [], lastWeek: [] }).ok).toBe(true);
+    expect(day.check({ expenses: [spend(D, 2, 120_000)], yesterday: [], lastWeek: [] }).ok).toBe(false);
+    const cat = TEMPLATES.find((t) => t.type === "cat-under-roomy")!.make(rich(D), () => 0)!;
+    expect(cat.title).toBe("Keep 🍜 Food under ₱200"); // 1.5 × ₱150, rounded down to a friendly amount
+  });
+
+  it("keeps late nights and early mornings quiet", () => {
+    const night = TEMPLATES.find((t) => t.type === "quiet-night")!.make(rich(D), () => 0)!;
+    const early = TEMPLATES.find((t) => t.type === "quiet-early")!.make(rich(D), () => 0)!;
+    expect(night.title).toBe("Nothing spent after 10 pm");
+    expect(early.title).toBe("Nothing spent before 8 am");
+    const day = (h: number) => ({ expenses: [spend(D, 2, 5_000, h)], yesterday: [], lastWeek: [] });
+    expect(night.check(day(21)).ok).toBe(true);
+    expect(night.check(day(22)).ok).toBe(false);
+    expect(early.check(day(8)).ok).toBe(true);
+    expect(early.check(day(7)).ok).toBe(false);
+  });
+
+  it("counts categories and buys per category", () => {
+    const three = TEMPLATES.find((t) => t.type === "three-cats")!.make(rich(D), () => 0)!;
+    const twice = TEMPLATES.find((t) => t.type === "cat-two-buys")!.make(rich(D), () => 0)!;
+    const facts = (...cats: (number | null)[]) => ({ expenses: cats.map((c) => spend(D, c, 5_000)), yesterday: [], lastWeek: [] });
+    expect(three.check(facts(1, 2, 3, 3)).ok).toBe(true);
+    expect(three.check(facts(1, 2, 3, null)).ok).toBe(false);
+    expect(twice.check(facts(1, 1, 2, 2))).toEqual({ ok: true, note: "most in one: 2" });
+    expect(twice.check(facts(1, 2, 2, 2)).ok).toBe(false);
+    expect(twice.check(facts()).note).toBe("none yet");
   });
 
   it("only compares with yesterday when yesterday had spending", () => {
@@ -81,6 +116,18 @@ describe("a day's missions", () => {
       }
     }
     expect([...counts].sort()).toEqual([3, 4, 5]);
+  });
+
+  it("include at least two easy ones, and never two from the same family", () => {
+    const family = new Map(TEMPLATES.map((t) => [t.type, t.family]));
+    for (let h = 1; h <= 30; h++) {
+      for (let d = D; d < D + 10; d++) {
+        const ms = missionsFor(h, d, rich(d));
+        expect(ms.filter((m) => m.level === 1).length).toBeGreaterThanOrEqual(2);
+        const fams = ms.map((m) => family.get(m.type)).filter(Boolean);
+        expect(new Set(fams).size).toBe(fams.length);
+      }
+    }
   });
 
   it("give a new household only rules that need no history", () => {
@@ -119,5 +166,33 @@ describe("a day's missions", () => {
     ];
     const r = judgeDay(ms, { expenses: splurge, yesterday: [spend(D - 1, 2, 15_000)], lastWeek: [spend(D - 7, 2, 15_000)] });
     expect(r.done * 2).toBeLessThan(r.missions);
+  });
+});
+
+describe("days stored before the easier set (rule set 1)", () => {
+  /** A baseline as stored in day_missions before rule sets existed: no `rules` field. */
+  const stored = (d: number) => {
+    const { rules: _, ...b } = rich(d) as ReturnType<typeof rich> & { rules?: number };
+    return b;
+  };
+
+  it("keep exactly the missions they were first given", () => {
+    const draw = [1, 2, 3, 7].flatMap((h) => [D, D + 1, D + 2].map((d) => missionsFor(h, d, stored(d)).map((m) => m.title).join(" | ")));
+    expect(draw).toMatchInlineSnapshot(`
+      [
+        "Nothing spent before 10 am | No 💡 Bills and no 🛍️ Shopping today | Keep today under your usual ₱800 | Nothing spent after 8 pm | Spend in at most 2 categories",
+        "At most 2 expenses today | Nothing spent before 10 am | No small buys under ₱50 | No single buy over ₱400 | Keep today under your usual ₱800",
+        "Nothing spent before 10 am | Spend less than yesterday | No single buy over ₱400",
+        "Keep 🚌 Transport under ₱80 | No single buy over ₱400 | At most 2 expenses today | Nothing spent after 8 pm",
+        "Nothing spent before 10 am | Spend in at most 2 categories | Keep 🚌 Transport under ₱50 | No 💡 Bills today",
+        "Keep ☕ Coffee under ₱120 | Keep today under your usual ₱800 | Spend less than last Thursday | Spend in at most 2 categories | No 💡 Bills today",
+        "Keep ☕ Coffee under ₱120 | No single buy over ₱400 | Keep today under your usual ₱800 | Spend less than last Tuesday",
+        "No 💡 Bills today | No small buys under ₱50 | Keep 🛒 Groceries under ₱400 | Spend less than yesterday",
+        "Keep ☕ Coffee under ₱120 | Keep today under your usual ₱800 | No small buys under ₱50 | Nothing spent after 8 pm",
+        "Nothing spent before 10 am | Keep 🛍️ Shopping under ₱800 | Spend less than last Tuesday | Keep today under your usual ₱800",
+        "No 🚌 Transport today | Spend less than yesterday | Nothing spent before 10 am | Keep today under your usual ₱800 | Spend less than last Wednesday",
+        "At most 2 expenses today | Keep today under your usual ₱800 | Spend less than last Thursday",
+      ]
+    `);
   });
 });
