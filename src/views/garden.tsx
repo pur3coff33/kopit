@@ -1,5 +1,6 @@
 // Drawings for the money garden: the kop.it wordmark, people's flowers and the plant. All decorative SVG;
 // whatever they mean is always also said in text next to them.
+import type { Child } from "hono/jsx";
 import { flowerFor } from "../lib/colors";
 
 const MAX_LEAVES = 20;
@@ -121,6 +122,41 @@ export function Welcome() {
       <p>your household's money garden</p>
       <div class="cloche">
         <Plant leaves={3} width={120} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Today's sky behind the live plant: day or night from the Manila clock, then /js/sky.js swaps in the real weather
+ * and sunset for where the phone is. Every layer is drawn; data-phase and data-weather pick what shows (app.css).
+ */
+export function Sky(props: { night: boolean; children?: Child }) {
+  const drops = Array.from({ length: 10 }, () => <i></i>);
+  return (
+    <div class="sky" data-sky="" data-phase={props.night ? "night" : "day"} data-weather="clear">
+      <div class="sky-back" aria-hidden="true">
+        <span class="sun"></span>
+        <span class="moon"></span>
+        <span class="stars">
+          <i></i>
+          <i></i>
+          <i></i>
+          <i></i>
+          <i></i>
+        </span>
+        <span class="cloud c1"></span>
+        <span class="cloud c2"></span>
+        <span class="flash"></span>
+      </div>
+      {props.children}
+      <div class="sky-front" aria-hidden="true">
+        <span class="rain">{drops}</span>
+        <span class="fireflies">
+          <i></i>
+          <i></i>
+          <i></i>
+        </span>
       </div>
     </div>
   );

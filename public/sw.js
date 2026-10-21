@@ -13,6 +13,7 @@ const PRECACHE = [
   "/js/router.js",
   "/js/leaf.js",
   "/js/wrapped.js",
+  "/js/sky.js",
   "/fonts/nunito-latin-wght-normal.woff2",
   "/fonts/nunito-latin-ext-wght-normal.woff2",
   "/icons/icon-192.png",

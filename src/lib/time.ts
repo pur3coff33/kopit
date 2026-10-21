@@ -82,7 +82,15 @@ export function rangeLabel(start: number, endExclusive: number, now: number): st
   return `${shortDate(start)} – ${sameMonth ? local(last).getUTCDate() : shortDate(last)}`;
 }
 
-/** "16:05" in Manila time. */
+/** "4:05 PM" in Manila time. */
 export function clockTime(ms: number): string {
-  return local(ms).toISOString().slice(11, 16);
+  const d = local(ms);
+  const h = d.getUTCHours();
+  return `${h % 12 || 12}:${String(d.getUTCMinutes()).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+}
+
+/** 6 PM to 6 AM in Manila: the garden's sky when the phone doesn't know the real sunset. Mirrored in /js/sky.js. */
+export function isNight(ms: number): boolean {
+  const h = local(ms).getUTCHours();
+  return h < 6 || h >= 18;
 }

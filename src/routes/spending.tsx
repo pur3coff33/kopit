@@ -8,9 +8,9 @@ import { categoryColor } from "../lib/colors";
 import { monthGarden, monthName, rangeDays, todayMissions, wholePastMonth } from "../lib/garden";
 import { formatPeso } from "../lib/money";
 import { breakdown, categoryPace, pace, paceText, rangeTotal, weeklyTotals } from "../lib/stats";
-import { addMonths, dayStart, rangeLabel, resolveRange, toDateInput, type Range, type RangeKind } from "../lib/time";
+import { addMonths, dayStart, isNight, rangeLabel, resolveRange, toDateInput, type Range, type RangeKind } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
-import { Plant } from "../views/garden";
+import { Plant, Sky } from "../views/garden";
 import { Layout } from "../views/layout";
 import { householdProfiles } from "./setup";
 
@@ -117,13 +117,15 @@ spending.get("/spending", async (c) => {
   const top = Math.max(1, ...b.rows.map((r) => r.amount));
   const q = qs({ kind: view.range.kind, who: view.who, from: view.from, to: view.to });
   const label = rangeLabel(view.range.start, view.range.end, now);
+  const plant = <Plant leaves={leafCount} perfect={perfectCount} bud={bud} bloom={!!g?.bloomed} width={104} />;
   const tally = `${plural(leafCount, "good day", "good days")} · ${perfectCount} perfect · ${plural(b.count, "expense", "expenses")}`;
   return c.html(
-    <Layout title="Garden" tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")}>
+    <Layout title="Garden" tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/sky.js"]}>
       <Filters view={view} />
       <section class="terrarium">
         <div class="terra-plant">
-          <Plant leaves={leafCount} perfect={perfectCount} bud={bud} bloom={!!g?.bloomed} width={104} />
+          {/* Only this month's plant stands under today's sky; past months are records. */}
+          {thisMonth ? <Sky night={isNight(now)}>{plant}</Sky> : plant}
           {view.who !== "all" && <span class="caption">the household's garden</span>}
         </div>
         <div class="terra-text">

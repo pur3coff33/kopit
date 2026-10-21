@@ -32,6 +32,8 @@ describe("spending screen", () => {
     expect(body).toContain("Today's missions");
     expect(body).toMatch(/\d of \d on track/);
     expect(body).toContain('href="/gallery"');
+    expect(body).toMatch(/class="sky" data-sky="" data-phase="(day|night)" data-weather="clear"/);
+    expect(body).toContain('src="/js/sky.js"');
     expect(body).toMatch(/href="\/spending\/category\/\d+\?range=this&amp;who=all"|href="\/spending\/category\/\d+\?range=this&who=all"/);
   });
 
@@ -84,6 +86,7 @@ describe("spending screen", () => {
     expect(body).toContain("₱400 spent, ₱100 less than");
     expect(body).toMatch(/href="\/wrapped\/\d{4}-\d{2}"[^>]*>[^<]*Replay Wrapped/);
     expect(body).not.toContain("Today's missions"); // only this month has missions
+    expect(body).not.toContain("data-sky"); // the weather is today's: a finished month has none
   });
 
   it("lets a month that ended higher just stay green", async () => {

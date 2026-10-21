@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  addMonths, dayKey, dayStart, fromDateInput, monthStart, rangeLabel, resolveRange, toDateInput, weekStart,
+  addMonths, clockTime, dayKey, dayStart, isNight, fromDateInput, monthStart, rangeLabel, resolveRange, toDateInput, weekStart,
 } from "../src/lib/time";
 
 const oct31_2330 = Date.UTC(2026, 9, 31, 15, 30); // 23:30 Manila Oct 31
@@ -59,5 +59,24 @@ describe("rangeLabel", () => {
   });
   it("single day", () => {
     expect(rangeLabel(fromDateInput("2026-10-19")!, fromDateInput("2026-10-20")!, now)).toBe("Oct 19");
+  });
+});
+
+describe("clockTime", () => {
+  it("reads like a phone clock in Manila time", () => {
+    expect(clockTime(Date.UTC(2026, 9, 21, 15, 0))).toBe("11:00 PM");
+    expect(clockTime(Date.UTC(2026, 9, 21, 8, 5))).toBe("4:05 PM");
+    expect(clockTime(Date.UTC(2026, 9, 20, 16, 30))).toBe("12:30 AM");
+    expect(clockTime(Date.UTC(2026, 9, 21, 4, 0))).toBe("12:00 PM");
+    expect(clockTime(Date.UTC(2026, 9, 21, 1, 9))).toBe("9:09 AM");
+  });
+});
+
+describe("isNight", () => {
+  it("is night from 6 PM to 6 AM in Manila", () => {
+    expect(isNight(Date.UTC(2026, 9, 21, 9, 59))).toBe(false); // 5:59 PM
+    expect(isNight(Date.UTC(2026, 9, 21, 10, 0))).toBe(true); // 6:00 PM
+    expect(isNight(Date.UTC(2026, 9, 20, 21, 59))).toBe(true); // 5:59 AM
+    expect(isNight(Date.UTC(2026, 9, 20, 22, 0))).toBe(false); // 6:00 AM
   });
 });

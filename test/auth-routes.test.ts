@@ -44,10 +44,10 @@ describe("login page", () => {
 
   it("says when to try again while locked", async () => {
     const { householdId } = await seedHousehold({ username: "jon", pin: "482913" });
-    const lockedUntil = Date.UTC(2030, 0, 1, 8, 5); // 16:05 Manila
+    const lockedUntil = Date.UTC(2030, 0, 1, 8, 5); // 4:05 PM Manila
     await db().update(households).set({ lockedUntil }).where(eq(households.id, householdId));
     const res = await req("/login", form({ username: "jon", pin: "482913" }));
-    expect(await html(res)).toContain("Too many tries. Try again at 16:05.");
+    expect(await html(res)).toContain("Too many tries. Try again at 4:05 PM.");
   });
 });
 

@@ -398,6 +398,94 @@ p { margin: 6px 0; }
 }
 .terra-plant { display: flex; flex-direction: column; align-items: center; flex: none; }
 .terra-plant .caption { font-size: 10.5px; font-weight: 800; color: var(--muted); margin-top: -2px; }
+/* Today's sky behind this month's plant (see Sky in views/garden.tsx and /js/sky.js). data-phase is day or night,
+   data-weather is clear, cloudy, rain or storm; every layer is drawn and these pick what shows. The sky fades out
+   toward the pot so the plant still stands on the card. Decorative only, behind the plant, never behind text. */
+@property --sky-top { syntax: "<color>"; inherits: true; initial-value: #bfe0f5; }
+@property --sky-low { syntax: "<color>"; inherits: true; initial-value: #e6f3f9; }
+.sky {
+  --sky-top: #bfe0f5; --sky-low: #e6f3f9; --cloud: #fff; --drop: rgba(62, 104, 140, 0.55);
+  position: relative; padding: 4px 6px 0; transition: --sky-top 1.2s, --sky-low 1.2s;
+}
+.sky[data-weather="cloudy"] { --sky-top: #cfdbe2; --sky-low: #e8eef1; }
+.sky[data-weather="rain"] { --sky-top: #b3c3ce; --sky-low: #dce5ea; --cloud: #eef2f5; }
+.sky[data-weather="storm"] { --sky-top: #8f9eab; --sky-low: #c9d3da; --cloud: #b4bfc8; --drop: rgba(40, 70, 100, 0.65); }
+.sky[data-phase="night"] { --sky-top: #182a48; --sky-low: #3a5378; --cloud: #7b8ba3; --drop: rgba(205, 222, 250, 0.6); }
+.sky[data-phase="night"][data-weather="cloudy"] { --sky-top: #232e3f; --sky-low: #47546b; }
+.sky[data-phase="night"][data-weather="rain"] { --sky-top: #1f2a3a; --sky-low: #3d4a5e; --cloud: #66758b; }
+.sky[data-phase="night"][data-weather="storm"] { --sky-top: #151c28; --sky-low: #323c4e; --cloud: #4f5a6c; }
+.sky-back, .sky-front { position: absolute; inset: 0; overflow: hidden; border-radius: 22px 22px 0 0; pointer-events: none; }
+.sky-back {
+  background: linear-gradient(var(--sky-top), var(--sky-low));
+  mask-image: linear-gradient(#000 62%, transparent 94%); -webkit-mask-image: linear-gradient(#000 62%, transparent 94%);
+}
+.sky .plant { position: relative; display: block; transition: filter 1.2s; }
+.sky[data-phase="night"] .plant { filter: brightness(0.8) saturate(0.9); }
+.sky[data-weather="rain"] .plant, .sky[data-weather="storm"] .plant { filter: saturate(1.15) brightness(1.03) drop-shadow(0 0 1px rgba(255, 255, 255, 0.7)); }
+.sky[data-phase="night"][data-weather="rain"] .plant, .sky[data-phase="night"][data-weather="storm"] .plant { filter: brightness(0.8) saturate(1.05); }
+.sky .sun, .sky .moon, .sky .stars, .sky .cloud, .sky .flash, .sky .rain, .sky .fireflies { position: absolute; opacity: 0; transition: opacity 1.2s; }
+.sky .sun { top: 9px; right: 9px; width: 16px; height: 16px; border-radius: 50%; background: #f7d774; box-shadow: 0 0 0 4px rgba(247, 215, 116, 0.3), 0 0 14px rgba(247, 215, 116, 0.8); }
+.sky .moon { top: 9px; right: 13px; width: 14px; height: 14px; border-radius: 50%; box-shadow: 4px 2px 0 0 #f4eed3; }
+.sky .stars { inset: 0; }
+.sky .stars i { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff; }
+.sky .stars i:nth-child(1) { top: 14px; left: 14px; }
+.sky .stars i:nth-child(2) { top: 30px; left: 30px; }
+.sky .stars i:nth-child(3) { top: 10px; left: 50px; }
+.sky .stars i:nth-child(4) { top: 40px; right: 12px; }
+.sky .stars i:nth-child(5) { top: 56px; left: 10px; }
+.sky .cloud { width: 30px; height: 10px; border-radius: 10px; background: var(--cloud); transition: opacity 1.2s, background 1.2s; }
+.sky .cloud::before { content: ""; position: absolute; left: 7px; bottom: 4px; width: 15px; height: 13px; border-radius: 50%; background: inherit; }
+.sky .c1 { top: 20px; left: 8px; }
+.sky .c2 { top: 40px; right: 6px; width: 24px; scale: 0.85; }
+.sky .flash { inset: 0; background: #fff; }
+.sky .rain { inset: 0; }
+.sky .rain i { position: absolute; top: 0; width: 1.5px; height: 9px; border-radius: 1px; background: var(--drop); rotate: 12deg; }
+.sky .rain i:nth-child(1) { left: 8%; translate: 0 30px; }
+.sky .rain i:nth-child(2) { left: 18%; translate: 0 80px; }
+.sky .rain i:nth-child(3) { left: 27%; translate: 0 10px; }
+.sky .rain i:nth-child(4) { left: 37%; translate: 0 104px; }
+.sky .rain i:nth-child(5) { left: 47%; translate: 0 52px; }
+.sky .rain i:nth-child(6) { left: 56%; translate: 0 20px; }
+.sky .rain i:nth-child(7) { left: 65%; translate: 0 92px; }
+.sky .rain i:nth-child(8) { left: 74%; translate: 0 44px; }
+.sky .rain i:nth-child(9) { left: 83%; translate: 0 70px; }
+.sky .rain i:nth-child(10) { left: 92%; translate: 0 6px; }
+.sky .fireflies { inset: 0; }
+.sky .fireflies i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #f6e27a; box-shadow: 0 0 6px 2px rgba(246, 226, 122, 0.6); }
+.sky .fireflies i:nth-child(1) { top: 52%; left: 20%; }
+.sky .fireflies i:nth-child(2) { top: 34%; left: 76%; }
+.sky .fireflies i:nth-child(3) { top: 68%; left: 70%; }
+.sky[data-phase="day"] .sun { opacity: 1; }
+.sky[data-phase="day"][data-weather="cloudy"] .sun { opacity: 0.45; }
+.sky[data-phase="day"][data-weather="rain"] .sun, .sky[data-phase="day"][data-weather="storm"] .sun { opacity: 0; }
+.sky[data-phase="night"] .moon { opacity: 1; }
+.sky[data-phase="night"][data-weather="rain"] .moon, .sky[data-phase="night"][data-weather="storm"] .moon { opacity: 0.3; }
+.sky[data-phase="night"][data-weather="clear"] .stars { opacity: 1; }
+.sky[data-phase="night"][data-weather="cloudy"] .stars { opacity: 0.35; }
+.sky[data-phase="night"][data-weather="clear"] .fireflies, .sky[data-phase="night"][data-weather="cloudy"] .fireflies { opacity: 1; }
+.sky:not([data-weather="clear"]) .cloud { opacity: 0.95; }
+.sky[data-weather="rain"] .rain, .sky[data-weather="storm"] .rain { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .sky .stars i { animation: twinkle 3s ease-in-out infinite alternate; }
+  .sky .stars i:nth-child(2n) { animation-delay: -1.4s; animation-duration: 2.3s; }
+  .sky .cloud { animation: drift 14s ease-in-out infinite alternate; }
+  .sky .c2 { animation-duration: 11s; animation-delay: -5s; }
+  .sky .rain i { animation: fall 0.9s linear infinite; }
+  .sky .rain i:nth-child(3n + 1) { animation-delay: -0.3s; }
+  .sky .rain i:nth-child(3n + 2) { animation-delay: -0.6s; animation-duration: 0.8s; }
+  .sky[data-weather="storm"] .rain i { animation-duration: 0.55s; }
+  .sky[data-weather="storm"] .flash { animation: lightning 7s linear infinite; }
+  .sky[data-weather="storm"] .plant .sway { animation: gust 3.2s ease-in-out infinite; }
+  .sky .fireflies i { animation: glow 4s ease-in-out infinite; }
+  .sky .fireflies i:nth-child(2) { animation-delay: -1.5s; animation-duration: 5s; }
+  .sky .fireflies i:nth-child(3) { animation-delay: -3s; animation-duration: 4.5s; }
+}
+@keyframes twinkle { from { opacity: 0.25; } to { opacity: 1; } }
+@keyframes drift { from { translate: -6px 0; } to { translate: 12px 0; } }
+@keyframes fall { from { translate: -4px -12px; } to { translate: 26px 150px; } }
+@keyframes lightning { 0%, 90%, 92.5%, 95.5%, 100% { opacity: 0; } 91% { opacity: 0.55; } 94% { opacity: 0.35; } }
+@keyframes gust { 0%, 100% { rotate: 0deg; } 20% { rotate: 7deg; } 35% { rotate: -2deg; } 55% { rotate: 9deg; } 75% { rotate: -4deg; } }
+@keyframes glow { 0%, 100% { opacity: 0.1; translate: 0 0; } 50% { opacity: 1; translate: 5px -6px; } }
 .terra-text { flex: 1; min-width: 0; padding-bottom: 6px; }
 .terra-text p { margin: 2px 0; }
 .terra-text .total { font-size: 32px; margin: 0 0 4px; line-height: 1.05; }
