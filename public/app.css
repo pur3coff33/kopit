@@ -269,10 +269,13 @@ p { margin: 6px 0; }
 
 /* ---------- bottom bar: a floating glass pill, Add as the round seed button in the middle ---------- */
 .app:has(> .nav) { padding-bottom: 0; }
+/* How far the pill floats above the screen's bottom edge. On phones with a home indicator the safe area already
+   leaves room for it (34px on iPhones), so the pill sits a little into that room instead of 10px on top of all of it. */
+.app { --nav-gap: max(10px, calc(env(safe-area-inset-bottom) - 12px)); }
 .nav {
-  position: sticky; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 5;
+  position: sticky; bottom: var(--nav-gap); z-index: 5;
   display: flex; justify-content: space-around; align-items: center;
-  margin: 14px 0 calc(10px + env(safe-area-inset-bottom)); padding: 6px 10px; border-radius: 28px;
+  margin: 14px 0 var(--nav-gap); padding: 6px 10px; border-radius: 28px;
   background: var(--glass); border: 1px solid var(--edge); box-shadow: var(--lift);
   -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
 }
@@ -355,11 +358,11 @@ p { margin: 6px 0; }
 .sk-mid { flex: 1; display: flex; flex-direction: column; gap: 6px; }
 .sk-bar { height: 8px; border-radius: 6px; }
 
-/* Smooth cross-fade between screens instead of a white flash (Chrome, Safari 18.2+).
-   The header and bottom bar stay put while the content changes. */
+/* Smooth cross-fade between screens instead of a white flash (Chrome, Safari 18.2+). The header and bottom bar fade
+   with the rest: they look the same on every screen, so they still seem to stay put. They mustn't get a
+   view-transition-name of their own: a named part is painted on its own, with nothing behind its frosted glass to
+   blur, and flashes dark until the transition ends. */
 @view-transition { navigation: auto; }
-.top { view-transition-name: top; }
-.nav { view-transition-name: nav; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.15s; }
 @media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }
 
@@ -515,15 +518,16 @@ p { margin: 6px 0; }
 .weeks .wk.now i { opacity: 0.55; }
 
 /* ---------- history: the garden path ---------- */
-.path { position: relative; padding-left: 20px; }
+/* The path runs down the screen's side margin (16px), so the days keep the full width. */
+.path { position: relative; }
 .path::before {
-  content: ""; position: absolute; left: 7px; top: 22px; bottom: 6px; width: 3px; border-radius: 2px;
+  content: ""; position: absolute; left: -9.5px; top: 22px; bottom: 6px; width: 3px; border-radius: 2px;
   background: repeating-linear-gradient(rgba(31, 51, 38, 0.18) 0 7px, transparent 7px 12px);
 }
 .path .day, .path .quiet { position: relative; }
-/* A stone per row: centred on the path line (padding 20px, line centre at 8.5px) and on its row. */
+/* A stone per row: centred on the path line (8px left of the content) and on its row. */
 .path .day::before, .path .quiet::before {
-  content: ""; position: absolute; left: -18px; top: 50%; transform: translateY(-50%);
+  content: ""; position: absolute; left: -14.5px; top: 50%; transform: translateY(-50%);
   width: 13px; height: 13px; border-radius: 50%;
   background: rgba(255, 255, 255, 0.95); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
