@@ -2,3 +2,7 @@ node_modules/
 .wrangler/
 .dev.vars
 dist/
+
+# brainstorm notes and plans stay local
+.superpowers/
+docs/superpowers/
