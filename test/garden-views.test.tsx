@@ -49,6 +49,16 @@ describe("drawings", () => {
     expect(s).not.toMatch(/<ellipse class="leaf[^"]*"[^>]*transform=/);
   });
 
+  it("flutters each leaf from where it meets the stem, on its own timing, with its flower riding along", () => {
+    const s = String(<Plant leaves={4} perfect={4} />);
+    const styles = [...s.matchAll(/<g class="flutter" style="([^"]*)">/g)].map((m) => m[1]);
+    expect(styles).toHaveLength(4);
+    for (const st of styles) expect(st).toMatch(/transform-origin:\d+(\.\d)?px \d+(\.\d)?px/);
+    expect(new Set(styles.map((st) => st.match(/animation-delay:([^;]+)/)![1])).size).toBe(4);
+    // Each perfect-day flower sits inside its leaf's flutter group, so it moves with the leaf.
+    for (const part of s.split('<g class="flutter"').slice(1)) expect(part).toContain('class="pf"');
+  });
+
   it("names the wordmark for screen readers and shows the person's flower", () => {
     expect(String(<Wordmark />)).toContain('aria-label="kop.it"');
     const a = String(<Avatar index={1} name="Mia" />);

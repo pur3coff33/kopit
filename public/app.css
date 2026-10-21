@@ -367,14 +367,23 @@ p { margin: 6px 0; }
 @keyframes leaf-grow { from { opacity: 0; scale: 0.2; } to { opacity: 1; scale: 1; } }
 @media (prefers-reduced-motion: reduce) { .leaf.new { animation: none; } }
 
-/* The plant sways from the top of its pot (60,124 in the plant's viewBox); a bloomed flower slowly turns. */
-.plant .sway { transform-box: view-box; transform-origin: 60px 124px; animation: sway 3s ease-in-out infinite alternate; }
-.plant .petals { transform-box: fill-box; transform-origin: center; animation: spin 7s linear infinite; }
-.gallery .month-card:nth-child(3n + 2) .sway { animation-delay: -1.5s; }
-.gallery .month-card:nth-child(3n + 3) .sway { animation-delay: -3s; }
-@keyframes sway { from { rotate: -6deg; } to { rotate: 6deg; } }
+/* A living plant: the stem sways in uneven gusts from the top of its pot (60,124 in the viewBox), each leaf flutters
+   from the stem on its own timing (set inline per leaf), perfect-day flowers bob, the bloom breathes as it turns
+   and the bud's dashed ring circles. */
+.plant .sway { transform-box: view-box; transform-origin: 60px 124px; animation: sway 7s ease-in-out infinite; }
+.plant .flutter { transform-box: view-box; animation: flutter 3s ease-in-out infinite; }
+.plant .bob { transform-box: fill-box; transform-origin: center; animation: bob 2.2s ease-in-out infinite alternate; }
+.plant .petals { transform-box: fill-box; transform-origin: center; animation: spin 9s linear infinite, breathe 2.6s ease-in-out infinite alternate; }
+.plant .bud { animation: circle 4s linear infinite; }
+.gallery .month-card:nth-child(3n + 2) .sway { animation-delay: -2.3s; }
+.gallery .month-card:nth-child(3n + 3) .sway { animation-delay: -4.6s; }
+@keyframes sway { 0%, 100% { rotate: 0deg; } 15% { rotate: 3deg; } 30% { rotate: -1.5deg; } 50% { rotate: 5deg; } 68% { rotate: -3deg; } 84% { rotate: 1.5deg; } }
+@keyframes flutter { 0%, 100% { rotate: 0deg; } 30% { rotate: 8deg; } 62% { rotate: -5deg; } }
+@keyframes bob { from { scale: 0.85; } to { scale: 1.2; } }
 @keyframes spin { to { rotate: 360deg; } }
-@media (prefers-reduced-motion: reduce) { .plant .sway, .plant .petals { animation: none; } }
+@keyframes breathe { from { scale: 0.92; } to { scale: 1.1; } }
+@keyframes circle { to { stroke-dashoffset: -24; } }
+@media (prefers-reduced-motion: reduce) { .plant .sway, .plant .flutter, .plant .bob, .plant .petals, .plant .bud { animation: none; } }
 
 /* ---------- garden screen ---------- */
 .seg {

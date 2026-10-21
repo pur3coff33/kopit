@@ -60,18 +60,25 @@ export function Plant(props: { leaves: number; perfect?: number; bud?: boolean; 
     // The tilt lives on a wrapping group: CSS transform-origin on the leaf itself (the grow-in) would wrap the
     // rotate attribute and swing the leaf off the stem.
     const tip = (left ? 60 - size * 2 + 2 : 60 + size * 2 - 2).toFixed(1);
+    // Each leaf flutters from where it meets the stem (its inner end, after the ±28° tilt), on its own timing so
+    // no two move together. Its perfect-day flower rides along.
+    const pivotX = (left ? Number(cx) + size * 0.883 : Number(cx) - size * 0.883).toFixed(1);
+    const pivotY = (y - size * 0.469).toFixed(1);
+    const flutter = `transform-origin:${pivotX}px ${pivotY}px;animation-delay:-${((i * 0.73) % 3).toFixed(2)}s;animation-duration:${(2.6 + ((i * 0.41) % 1.4)).toFixed(2)}s`;
     return (
-      <>
+      <g class="flutter" style={flutter}>
         <g transform={`rotate(${left ? -28 : 28} ${cx} ${cy})`}>
           <ellipse class={cls} cx={cx} cy={cy} rx={size.toFixed(1)} ry={(size * 0.5).toFixed(1)} fill={LEAF_GREENS[i % LEAF_GREENS.length]} />
         </g>
         {flowered.has(i) && (
           <g class="pf" transform={`translate(${tip} ${(y - 5).toFixed(1)})`}>
-            <circle r="4.2" fill="#F0A3B5" />
-            <circle r="1.7" fill="#F2C94C" />
+            <g class="bob" style={`animation-delay:-${((i * 0.53) % 2).toFixed(2)}s`}>
+              <circle r="4.2" fill="#F0A3B5" />
+              <circle r="1.7" fill="#F2C94C" />
+            </g>
           </g>
         )}
-      </>
+      </g>
     );
   });
   return (
