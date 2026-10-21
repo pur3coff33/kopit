@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 // @ts-ignore plain browser module
-import { fetchPage, navTarget, skeletonKind } from "../public/js/router.js";
+import { fetchPage, navTarget, sameScreen, skeletonKind } from "../public/js/router.js";
 import { authCookie, html, req, seedHousehold } from "./helpers";
 
 const here = "https://kopit.test/spending?range=this&who=all";
@@ -23,6 +23,20 @@ describe("navTarget", () => {
   it("never opens API endpoints or in-page anchors as screens", () => {
     expect(navTarget({ ...click, href: "/api/entries" }, here)).toBeNull();
     expect(navTarget({ ...click, href: "#top" }, here)).toBeNull();
+    expect(navTarget({ ...click, href: "https://kopit.test/guide#sky" }, "https://kopit.test/guide#plant")).toBeNull();
+  });
+
+  it("keeps the anchor when opening another screen at a section", () => {
+    expect(navTarget({ ...click, href: "/guide#legal" }, "https://kopit.test/privacy")).toBe("/guide#legal");
+  });
+});
+
+describe("sameScreen", () => {
+  it("treats a jump to a section as staying on the screen", () => {
+    expect(sameScreen("https://kopit.test/guide#sky", "/guide")).toBe(true);
+    expect(sameScreen("https://kopit.test/guide", "/guide#plant")).toBe(true);
+    expect(sameScreen("https://kopit.test/spending?range=last", "/spending?range=this")).toBe(false);
+    expect(sameScreen("https://kopit.test/history", "/guide")).toBe(false);
   });
 });
 

@@ -14,7 +14,14 @@ export function navTarget({ href, target, download, button, modified }, here) {
   const now = new URL(here);
   if (url.origin !== now.origin || url.pathname.startsWith("/api/")) return null;
   if (url.hash && url.pathname === now.pathname && url.search === now.search) return null;
-  return url.pathname + url.search;
+  return url.pathname + url.search + url.hash;
+}
+
+/** `href` is the screen already showing (`shown`, a path), maybe at another section: anchors don't make a new screen. */
+export function sameScreen(href, shown) {
+  const a = new URL(href, "https://x.invalid");
+  const b = new URL(shown, "https://x.invalid");
+  return a.pathname === b.pathname && a.search === b.search;
 }
 
 const PAGE_TIMEOUT_MS = 3000; // same patience the service worker gives the add screen on weak signal
@@ -81,6 +88,13 @@ if (typeof document !== "undefined" && typeof history.pushState === "function") 
   const newKey = () => Math.random().toString(36).slice(2);
   let key = history.state?.key ?? newKey();
   history.replaceState({ ...history.state, key }, "");
+  let shown = location.pathname + location.search; // the screen on show, whatever section it's at
+
+  /** The section a URL's anchor points at on the current screen, if there is one. */
+  function section(url) {
+    const hash = new URL(url, location.href).hash;
+    return hash ? document.getElementById(decodeURIComponent(hash.slice(1))) : null;
+  }
 
   function load(url) {
     const hit = early.get(url);
@@ -177,7 +191,7 @@ if (typeof document !== "undefined" && typeof history.pushState === "function") 
       return;
     }
     if (push) {
-      const same = url === location.pathname + location.search;
+      const same = url === location.pathname + location.search + location.hash;
       if (!same) key = newKey();
       history[same ? "replaceState" : "pushState"]({ key }, "", url);
     }
@@ -188,7 +202,12 @@ if (typeof document !== "undefined" && typeof history.pushState === "function") 
       put(".nav", doc);
       document.title = doc.title;
       runInlineScripts(document.querySelector(".app > main"));
-      scrollTo(0, push ? 0 : (positions.get(key) ?? 0));
+      shown = location.pathname + location.search;
+      // Back and Forward land where you left; a new screen opens at its anchor's section, or at the top.
+      const saved = push ? undefined : positions.get(key);
+      const target = saved === undefined ? section(url) : null;
+      if (target) target.scrollIntoView();
+      else scrollTo(0, saved ?? 0);
       loading = false;
       start(mods);
     };
@@ -271,7 +290,16 @@ if (typeof document !== "undefined" && typeof history.pushState === "function") 
 
   addEventListener("popstate", () => {
     key = history.state?.key ?? newKey();
-    go(location.pathname + location.search, false);
+    if (!history.state?.key) history.replaceState({ ...history.state, key }, ""); // an anchor's entry, made by the browser
+    // A jump between sections of the screen on show (an in-page anchor, or Back over one) isn't a new screen: just
+    // scroll, instead of loading the page again from the top.
+    if (sameScreen(location.href, shown)) {
+      const target = section(location.href);
+      if (target) target.scrollIntoView();
+      else scrollTo(0, positions.get(key) ?? 0);
+      return;
+    }
+    go(location.pathname + location.search + location.hash, false);
   });
 
   // First load: the page came from the server as usual; start its scripts.
