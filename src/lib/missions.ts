@@ -1,4 +1,4 @@
-// Daily missions: 3–5 small "spend less" goals a day, checked automatically from what the household logs.
+// Daily missions: 3–5 small "spend less" goals a day (easy or medium), checked automatically from what the household logs.
 // Pure code (no database): garden.ts feeds it expenses and stores the results.
 //
 // Adding a mission: add one entry to TEMPLATES. Its make() gets the household's 28-day baseline and returns a
@@ -30,7 +30,7 @@ export type DayFacts = { expenses: DayExpense[]; yesterday: DayExpense[]; lastWe
 
 export type Mission = {
   type: string;
-  level: 1 | 2 | 3;
+  level: 1 | 2;
   title: string;
   /** Categories it's about, so one day doesn't get two missions on the same category. */
   catIds: number[];
@@ -40,7 +40,7 @@ export type Mission = {
 
 export type Template = {
   type: string;
-  level: 1 | 2 | 3;
+  level: 1 | 2;
   needsHistory: boolean;
   make(b: Baseline, rnd: () => number): Mission | null;
 };
@@ -109,7 +109,7 @@ const occasional = (b: Baseline) => b.cats.filter((c) => c.daysWith >= 2 && c.da
 /** Categories used regularly enough to have a sensible daily limit. */
 const regular = (b: Baseline) => b.cats.filter((c) => c.daysWith >= 5 && c.usualOnDay >= 2_000);
 
-function catLimit(type: string, level: 1 | 2 | 3, share: number): Template {
+function catLimit(type: string, level: 1 | 2, share: number): Template {
   return {
     type,
     level,
@@ -132,7 +132,7 @@ function catLimit(type: string, level: 1 | 2 | 3, share: number): Template {
   };
 }
 
-function noCats(type: string, level: 1 | 2 | 3, pickCats: (b: Baseline, rnd: () => number) => CatBaseline[] | null): Template {
+function noCats(type: string, level: 1 | 2, pickCats: (b: Baseline, rnd: () => number) => CatBaseline[] | null): Template {
   return {
     type,
     level,
@@ -154,7 +154,7 @@ function noCats(type: string, level: 1 | 2 | 3, pickCats: (b: Baseline, rnd: () 
   };
 }
 
-function dayLimit(type: string, level: 1 | 2 | 3, share: number, title: (limit: number) => string): Template {
+function dayLimit(type: string, level: 1 | 2, share: number, title: (limit: number) => string): Template {
   return {
     type,
     level,
@@ -176,18 +176,18 @@ function dayLimit(type: string, level: 1 | 2 | 3, share: number, title: (limit: 
   };
 }
 
-function simple(type: string, level: 1 | 2 | 3, title: string, check: Mission["check"]): Template {
+function simple(type: string, level: 1 | 2, title: string, check: Mission["check"]): Template {
   return { type, level, needsHistory: false, make: () => ({ type, level, title, catIds: [], check }) };
 }
 
-function noneAt(type: string, level: 1 | 2 | 3, title: string, bad: (h: number) => boolean): Template {
+function noneAt(type: string, level: 1 | 2, title: string, bad: (h: number) => boolean): Template {
   return simple(type, level, title, (f) => {
     const n = f.expenses.filter((e) => bad(hour(e.spentAt))).length;
     return { ok: n === 0, note: n === 0 ? "so far so good" : `${n} spent` };
   });
 }
 
-function lessThan(type: string, level: 1 | 2 | 3, of: "yesterday" | "lastWeek", share: number, title: (b: Baseline) => string): Template {
+function lessThan(type: string, level: 1 | 2, of: "yesterday" | "lastWeek", share: number, title: (b: Baseline) => string): Template {
   return {
     type,
     level,
@@ -209,7 +209,7 @@ function lessThan(type: string, level: 1 | 2 | 3, of: "yesterday" | "lastWeek", 
   };
 }
 
-/** The rule types. About 20, each with variations from the household's categories and amounts. */
+/** The rule types, easy and medium only (no hard ones for now). 14, each with variations from the household's categories and amounts. */
 export const TEMPLATES: ReadonlyArray<Template> = [
   // easy
   noCats("no-cat", 1, (b, rnd) => {
@@ -291,16 +291,6 @@ export const TEMPLATES: ReadonlyArray<Template> = [
     const rest = pool.filter((c) => c !== a);
     return [a, pick(rest, rnd)!];
   }),
-  // hard
-  dayLimit("half-day", 3, 0.5, (limit) => `Keep today under ${peso(limit)}, half your usual`),
-  simple("no-spend", 3, "A no-spend day", (f) => {
-    const t = sum(f.expenses);
-    return { ok: t === 0, note: t === 0 ? "nothing yet" : `${peso(t)} spent` };
-  }),
-  simple("one-buy", 3, "Just one expense today", (f) => ({ ok: f.expenses.length <= 1, note: `${f.expenses.length} so far` })),
-  noCats("no-top-cat", 3, (b) => (b.cats[0] ? [b.cats[0]] : null)),
-  lessThan("half-of-yesterday", 3, "yesterday", 0.5, () => "Spend less than half of yesterday"),
-  catLimit("cat-under-half", 3, 0.5),
 ];
 
 /** A friendly name per rule type, for "the mission you beat most" in a month's Wrapped. */
@@ -319,6 +309,7 @@ export const TYPE_NAMES: Readonly<Record<string, string>> = {
   "two-cats": "Two categories at most",
   "quiet-evening": "Quiet evenings",
   "two-no-cats": "Skipping two categories",
+  // Retired hard rules: past days' results can still name them in a month's Wrapped.
   "half-day": "Half your usual day",
   "no-spend": "No-spend days",
   "one-buy": "One-buy days",
@@ -339,7 +330,7 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/** The day's 3–5 missions: at least one easy, at most one hard, no rule or category twice. */
+/** The day's 3–5 missions: at least one easy, no rule or category twice. */
 export function missionsFor(householdId: number, day: number, b: Baseline): Mission[] {
   const rnd = mulberry32(Math.imul(householdId, 0x9e3779b1) ^ Math.imul(day, 0x85ebca6b));
   const want = 3 + Math.floor(rnd() * 3);
@@ -351,7 +342,7 @@ export function missionsFor(householdId: number, day: number, b: Baseline): Miss
   const picked: Mission[] = [];
   const usedCats = new Set<number>();
   const take = (t: Template) => {
-    if (picked.some((m) => m.type === t.type) || (t.level === 3 && picked.some((m) => m.level === 3))) return false;
+    if (picked.some((m) => m.type === t.type)) return false;
     const m = t.make(b, rnd);
     if (!m || m.catIds.some((id) => usedCats.has(id))) return false;
     picked.push(m);

@@ -64,7 +64,7 @@ export const sessions = sqliteTable("sessions", {
 
 /**
  * How each finished day went on its missions: a cache, rebuilt from the expenses whenever needed. Rows are
- * cleared when an expense on or up to 28 days before that day changes (missions use a 28-day baseline).
+ * cleared when an expense on that day, the day before or a week before changes (see invalidateGarden).
  */
 export const gardenDays = sqliteTable(
   "garden_days",
@@ -76,6 +76,23 @@ export const gardenDays = sqliteTable(
     done: integer("done").notNull(),
     /** Comma-separated mission types met that day, for the month's "most beaten" mission. */
     doneTypes: text("done_types").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.day] })],
+);
+
+/**
+ * Each day's missions, fixed the first time they're needed (normally the household's first open that day): the
+ * 28-day baseline they were drawn from. Never cleared, so later edits to older expenses can't change a day's missions.
+ */
+export const dayMissions = sqliteTable(
+  "day_missions",
+  {
+    householdId: integer("household_id").notNull().references(() => households.id),
+    /** Manila day key. */
+    day: integer("day").notNull(),
+    /** The Baseline (missions.ts) as JSON. */
+    baseline: text("baseline").notNull(),
+    createdAt: integer("created_at").notNull(),
   },
   (t) => [primaryKey({ columns: [t.householdId, t.day] })],
 );

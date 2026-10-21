@@ -2,13 +2,14 @@
 // of them done grows a leaf, a day with all done adds a small flower, and a month that ends lower than the one before
 // blooms on top. Always the whole household's, whatever person filter a screen has on.
 //
-// Finished days are cached in garden_days (working one out means reading up to 28 earlier days of expenses);
-// today is always worked out live.
-import { and, count, eq, gte, lt, sql, sum } from "drizzle-orm";
+// A day's missions are fixed the first time they're needed (day_missions, see frozenBaselines). Finished days'
+// results are cached in garden_days (working one out means reading up to 28 earlier days of expenses); today is
+// always judged live.
+import { and, count, eq, gte, inArray, lt, sql, sum } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { categories, entries, gardenDays } from "../db/schema";
 import type { Env } from "../env";
-import { TYPE_NAMES, baseline, judgeDay, missionsFor, type CatInfo, type DayExpense, type DayFacts } from "./missions";
+import { TYPE_NAMES, baseline, judgeDay, missionsFor, type Baseline, type CatInfo, type DayExpense, type DayFacts } from "./missions";
 import { DAY_MS, MANILA_OFFSET_MS, addMonths, dayKey, dayStart, monthStart, toDateInput, type Range } from "./time";
 
 export const MONTH_NAMES: readonly string[] = [
@@ -68,13 +69,45 @@ function historyBefore(on: (day: number) => DayExpense[], day: number): DayExpen
   return out;
 }
 
-/** How each of `days` went, given every expense from 28 days before the first through the last. Pure. */
-export function judgeDays(householdId: number, days: number[], all: DayExpense[], cats: CatInfo[]): Map<number, DayResult> {
-  const on = byDay(all);
+/**
+ * Each of `days`' baseline (what its missions are drawn from), fixed the first time it's needed: normally the
+ * household's first open that day. `make` works out the ones not stored yet. Two phones opening at once both keep
+ * whichever copy was stored first: the inserts are INSERT OR IGNORE, read back in the same transaction.
+ */
+export async function frozenBaselines(env: Env, householdId: number, days: number[], make: (day: number) => Baseline) {
+  const out = new Map<number, Baseline>();
+  if (days.length === 0) return out;
+  const wanted = new Set(days);
+  const read = env.DB.prepare("SELECT day, baseline FROM day_missions WHERE household_id = ? AND day >= ? AND day <= ?").bind(
+    householdId,
+    Math.min(...days),
+    Math.max(...days),
+  );
+  const keep = (rows: { day: number; baseline: string }[]) => {
+    for (const r of rows) if (wanted.has(r.day)) out.set(r.day, JSON.parse(r.baseline) as Baseline);
+  };
+  keep((await read.all<{ day: number; baseline: string }>()).results);
+  const missing = days.filter((d) => !out.has(d));
+  if (missing.length === 0) return out;
+  const put = env.DB.prepare("INSERT OR IGNORE INTO day_missions (household_id, day, baseline, created_at) VALUES (?, ?, ?, ?)");
+  const createdAt = Date.now();
+  const results = await env.DB.batch<{ day: number; baseline: string }>([
+    ...missing.map((d) => put.bind(householdId, d, JSON.stringify(make(d)), createdAt)),
+    read,
+  ]);
+  keep(results[results.length - 1].results);
+  return out;
+}
+
+/** The fixed baselines for `days`, working out any not stored yet from `on` (expenses by day) and `cats`. */
+function baselinesFor(env: Env, householdId: number, days: number[], on: (day: number) => DayExpense[], cats: CatInfo[]) {
+  return frozenBaselines(env, householdId, days, (day) => baseline(historyBefore(on, day), day, cats));
+}
+
+/** How each of `days` went on its fixed missions. Pure. */
+export function judgeDays(householdId: number, days: number[], on: (day: number) => DayExpense[], baselines: Map<number, Baseline>) {
   const out = new Map<number, DayResult>();
-  for (const day of days) {
-    out.set(day, judgeDay(missionsFor(householdId, day, baseline(historyBefore(on, day), day, cats)), factsOn(on, day)));
-  }
+  for (const day of days) out.set(day, judgeDay(missionsFor(householdId, day, baselines.get(day)!), factsOn(on, day)));
   return out;
 }
 
@@ -101,7 +134,8 @@ export async function dayResults(env: Env, householdId: number, createdAt: numbe
   const first = Math.min(...missing);
   const last = Math.max(...missing);
   const [all, cats] = await Promise.all([expensesBetween(env, householdId, first - BASELINE_DAYS, last + 1), visibleCats(env, householdId)]);
-  const judged = judgeDays(householdId, missing, all, cats);
+  const on = byDay(all);
+  const judged = judgeDays(householdId, missing, on, await baselinesFor(env, householdId, missing, on, cats));
   const fresh = missing.map((day) => {
     const r = judged.get(day)!;
     out.set(day, r);
@@ -121,12 +155,15 @@ export async function dayResults(env: Env, householdId: number, createdAt: numbe
   return out;
 }
 
-/** An expense on `spentAt` changed: forget that day and the 28 after it (their baselines looked back at it). */
+/**
+ * An expense on `spentAt` changed: forget that day's result and the two that compare with it ("less than yesterday"
+ * the day after, "less than last week" a week later). Missions themselves are fixed, so no other day can change.
+ */
 export async function invalidateGarden(env: Env, householdId: number, spentAt: number): Promise<void> {
   const d = dayKey(spentAt);
   await getDb(env)
     .delete(gardenDays)
-    .where(and(eq(gardenDays.householdId, householdId), gte(gardenDays.day, d), lt(gardenDays.day, d + BASELINE_DAYS + 1)));
+    .where(and(eq(gardenDays.householdId, householdId), inArray(gardenDays.day, [d, d + 1, d + 7])));
 }
 
 export type MonthGarden = {
@@ -226,7 +263,7 @@ export function wholePastMonth(range: Range, now: number): number | null {
   return whole && range.end <= now ? range.start : null;
 }
 
-export type TodayMission = { title: string; level: 1 | 2 | 3; status: "track" | "missed"; note: string };
+export type TodayMission = { title: string; level: 1 | 2; status: "track" | "missed"; note: string };
 
 /** Today's missions, judged live: on track while still met, "not today" once broken (more spending can't undo that). */
 export async function todayMissions(env: Env, householdId: number, now: number) {
@@ -234,7 +271,8 @@ export async function todayMissions(env: Env, householdId: number, now: number) 
   const [all, cats] = await Promise.all([expensesBetween(env, householdId, today - BASELINE_DAYS, today + 1), visibleCats(env, householdId)]);
   const on = byDay(all);
   const facts = factsOn(on, today);
-  const items: TodayMission[] = missionsFor(householdId, today, baseline(historyBefore(on, today), today, cats)).map((m) => {
+  const fixed = (await baselinesFor(env, householdId, [today], on, cats)).get(today)!;
+  const items: TodayMission[] = missionsFor(householdId, today, fixed).map((m) => {
     const r = m.check(facts);
     return { title: m.title, level: m.level, status: r.ok ? "track" : "missed", note: r.note };
   });

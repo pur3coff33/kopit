@@ -1,9 +1,10 @@
 import { env } from "cloudflare:test";
 import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { gardenDays } from "../src/db/schema";
+import { dayMissions, gardenDays } from "../src/db/schema";
 import { deleteEntry, insertEntry, updateEntry } from "../src/lib/entries";
-import { dayResults, gardenMonths, monthGarden, todayGarden, todayMissions, wholePastMonth } from "../src/lib/garden";
+import { dayResults, frozenBaselines, gardenMonths, monthGarden, todayGarden, todayMissions, wholePastMonth } from "../src/lib/garden";
+import { baseline } from "../src/lib/missions";
 import { dayKey, resolveRange } from "../src/lib/time";
 import { addEntry, db, seedHousehold } from "./helpers";
 
@@ -54,6 +55,20 @@ describe("day results", () => {
     await deleteEntry(env, h.householdId, id, now);
     const oct15 = (await dayResults(env, h.householdId, created, ...range, now)).get(dayKey(manila(9, 15)))!;
     expect(oct15.done).toBe(oct15.missions);
+  });
+
+  it("only forget the edited day and the two that compare with it (the next day, a week later)", async () => {
+    const created = manila(9, 1, 9);
+    const h = await seedHousehold({ createdAt: created });
+    await dayResults(env, h.householdId, created, dayKey(monthOf(9)), dayKey(now), now);
+    const id = await addEntry(h, { amount: 5_000, at: manila(9, 5), category: "Food" });
+    await deleteEntry(env, h.householdId, id, now);
+    const left = (await db().select().from(gardenDays).where(eq(gardenDays.householdId, h.householdId))).map((r) => r.day);
+    const oct = (d: number) => dayKey(manila(9, d));
+    expect(left).toHaveLength(17);
+    expect(left).not.toContain(oct(5));
+    expect(left).not.toContain(oct(6));
+    expect(left).not.toContain(oct(12));
   });
 
   it("aren't cached while an expense was just written, so a write racing the calculation can't leave a stale day", async () => {
@@ -138,6 +153,32 @@ describe("today", () => {
     await splurge(h, 9, 21);
     const after = await todayMissions(env, h.householdId, manila(9, 21, 23));
     expect(after.items.some((m) => m.status === "missed")).toBe(true);
+  });
+
+  it("are fixed at the day's first open: older expenses changing later don't change them", async () => {
+    const h = await seedHousehold({ createdAt: manila(9, 1, 9) });
+    const titles = async () => (await todayMissions(env, h.householdId, now)).items.map((m) => m.title);
+    const first = await titles();
+    // Three weeks of back-dated history arrives after the first open.
+    for (let d = 1; d <= 20; d++) await addEntry(h, { amount: 15_000, at: manila(9, d), category: "Food" });
+    expect(await titles()).toEqual(first);
+    // Without the stored copy, today's missions would have come out differently.
+    await db().delete(dayMissions).where(eq(dayMissions.householdId, h.householdId));
+    expect(await titles()).not.toEqual(first);
+  });
+
+  it("are the same for two phones opening at once, and stored once", async () => {
+    const h = await seedHousehold({ createdAt: manila(9, 1, 9) });
+    const today = dayKey(now);
+    const make = (usualCount: number) => (day: number) => ({ ...baseline([], day, []), usualCount });
+    const [a, b] = await Promise.all([
+      frozenBaselines(env, h.householdId, [today], make(1)),
+      frozenBaselines(env, h.householdId, [today], make(2)),
+    ]);
+    expect(a.get(today)).toEqual(b.get(today));
+    const [x, y] = await Promise.all([todayMissions(env, h.householdId, now), todayMissions(env, h.householdId, now)]);
+    expect(x.items).toEqual(y.items);
+    expect(await db().select().from(dayMissions).where(eq(dayMissions.householdId, h.householdId))).toHaveLength(1);
   });
 
   it("celebrates yesterday's leaf and knows when last month's Wrapped is due", async () => {

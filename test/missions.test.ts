@@ -33,9 +33,10 @@ function history(d: number): DayExpense[] {
 const rich = (d: number, cats = CATS) => baseline(history(d), d, cats);
 
 describe("mission rules", () => {
-  it("has 20 rule types, each with its own name", () => {
-    expect(TEMPLATES).toHaveLength(20);
-    expect(new Set(TEMPLATES.map((t) => t.type)).size).toBe(20);
+  it("has 14 rule types, easy or medium only, each with its own name", () => {
+    expect(TEMPLATES).toHaveLength(14);
+    expect(new Set(TEMPLATES.map((t) => t.type)).size).toBe(14);
+    for (const t of TEMPLATES) expect(t.level, t.type).toBeLessThanOrEqual(2);
     for (const t of TEMPLATES) expect(TYPE_NAMES[t.type], t.type).toBeTruthy();
   });
 
@@ -66,7 +67,7 @@ describe("a day's missions", () => {
     expect(missionsFor(7, D, b).map((m) => m.title)).toEqual(missionsFor(7, D, b).map((m) => m.title));
   });
 
-  it("number 3 to 5, mix easy and hard, and never repeat a rule", () => {
+  it("number 3 to 5, mix easy and medium (never hard), and never repeat a rule", () => {
     const counts = new Set<number>();
     for (let h = 1; h <= 30; h++) {
       for (let d = D; d < D + 10; d++) {
@@ -75,7 +76,7 @@ describe("a day's missions", () => {
         expect(ms.length).toBeGreaterThanOrEqual(3);
         expect(ms.length).toBeLessThanOrEqual(5);
         expect(ms.some((m) => m.level === 1)).toBe(true);
-        expect(ms.filter((m) => m.level === 3).length).toBeLessThanOrEqual(1);
+        expect(ms.every((m) => m.level <= 2)).toBe(true);
         expect(new Set(ms.map((m) => m.type)).size).toBe(ms.length);
       }
     }
