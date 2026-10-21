@@ -367,6 +367,15 @@ p { margin: 6px 0; }
 @keyframes leaf-grow { from { opacity: 0; scale: 0.2; } to { opacity: 1; scale: 1; } }
 @media (prefers-reduced-motion: reduce) { .leaf.new { animation: none; } }
 
+/* The plant sways from the top of its pot (60,124 in the plant's viewBox); a bloomed flower slowly turns. */
+.plant .sway { transform-box: view-box; transform-origin: 60px 124px; animation: sway 3s ease-in-out infinite alternate; }
+.plant .petals { transform-box: fill-box; transform-origin: center; animation: spin 7s linear infinite; }
+.gallery .month-card:nth-child(3n + 2) .sway { animation-delay: -1.5s; }
+.gallery .month-card:nth-child(3n + 3) .sway { animation-delay: -3s; }
+@keyframes sway { from { rotate: -6deg; } to { rotate: 6deg; } }
+@keyframes spin { to { rotate: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .plant .sway, .plant .petals { animation: none; } }
+
 /* ---------- garden screen ---------- */
 .seg {
   display: flex; padding: 4px; margin: 8px 0 4px; border-radius: 18px;
@@ -466,8 +475,10 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 }
 
 /* ---------- garden: today's missions, gallery link ---------- */
-.garden-head { display: flex; justify-content: flex-end; margin-bottom: -2px; }
-.replay { margin-top: 8px; }
+.terra-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+/* Smaller pills in the plant card; the invisible ::after keeps each one a 44px tap target. */
+.terra-links .chip { position: relative; min-height: 32px; font-size: 12px; padding: 4px 11px; border-radius: 14px; background: var(--solid); }
+.terra-links .chip::after { content: ""; position: absolute; inset: -6px 0; }
 .missions {
   margin: 10px 0 2px; padding: 10px 14px 6px; border-radius: 22px;
   background: var(--solid); border: 1px solid var(--edge); box-shadow: var(--lift);

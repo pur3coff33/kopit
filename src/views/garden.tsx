@@ -78,27 +78,30 @@ export function Plant(props: { leaves: number; perfect?: number; bud?: boolean; 
     <svg class="plant" viewBox="0 0 120 150" width={props.width ?? 110} height={Math.round((props.width ?? 110) * 1.25)} aria-hidden="true">
       <path d="M40 148 L80 148 L75 128 L45 128 Z" fill="#C98B5E" />
       <rect x="42" y="122" width="36" height="8" rx="4" fill="#B07548" />
-      <path d={`M60 ${base} C60 ${(base + top) / 2} 59 ${top + 10} 61 ${top}`} stroke="#3E7A4A" stroke-width="3" fill="none" stroke-linecap="round" />
-      {n === 0 ? (
-        <g class="sprout">
-          <ellipse cx="52" cy="106" rx="8" ry="4" fill="#8FC19B" transform="rotate(-30 52 106)" />
-          <ellipse cx="68" cy="102" rx="8" ry="4" fill="#7FB08C" transform="rotate(30 68 102)" />
-        </g>
-      ) : (
-        leaves
-      )}
-      {props.bud && !props.bloom && <circle class="bud" cx="61" cy={top - 5} r="5" fill="none" stroke="#E98AA3" stroke-width="2" stroke-dasharray="3 3" />}
-      {props.bloom && (
-        <g class="flower" transform={`translate(61 ${top - 6})`}>
-          <g fill="#F0A3B5">
-            <ellipse cx="0" cy="-7" rx="4.5" ry="6.5" />
-            <ellipse cx="7" cy="0" rx="6.5" ry="4.5" />
-            <ellipse cx="0" cy="7" rx="4.5" ry="6.5" />
-            <ellipse cx="-7" cy="0" rx="6.5" ry="4.5" />
+      {/* Everything above the pot sways gently from where the stem leaves it (see .sway in app.css). */}
+      <g class="sway">
+        <path d={`M60 ${base} C60 ${(base + top) / 2} 59 ${top + 10} 61 ${top}`} stroke="#3E7A4A" stroke-width="3" fill="none" stroke-linecap="round" />
+        {n === 0 ? (
+          <g class="sprout">
+            <ellipse cx="52" cy="106" rx="8" ry="4" fill="#8FC19B" transform="rotate(-30 52 106)" />
+            <ellipse cx="68" cy="102" rx="8" ry="4" fill="#7FB08C" transform="rotate(30 68 102)" />
           </g>
-          <circle r="4.5" fill="#F2C94C" />
-        </g>
-      )}
+        ) : (
+          leaves
+        )}
+        {props.bud && !props.bloom && <circle class="bud" cx="61" cy={top - 5} r="5" fill="none" stroke="#E98AA3" stroke-width="2" stroke-dasharray="3 3" />}
+        {props.bloom && (
+          <g class="flower" transform={`translate(61 ${top - 6})`}>
+            <g class="petals" fill="#F0A3B5">
+              <ellipse cx="0" cy="-7" rx="4.5" ry="6.5" />
+              <ellipse cx="7" cy="0" rx="6.5" ry="4.5" />
+              <ellipse cx="0" cy="7" rx="4.5" ry="6.5" />
+              <ellipse cx="-7" cy="0" rx="6.5" ry="4.5" />
+            </g>
+            <circle r="4.5" fill="#F2C94C" />
+          </g>
+        )}
+      </g>
     </svg>
   );
 }

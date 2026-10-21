@@ -120,11 +120,6 @@ spending.get("/spending", async (c) => {
   const tally = `${plural(leafCount, "good day", "good days")} · ${perfectCount} perfect · ${plural(b.count, "expense", "expenses")}`;
   return c.html(
     <Layout title="Garden" tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")}>
-      <div class="garden-head">
-        <a class="chip gallery-link" href="/gallery">
-          🪴 Gallery
-        </a>
-      </div>
       <Filters view={view} />
       <section class="terrarium">
         <div class="terra-plant">
@@ -153,11 +148,6 @@ spending.get("/spending", async (c) => {
               ) : (
                 <p class="muted">{plural(b.count, "expense", "expenses")}</p>
               )}
-              {!beforeGarden && (
-                <a class="chip replay" href={`/wrapped/${toDateInput(g.start).slice(0, 7)}`}>
-                  ▶ Replay Wrapped
-                </a>
-              )}
             </>
           ) : (
             <>
@@ -172,6 +162,16 @@ spending.get("/spending", async (c) => {
               <p class="muted tally">🍃 {tally}</p>
             </>
           )}
+          <div class="terra-links">
+            {g && !beforeGarden && (
+              <a class="chip" href={`/wrapped/${toDateInput(g.start).slice(0, 7)}`}>
+                ▶ Replay Wrapped
+              </a>
+            )}
+            <a class="chip gallery-link" href="/gallery">
+              🪴 Gallery
+            </a>
+          </div>
         </div>
       </section>
       {missions && (
