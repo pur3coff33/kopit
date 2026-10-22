@@ -22,8 +22,9 @@ Logging an expense takes a few seconds: type the amount, tap a category if you l
 ## What's in it
 
 - Quick add screen with a number keypad, category tiles and an optional one-line note
-- Garden screen with totals per category and your pace against last month
-- A money garden: every day the household gets 3 small "spend less" missions, two easy and one medium, checked automatically from what you log. They're only about how much you spend (never who buys, when to stop, or a day without spending), and made from the household's own last 28 days: an easy one is something you'd have managed on about 9 of 10 of those days, a medium one on about 6. Meet at least half and the plant grows a leaf; meet them all and the leaf gets a small flower. A month that ends lower than the one before blooms. It only ever rewards, never scolds
+- The same ten categories for every household, based on research into how people sort their spending: six needs (Groceries, Bills, Transport, Health, School, Household) and four wants (Eating out, Shopping, Fun & outings, Gifts & occasions). Loan payments go under Bills. Tap one and its ready-made notes slide up (Jollibee, Electricity, Grab…), with your household's own notes first; type your own or skip. A category is optional
+- Garden screen with totals for needs and wants, per category, and your pace against last month
+- A money garden: every day the household gets 3 small "spend less" missions, two easy and one medium, checked automatically from what you log. They're only about how much you spend (never who buys, when to stop, or a day without spending), and a mission only ever names a want, never a need, and made from the household's own last 28 days: an easy one is something you'd have managed on about 9 of 10 of those days, a medium one on about 6. Meet at least half and the plant grows a leaf; meet them all and the leaf gets a small flower. A month that ends lower than the one before blooms. It only ever rewards, never scolds
 - A gallery of every month's plant, and a Wrapped recap when a month ends
 - This month's plant stands under today's sky: day or night, and the weather where you are (sun, clouds, rain, a thunderstorm)
 - History of every expense, newest first, grouped by day, with a filter by person. Each day folds its missions underneath: tap to see which were met
@@ -58,7 +59,6 @@ iPhones don't sync in the background, so expenses saved offline are sent when yo
 - Amounts are in pesos, up to ₱1,000,000 per expense. Dates follow Manila time.
 - A wrong PIN 5 times in a row locks the household for 15 minutes. You can change the PIN in the **garden shed** (tap your name at the top) → **Change PIN**.
 - To delete the whole household, go to the very bottom of the garden shed → **Delete household…**. It asks for the PIN and for DELETE to be typed, then erases every person, expense and leaf and logs out every phone. The database's restore history keeps a copy for up to 30 days.
-- Adding a new category needs internet. Saving an expense doesn't.
 - The garden's sky asks for your location once, to show the weather where you are. Only a rounded location (about a kilometre) goes to [Open-Meteo](https://open-meteo.com) for the forecast. Say no and the sky just follows day and night.
 - One deployment holds at most 15 households.
 

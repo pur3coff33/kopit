@@ -44,7 +44,7 @@ legal.get("/privacy", (c) =>
         <li>Your household's username, and its PIN as a salted hash (never the PIN itself).</li>
         <li>The names of the people in the household, and whether each one has hidden the total with the eye.</li>
         <li>Every expense: the amount, its category, the optional note, who logged it and when.</li>
-        <li>Your categories, and how each day's missions went (to grow the plant).</li>
+        <li>How each day's missions went (to grow the plant).</li>
         <li>Logins (as hashed tokens) and failed PIN tries, to keep the household safe.</li>
         <li>When an expense is deleted, only its random id and the time, so an offline phone can't send it back.</li>
       </ul>

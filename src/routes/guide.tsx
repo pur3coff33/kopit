@@ -61,6 +61,12 @@ guide.get("/guide", (c) => {
           without signal, and the garden screen shows where the money went.
         </p>
         <p>
+          Every household has the same ten categories: six needs (groceries, bills, transport, health, school, household)
+          and four wants (eating out, shopping, fun and outings, gifts and occasions). Loan payments go under bills. Tap one
+          and its notes slide up, like Jollibee or Electricity; pick one, type your own, or skip. Picking a category is
+          optional too.
+        </p>
+        <p>
           Spending less grows a plant. Every day brings a few small missions, checked automatically from what you log. Good
           days grow leaves, perfect days grow flowers, and a cheaper month blooms. It only ever rewards, never scolds.
         </p>
@@ -113,7 +119,8 @@ guide.get("/guide", (c) => {
         <p>
           Each one is tried on those days first. An <b>easy</b> mission is one you'd have met on about 9 of 10 of them, a{" "}
           <b>medium</b> one on about 6 of 10. So an ordinary day meets the easy ones, and only a heavier one than usual
-          misses them. A category is only ever skipped if it's one you buy now and then anyway.
+          misses them. A mission only ever names a want (eating out, shopping, fun, gifts), never a need, and a category is
+          only ever skipped if it's one you buy now and then anyway.
         </p>
         <ul class="missions-list">
           {missions.map((m) => (
