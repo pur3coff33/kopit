@@ -160,7 +160,7 @@ describe("history's missions", () => {
     await addEntry(h, { amount: 15_000, at: now - 3 * DAY, category: "Food" });
     await addEntry(h, { amount: 900_000, at: now - 2 * DAY, category: "Shopping" });
     const body = await view("/history?who=all", h);
-    const lines = body.match(/<details class="missions day-missions">/g) ?? [];
+    const lines = body.match(/<details class="missions day-missions"[^>]*>/g) ?? [];
     expect(lines).toHaveLength(2);
     expect(body).toMatch(/\d of \d missions met/);
     expect(body).toMatch(/class="m (met|missed)"/);

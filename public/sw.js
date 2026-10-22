@@ -12,6 +12,8 @@ const PRECACHE = [
   "/js/notes.js",
   "/js/router.js",
   "/js/leaf.js",
+  "/js/tour.js",
+  "/js/tour-page.js",
   "/js/wrapped.js",
   "/js/sky.js",
   "/fonts/nunito-latin-wght-normal.woff2",

@@ -8,6 +8,7 @@ import { deleteEntry, insertEntry } from "../lib/entries";
 import { MAX_CENTAVOS, formatPeso } from "../lib/money";
 import { cleanNote } from "../lib/notes";
 import { weekCategoryTotal } from "../lib/stats";
+import { isTourScreen } from "../views/tour";
 
 export const api = new Hono<AppEnv>();
 
@@ -60,6 +61,21 @@ api.post("/entries", async (c) => {
 api.delete("/entries/:id", async (c) => {
   const ok = await deleteEntry(c.env, c.get("householdId"), c.req.param("id").toLowerCase());
   return ok ? c.json({ ok: true }) : c.json({ error: "not-found" }, 404);
+});
+
+// A screen's first-time tour was closed (finished or skipped): don't offer it to this person again, on any phone.
+api.post("/tour", async (c) => {
+  const b = await readJson(c.req.raw);
+  const screen = b?.screen;
+  if (!isTourScreen(screen)) return c.json({ error: "screen" }, 400);
+  const seen = c.get("toursSeen");
+  if (!seen.includes(screen)) {
+    await getDb(c.env)
+      .update(profiles)
+      .set({ toursSeen: [...seen, screen].join(",") })
+      .where(and(eq(profiles.id, c.get("profileId")), eq(profiles.householdId, c.get("householdId"))));
+  }
+  return c.json({ ok: true });
 });
 
 api.post("/categories", async (c) => {

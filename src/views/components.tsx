@@ -5,7 +5,7 @@ const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back"];
 
 export function Keypad() {
   return (
-    <div class="keys" id="keys">
+    <div class="keys" id="keys" data-spot="keypad">
       {KEYS.map((k) => (
         <button type="button" data-key={k} aria-label={k === "back" ? "Delete" : k}>
           {k === "back" ? "⌫" : k}
@@ -26,7 +26,7 @@ export function Tile({ cat, id }: { cat: Cat; id?: string }) {
 
 export function CategoryTiles({ cats }: { cats: Cat[] }) {
   return (
-    <div class="cats" id="tiles">
+    <div class="cats" id="tiles" data-spot="categories">
       {cats.map((cat) => (
         <Tile cat={cat} />
       ))}
@@ -87,7 +87,7 @@ export function PinInput({ name }: { name: string }) {
 /** The eye by a total: hides the totals for this phone's person (or shows them again), then comes back to `back`. */
 export function AmountsEye({ hidden, back }: { hidden: boolean; back: string }) {
   return (
-    <form class="eye" method="post" action="/settings/amounts">
+    <form class="eye" method="post" action="/settings/amounts" data-spot="eye">
       <input type="hidden" name="hide" value={hidden ? "0" : "1"} />
       <input type="hidden" name="back" value={back} />
       <button type="submit" aria-label={hidden ? "Show total" : "Hide total"} title={hidden ? "Show total" : "Hide total"}>

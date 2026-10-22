@@ -30,6 +30,7 @@ Logging an expense takes a few seconds: type the amount, tap a category if you l
 - An eye by the garden's total hides all but its first digit, like ₱1•,••• (on the garden screen and each category's page). It's set per person, so it follows them to any phone they pick themselves on. Tap it again to show the total
 - One household, several people. Each phone picks who it belongs to
 - Installs to the home screen like an app
+- A short tour on each screen (add, garden, history, garden shed) the first time each person opens it: the screen dims and lights up one part at a time. People who were already using kop.it get them once too, and the guide can play them again
 - A guide in the app: how the plant grows, every sky, and every mission with an example. Privacy policy and terms sit next to it
 
 ## The garden's sky

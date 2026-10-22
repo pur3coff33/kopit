@@ -43,6 +43,13 @@
       "when": 1792596212325,
       "tag": "0005_amount_privacy",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792710449793,
+      "tag": "0006_tours_seen",
+      "breakpoints": true
     }
   ]
 }

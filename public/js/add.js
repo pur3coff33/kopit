@@ -3,6 +3,7 @@ import { isStale, shouldCelebrate, shouldShowWrapped } from "./leaf.js";
 import { suggest } from "./notes.js";
 import { count, enqueue, flush, remove } from "./queue.js";
 import { saveEntry } from "./save.js";
+import { startTour } from "./tour.js";
 
 const $ = (sel) => document.querySelector(sel);
 const LEAF_SEEN = "kopit-leaf-seen";
@@ -253,8 +254,21 @@ function onVisible() {
   if (root) showGarden(root);
 }
 
+/**
+ * Opens the add screen's first-time tour if it's due (or asked for again with ?tour); returns whether it opened.
+ * Yesterday's leaf and Wrapped wait until it's closed.
+ */
+function showTour(root) {
+  const replay = new URLSearchParams(location.search).has("tour");
+  if (replay) history.replaceState(history.state, "", "/"); // a reload shouldn't play it again
+  const dialog = $("#tour");
+  if (!dialog) return false; // an older offline copy of the screen, from before the tour
+  return startTour(dialog, { replay, onDone: () => root === $("#add") && showGarden(root) });
+}
+
 /** Celebrate yesterday's leaf once on this phone (fetching a fresh stamp first if this screen is from an earlier day). */
 function showGarden(root) {
+  if ($("#tour")?.open) return; // the tour is on: the leaf waits for it to close
   if (isStale(root.dataset.day, Date.now())) {
     refreshGarden(root); // rendered on an earlier day: fetch today's leaf in the background
     return;
@@ -351,7 +365,7 @@ export function mount() {
   document.addEventListener("visibilitychange", onVisible);
   render();
   sync();
-  showGarden(root);
+  if (!showTour(root)) showGarden(root);
 
   return () => {
     window.removeEventListener("online", sync);

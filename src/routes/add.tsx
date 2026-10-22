@@ -8,6 +8,7 @@ import { requireProfile, requireSession } from "../middleware/auth";
 import { Amount, CategoryTiles, Keypad, Tile, Toast } from "../views/components";
 import { Plant } from "../views/garden";
 import { Layout } from "../views/layout";
+import { Tour } from "../views/tour";
 
 export const add = new Hono<AppEnv>();
 
@@ -41,7 +42,7 @@ add.get("/", requireSession, requireProfile, async (c) => {
       >
         <Amount />
         <CategoryTiles cats={top} />
-        <div class="note-row">
+        <div class="note-row" data-spot="categories">
           <button type="button" class="note-toggle" id="note-toggle">
             ＋ note
           </button>
@@ -51,7 +52,7 @@ add.get("/", requireSession, requireProfile, async (c) => {
           </div>
         </div>
         <Keypad />
-        <button class="save" id="save" type="button" disabled>
+        <button class="save" id="save" type="button" data-spot="save" disabled>
           Save it ✓
         </button>
         <div class="sync" id="sync"></div>
@@ -103,6 +104,7 @@ add.get("/", requireSession, requireProfile, async (c) => {
           </form>
         </dialog>
       )}
+      <Tour screen="add" profileId={c.get("profileId")} profileName={c.get("profileName")} seen={c.get("toursSeen")} />
       <Toast />
     </Layout>,
   );

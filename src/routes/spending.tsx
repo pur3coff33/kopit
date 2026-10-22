@@ -13,6 +13,7 @@ import { requireProfile, requireSession } from "../middleware/auth";
 import { AmountsEye, herePath } from "../views/components";
 import { Plant, Sky } from "../views/garden";
 import { Layout } from "../views/layout";
+import { Tour } from "../views/tour";
 import { householdProfiles } from "./setup";
 
 export const spending = new Hono<AppEnv>();
@@ -124,9 +125,9 @@ spending.get("/spending", async (c) => {
   const plant = <Plant leaves={leafCount} perfect={perfectCount} bud={bud} bloom={!!g?.bloomed} width={104} />;
   const tally = `${plural(leafCount, "good day", "good days")} · ${perfectCount} perfect · ${plural(b.count, "expense", "expenses")}`;
   return c.html(
-    <Layout title="Garden" tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/sky.js"]}>
+    <Layout title="Garden" tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/sky.js", "/js/tour-page.js"]}>
       <Filters view={view} />
-      <section class="terrarium">
+      <section class="terrarium" data-spot="garden">
         <div class="terra-plant">
           {/* Only this month's plant stands under today's sky; past months are records. */}
           {thisMonth ? <Sky night={isNight(now)}>{plant}</Sky> : plant}
@@ -191,7 +192,7 @@ spending.get("/spending", async (c) => {
         </div>
       </section>
       {missions && (
-        <section class="missions">
+        <section class="missions" data-spot="missions">
           <div class="missions-head">
             <span>Today's missions</span>
             <span>
@@ -216,6 +217,8 @@ spending.get("/spending", async (c) => {
           </ul>
         </section>
       )}
+      {/* The tour is about this month's garden; past months and other ranges are records. */}
+      {thisMonth && <Tour screen="garden" profileId={c.get("profileId")} profileName={c.get("profileName")} seen={c.get("toursSeen")} />}
       {b.rows.length === 0 ? (
         <p class="muted" style="margin-top:18px">Nothing logged yet.</p>
       ) : (

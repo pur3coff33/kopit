@@ -16,6 +16,8 @@ export const profiles = sqliteTable("profiles", {
   name: text("name").notNull(),
   /** The eye by the total: this person sees the garden's totals as ₱1•,••• until they tap it again. */
   hideAmounts: integer("hide_amounts", { mode: "boolean" }).notNull().default(false),
+  /** The screens whose first-time tour this person has had (or closed), comma-separated: "add,garden". */
+  toursSeen: text("tours_seen").notNull().default(""),
   createdAt: integer("created_at").notNull(),
 });
 
