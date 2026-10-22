@@ -7,7 +7,7 @@ import { addEntry, authCookie, db, form, html, req, seedHousehold } from "./help
 async function setup() {
   const now = Date.now();
   const h = await seedHousehold();
-  await addEntry(h, { amount: 435000, at: now - 2000, category: "Food" });
+  await addEntry(h, { amount: 435000, at: now - 2000, category: "Eating out" });
   await addEntry(h, { amount: 790000, at: now - 1000, category: "Groceries", profile: 1 });
   const jon = await authCookie(h.householdId, h.profileIds[0]);
   const partner = await authCookie(h.householdId, h.profileIds[1]);
@@ -34,7 +34,7 @@ describe("a hidden total", () => {
 describe("the eye by the total", () => {
   it("sits by the garden's total and each category's total, ready to hide it", async () => {
     const { h, jon } = await setup();
-    for (const path of ["/spending", `/spending/category/${h.categoryIds.Food}`]) {
+    for (const path of ["/spending", `/spending/category/${h.categoryIds["Eating out"]}`]) {
       const body = await html(await req(path, { cookie: jon }));
       expect(body, path).toContain('action="/settings/amounts"');
       expect(body, path).toContain('aria-label="Hide total"');
@@ -44,9 +44,9 @@ describe("the eye by the total", () => {
 
   it("hides only the total, for that person only, and shows it again", async () => {
     const { h, jon, partner } = await setup();
-    const res = await hide(jon, true, `/spending/category/${h.categoryIds.Food}`);
+    const res = await hide(jon, true, `/spending/category/${h.categoryIds["Eating out"]}`);
     expect(res.status).toBe(302);
-    expect(res.headers.get("Location")).toBe(`/spending/category/${h.categoryIds.Food}`);
+    expect(res.headers.get("Location")).toBe(`/spending/category/${h.categoryIds["Eating out"]}`);
 
     const garden = await html(await req("/spending", { cookie: jon }));
     expect(total(garden)).toBe("₱1•,•••");
@@ -57,7 +57,7 @@ describe("the eye by the total", () => {
     expect(garden).toContain("₱7,900");
     expect(garden).toContain("₱4,350");
     expect(await html(await req("/history", { cookie: jon }))).toContain("₱4,350");
-    const food = await html(await req(`/spending/category/${h.categoryIds.Food}`, { cookie: jon }));
+    const food = await html(await req(`/spending/category/${h.categoryIds["Eating out"]}`, { cookie: jon }));
     expect(total(food)).toBe("₱4,•••");
 
     // The other person in the household still sees it.

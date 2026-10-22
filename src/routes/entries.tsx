@@ -41,7 +41,7 @@ async function EditPage(props: {
   back: string | null;
   message?: string;
 }) {
-  const cats = await listCategories(props.c.env, props.c.get("householdId"), { includeHidden: true });
+  const cats = await listCategories(props.c.env, props.c.get("householdId"));
   return (
     <Layout title="Edit" tab="spending" profileName={props.c.get("profileName")} profileIndex={props.c.get("profileIndex")} scripts={["/js/edit.js"]}>
       <p>

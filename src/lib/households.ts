@@ -2,25 +2,11 @@ import { count, eq } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { categories, dayMissions, deletedEntries, entries, gardenDays, households, profiles, sessions } from "../db/schema";
 import type { Env } from "../env";
+import { FIXED } from "./categories";
 import { normalizeUsername } from "./login";
 import { hashPin, isValidPin } from "./pin";
 
 export const MAX_HOUSEHOLDS = 15;
-
-export const STARTER_CATEGORIES: ReadonlyArray<{ emoji: string; name: string }> = [
-  { emoji: "🛒", name: "Groceries" },
-  { emoji: "🍜", name: "Food" },
-  { emoji: "🚌", name: "Transport" },
-  { emoji: "💡", name: "Bills" },
-  { emoji: "🏠", name: "Home" },
-  { emoji: "💊", name: "Health" },
-  { emoji: "🛍️", name: "Shopping" },
-  { emoji: "🎉", name: "Fun" },
-  { emoji: "☕", name: "Coffee" },
-  { emoji: "📱", name: "Load / Data" },
-  { emoji: "🎁", name: "Gifts" },
-  { emoji: "✈️", name: "Travel" },
-];
 
 export async function isFull(env: Env): Promise<boolean> {
   const [row] = await getDb(env).select({ n: count() }).from(households);
@@ -30,7 +16,7 @@ export async function isFull(env: Env): Promise<boolean> {
 export async function seedCategories(env: Env, householdId: number, now: number): Promise<void> {
   await getDb(env)
     .insert(categories)
-    .values(STARTER_CATEGORIES.map((c, i) => ({ householdId, name: c.name, emoji: c.emoji, sortOrder: i, createdAt: now })));
+    .values(FIXED.map((c, i) => ({ householdId, key: c.key, name: c.name, emoji: c.emoji, sortOrder: i, createdAt: now })));
 }
 
 export type CreateResult =

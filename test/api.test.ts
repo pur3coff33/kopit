@@ -97,7 +97,7 @@ describe("POST /api/entries", () => {
     const p = await post(cookie, entry({ profileId: other.profileIds[0] }));
     expect(p.status).toBe(400);
     expect(await p.json()).toEqual({ error: "profileId" });
-    const c = await post(cookie, entry({ categoryId: other.categoryIds.Food }));
+    const c = await post(cookie, entry({ categoryId: other.categoryIds["Eating out"] }));
     expect(c.status).toBe(400);
     expect(await c.json()).toEqual({ error: "categoryId" });
     expect(await db().select().from(entries)).toHaveLength(0);

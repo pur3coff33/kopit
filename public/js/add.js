@@ -16,7 +16,7 @@ function remember(key) {
   }
 }
 // The screen's elements: looked up again each time the screen is mounted.
-let profileId, amt, save, tiles, more, sheet, toastEl, toastText, undoBtn, noteToggle, noteBox, noteInput, suggestEl;
+let profileId, amt, save, tiles, toastEl, toastText, undoBtn, noteToggle, noteBox, noteInput, suggestEl;
 
 let notes = [];
 let typed = "0";
@@ -50,85 +50,16 @@ async function onUndo() {
   if (action) toast(await action());
 }
 
-function resetMore() {
-  more.innerHTML = '<span class="e">✏️</span>More';
-  delete more.dataset.id;
-}
-
 function select(id) {
   categoryId = id;
   for (const t of tiles.querySelectorAll(".cat")) t.classList.toggle("on", id !== null && t.dataset.id === String(id));
 }
 
-/** Selects a category even if it isn't one of the 7 tiles (it then shows in the More tile). */
-function selectCategory(id, emoji, name) {
-  const inTiles = tiles.querySelector(`.cat[data-id="${id}"]:not(#more)`);
-  if (inTiles) {
-    resetMore();
-  } else {
-    more.dataset.id = String(id);
-    more.innerHTML = `<span class="e"></span>`;
-    more.firstChild.textContent = emoji;
-    more.append(name);
-  }
-  select(id);
-}
-
-function pickFromSheet(btn) {
-  selectCategory(Number(btn.dataset.id), btn.dataset.emoji, btn.dataset.name);
-  sheet.close();
-}
-
 function onTile(ev) {
   const t = ev.target.closest(".cat");
   if (!t) return;
-  if (t === more && !more.dataset.id) {
-    $("#newcat").hidden = !navigator.onLine;
-    $("#offline-note").hidden = navigator.onLine;
-    sheet.showModal();
-    return;
-  }
   const id = Number(t.dataset.id);
-  if (categoryId === id) {
-    select(null);
-    if (t === more) resetMore();
-  } else {
-    select(id);
-  }
-}
-
-function onSheetTile(ev) {
-  const btn = ev.target.closest(".cat");
-  if (btn) pickFromSheet(btn);
-}
-
-async function onNewCategory(ev) {
-  ev.preventDefault();
-  const f = new FormData(ev.target);
-  try {
-    const res = await fetch("/api/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: f.get("name"), emoji: f.get("emoji") }),
-    });
-    if (!res.ok) throw new Error(String(res.status));
-    const cat = await res.json();
-    let btn = $(`#all .cat[data-id="${cat.id}"]`);
-    if (!btn) {
-      btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "cat";
-      Object.assign(btn.dataset, { id: cat.id, name: cat.name, emoji: cat.emoji });
-      btn.innerHTML = '<span class="e"></span>';
-      btn.firstChild.textContent = cat.emoji;
-      btn.append(cat.name);
-      $("#all").append(btn);
-    }
-    ev.target.reset();
-    pickFromSheet(btn);
-  } catch {
-    toast("Couldn't add that category. Try again?");
-  }
+  select(categoryId === id ? null : id);
 }
 
 // ---------- note with autocomplete ----------
@@ -148,8 +79,7 @@ function renderSuggestions() {
 
 function useNote(n) {
   noteInput.value = n.note;
-  const cat = n.categoryId === null ? null : $(`#all .cat[data-id="${n.categoryId}"]`);
-  if (cat) selectCategory(n.categoryId, cat.dataset.emoji, cat.dataset.name);
+  if (n.categoryId !== null && tiles.querySelector(`.cat[data-id="${n.categoryId}"]`)) select(n.categoryId);
   suggestEl.replaceChildren();
   noteInput.blur(); // closes the keyboard so the amount and Save are visible again
 }
@@ -230,7 +160,6 @@ async function onSave() {
   if (note) rememberNote(note, categoryId);
   typed = "0";
   select(null);
-  resetMore();
   resetNote();
   render();
   const r = await saveEntry(entry, { enqueue, remove, post: postEntry });
@@ -315,8 +244,6 @@ export function mount() {
   amt = $("#amt");
   save = $("#save");
   tiles = $("#tiles");
-  more = $("#more");
-  sheet = $("#sheet");
   toastEl = $("#toast");
   toastText = $("#toast-text");
   undoBtn = $("#toast-undo");
@@ -339,9 +266,6 @@ export function mount() {
   });
   undoBtn.addEventListener("click", onUndo);
   tiles.addEventListener("click", onTile);
-  $("#all").addEventListener("click", onSheetTile);
-  $("#close").addEventListener("click", () => sheet.close());
-  $("#newcat").addEventListener("submit", onNewCategory);
   noteToggle.addEventListener("click", openNote);
   noteInput.addEventListener("input", renderSuggestions);
   noteInput.addEventListener("focus", renderSuggestions);

@@ -30,7 +30,7 @@ describe("delete household", () => {
 
   it("says what will be erased, and asks for the PIN and DELETE", async () => {
     const { h, cookie } = await setup();
-    await addEntry(h, { amount: 1000, at: Date.now() - 60_000, category: "Food" });
+    await addEntry(h, { amount: 1000, at: Date.now() - 60_000, category: "Eating out" });
     const body = await html(await req("/settings/delete", { cookie }));
     expect(body).toContain("Delete the jon household?");
     expect(body).toContain("2 people: Jon, Partner");
@@ -64,8 +64,8 @@ describe("delete household", () => {
   it("erases the household and everything in it, logs out every phone, and leaves others alone", async () => {
     const { h, cookie } = await setup();
     const other = await seedHousehold();
-    await addEntry(h, { amount: 1000, at: Date.now() - 2 * 86_400_000, category: "Food" });
-    await addEntry(other, { amount: 2000, at: Date.now() - 60_000, category: "Food" });
+    await addEntry(h, { amount: 1000, at: Date.now() - 2 * 86_400_000, category: "Eating out" });
+    await addEntry(other, { amount: 2000, at: Date.now() - 60_000, category: "Eating out" });
     const otherPhone = await authCookie(h.householdId, h.profileIds[1]);
     await req("/spending", { cookie }); // works out the garden, so its tables have rows to erase too
     const before = await rowsOf(h.householdId);

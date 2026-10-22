@@ -21,10 +21,10 @@ async function counts() {
 describe("dumpToSql", () => {
   it("round-trips every table, quotes included", async () => {
     const h = await seedHousehold();
-    await db().update(categories).set({ name: "Mom's" }).where(eq(categories.id, h.categoryIds.Gifts));
-    await addEntry(h, { amount: 100, at: Date.now(), category: "Gifts" });
+    await db().update(categories).set({ name: "Mom's" }).where(eq(categories.id, h.categoryIds["Gifts & occasions"]));
+    await addEntry(h, { amount: 100, at: Date.now(), category: "Gifts & occasions" });
     await addEntry(h, { amount: 250, at: Date.now(), category: null });
-    await addEntry(h, { amount: 999, at: Date.now(), category: "Food", profile: 1 });
+    await addEntry(h, { amount: 999, at: Date.now(), category: "Eating out", profile: 1 });
     await deleteEntry(env, h.householdId, await addEntry(h, { amount: 5, at: Date.now(), category: null }));
     const before = await counts();
     expect(before.deleted_entries).toBe(1);
@@ -37,7 +37,7 @@ describe("dumpToSql", () => {
     await env.DB.batch(inserts.map((s) => env.DB.prepare(s)));
 
     expect(await counts()).toEqual(before);
-    const gifts = await env.DB.prepare("SELECT name FROM categories WHERE id = ?").bind(h.categoryIds.Gifts).first<{ name: string }>();
+    const gifts = await env.DB.prepare("SELECT name FROM categories WHERE id = ?").bind(h.categoryIds["Gifts & occasions"]).first<{ name: string }>();
     expect(gifts?.name).toBe("Mom's");
     const nulls = await env.DB.prepare("SELECT count(*) AS n FROM entries WHERE category_id IS NULL").first<{ n: number }>();
     expect(nulls?.n).toBe(1);

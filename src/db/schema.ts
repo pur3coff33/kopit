@@ -8,6 +8,8 @@ export const households = sqliteTable("households", {
   failedAttempts: integer("failed_attempts").notNull().default(0),
   lockedUntil: integer("locked_until"),
   createdAt: integer("created_at").notNull(),
+  /** 2: on the fixed ten categories. 1: still on its own old categories, until its first visit switches it (switch.ts). */
+  categoriesSet: integer("categories_set").notNull().default(2),
 });
 
 export const profiles = sqliteTable("profiles", {
@@ -26,11 +28,17 @@ export const categories = sqliteTable(
     householdId: integer("household_id").notNull().references(() => households.id),
     name: text("name").notNull(),
     emoji: text("emoji").notNull(),
+    /** Which of the fixed ten (categories.ts) this row is. Null: an old category, retired by the switch. */
+    key: text("key"),
+    /** A retired row: the category its expenses moved to (null: none), and the note they got if they had none. */
+    movedTo: integer("moved_to"),
+    movedNote: text("moved_note"),
+    /** Only read by the one-time switch (switch.ts): old households could hide categories. Nothing sets it now. */
     hidden: integer("hidden", { mode: "boolean" }).notNull().default(false),
     sortOrder: integer("sort_order").notNull(),
     createdAt: integer("created_at").notNull(),
   },
-  (t) => [uniqueIndex("categories_household_name").on(t.householdId, t.name)],
+  (t) => [uniqueIndex("categories_household_name").on(t.householdId, t.name), uniqueIndex("categories_household_key").on(t.householdId, t.key)],
 );
 
 export const entries = sqliteTable(
@@ -66,7 +74,8 @@ export const sessions = sqliteTable("sessions", {
 
 /**
  * How each finished day went on its missions: a cache, rebuilt from the expenses whenever needed. Rows are
- * cleared when an expense on that day, the day before or a week before changes (see invalidateGarden).
+ * cleared when an expense on that day, the day before or a week before changes (see invalidateGarden), except
+ * `final` ones: days before the household moved to the fixed categories, kept for good (switch.ts).
  */
 export const gardenDays = sqliteTable(
   "garden_days",
@@ -78,6 +87,9 @@ export const gardenDays = sqliteTable(
     done: integer("done").notNull(),
     /** Comma-separated mission types met that day, for the month's "most beaten" mission. */
     doneTypes: text("done_types").notNull(),
+    /** A final day's missions as history shows them (PastMission[] as JSON); null on cached days. */
+    items: text("items"),
+    final: integer("final", { mode: "boolean" }).notNull().default(false),
   },
   (t) => [primaryKey({ columns: [t.householdId, t.day] })],
 );

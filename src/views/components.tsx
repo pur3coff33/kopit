@@ -30,9 +30,6 @@ export function CategoryTiles({ cats }: { cats: Cat[] }) {
       {cats.map((cat) => (
         <Tile cat={cat} />
       ))}
-      <button type="button" class="cat" id="more">
-        <span class="e">✏️</span>More
-      </button>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { and, count, eq } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { entries, households, profiles } from "../db/schema";
 import type { AppEnv } from "../env";
-import { cleanName, listCategories, renameCategory, setCategoryHidden } from "../lib/categories";
+import { cleanName } from "../lib/categories";
 import { getCookie } from "hono/cookie";
 import { deleteHousehold } from "../lib/households";
 import { attemptPin } from "../lib/login";
@@ -25,15 +25,13 @@ settings.use("/settings/*", requireSession, requireProfile);
 
 const OK: Record<string, string> = {
   people: "Saved.",
-  cat: "Category saved.",
   pin: "PIN changed. Other phones will need to log in again with the new PIN.",
 };
 
 async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: string }) {
   const householdId = c.get("householdId");
-  const [people, cats, home] = await Promise.all([
+  const [people, home] = await Promise.all([
     householdProfiles(c.env, householdId),
-    listCategories(c.env, householdId, { includeHidden: true }),
     getDb(c.env).select({ username: households.username }).from(households).where(eq(households.id, householdId)).get(),
   ]);
   const ok = OK[c.req.query("ok") ?? ""];
@@ -74,29 +72,6 @@ async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: stri
           </label>
           <button class="save" type="submit">Add</button>
         </form>
-
-      </section>
-
-      <section class="card">
-        <h2>Categories</h2>
-        <p class="muted">Hidden categories stay on old expenses but leave the add screen.</p>
-        {cats.map((cat) => (
-          <div style={cat.hidden ? "opacity:.55" : ""}>
-            <form class="form inline" method="post" action={`/settings/categories/${cat.id}`} style="margin-bottom:4px">
-              <label style="flex:0 0 58px">
-                <input name="emoji" value={cat.emoji} maxlength={8} aria-label="Emoji" />
-              </label>
-              <label>
-                <input name="name" value={cat.name} maxlength={24} required aria-label="Name" />
-              </label>
-              <button class="save" type="submit">Save</button>
-            </form>
-            <form method="post" action={`/settings/categories/${cat.id}/hidden`} style="margin:0 0 10px">
-              <input type="hidden" name="hidden" value={cat.hidden ? "0" : "1"} />
-              <button class="linkbtn" type="submit">{cat.hidden ? "Show on add screen" : "Hide"}</button>
-            </form>
-          </div>
-        ))}
 
       </section>
 
@@ -164,21 +139,6 @@ settings.post("/settings/profiles/:id", async (c) => {
   return c.redirect("/settings?ok=people");
 });
 
-settings.post("/settings/categories/:id", async (c) => {
-  const body = await c.req.parseBody();
-  const result = await renameCategory(c.env, c.get("householdId"), Number(c.req.param("id")), String(body.name ?? ""), String(body.emoji ?? ""));
-  if (result === "not-found") return c.notFound();
-  if (result === "exists") return page(c, "That category already exists.", 400);
-  if (result === "invalid") return page(c, "Category names can be 1–24 characters.", 400);
-  return c.redirect("/settings?ok=cat");
-});
-
-settings.post("/settings/categories/:id/hidden", async (c) => {
-  const hidden = String((await c.req.parseBody()).hidden ?? "") === "1";
-  if (!(await setCategoryHidden(c.env, c.get("householdId"), Number(c.req.param("id")), hidden))) return c.notFound();
-  return c.redirect("/settings?ok=cat");
-});
-
 // The eye by the totals. Per person, so it follows them to any phone they pick themselves on.
 settings.post("/settings/amounts", async (c) => {
   const body = await c.req.parseBody();
@@ -229,7 +189,6 @@ async function DeletePage({ c, message }: { c: Context<AppEnv>; message?: string
             {people.length === 1 ? "1 person" : `${people.length} people`}: {people.map((p) => p.name).join(", ")}
           </li>
           <li>{n === 0 ? "no expenses yet" : n === 1 ? "1 expense, with its note" : `${n} expenses, with their notes`}</li>
-          <li>your categories</li>
           <li>the garden: every leaf, flower and month, and the Wrapped recaps</li>
         </ul>
         <p>

@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { entries } from "../src/db/schema";
+import { FIXED } from "../src/lib/categories";
 import { DAY_MS, dayStart, toDateInput } from "../src/lib/time";
 import { addEntry, authCookie, db, html, req, seedHousehold } from "./helpers";
 
 describe("add screen notes", () => {
   it("offers a note field with the household's past notes for autocomplete", async () => {
     const h = await seedHousehold();
-    const id = await addEntry(h, { amount: 100, at: Date.now(), category: "Food" });
+    const id = await addEntry(h, { amount: 100, at: Date.now(), category: "Eating out" });
     await db().update(entries).set({ note: `Jollibee "big" <meal>` }).where(eq(entries.id, id));
     const body = await (await req("/", { cookie: await authCookie(h.householdId, h.profileIds[0]) })).text();
     expect(body).toContain("＋ note");
@@ -15,22 +16,20 @@ describe("add screen notes", () => {
     const m = /data-notes="([^"]*)"/.exec(body);
     expect(m).not.toBeNull();
     const json = m![1].replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-    expect(JSON.parse(json)).toEqual([{ note: `Jollibee "big" <meal>`, categoryId: h.categoryIds.Food, count: 1 }]);
+    expect(JSON.parse(json)).toEqual([{ note: `Jollibee "big" <meal>`, categoryId: h.categoryIds["Eating out"], count: 1 }]);
   });
 });
 
 describe("add screen", () => {
-  it("shows the top 7 tiles, More, the full sheet and the keypad", async () => {
+  it("shows all ten tiles in the fixed order, nothing to add or edit, and the keypad", async () => {
     const { householdId, profileIds } = await seedHousehold();
     const res = await req("/", { cookie: await authCookie(householdId, profileIds[1]) });
     expect(res.status).toBe(200);
     const body = await html(res);
-    const tiles = body.slice(body.indexOf('id="tiles"'), body.indexOf('id="sheet"'));
-    const names = [...tiles.matchAll(/data-name="([^"]+)"/g)].map((m) => m[1]);
-    expect(names).toEqual(["Groceries", "Food", "Transport", "Bills", "Home", "Health", "Shopping"]);
-    expect(tiles).toContain("More");
-    const sheet = body.slice(body.indexOf('id="sheet"'));
-    expect([...sheet.matchAll(/data-name="([^"]+)"/g)]).toHaveLength(12);
+    const names = [...body.matchAll(/data-name="([^"]+)"/g)].map((m) => m[1]);
+    expect(names).toEqual(FIXED.map((c) => c.name));
+    expect(body).not.toContain('id="more"');
+    expect(body).not.toContain('id="newcat"');
     expect(body).toContain(`data-profile-id="${profileIds[1]}"`);
   });
 });
@@ -52,7 +51,7 @@ describe("add screen garden", () => {
   it("has no leaf to celebrate after a day that broke its missions", async () => {
     const h = await seedHousehold({ createdAt: Date.now() - 3 * DAY_MS });
     const yesterday = dayStart(Date.now()) - DAY_MS;
-    const cats = ["Groceries", "Food", "Transport", "Bills", "Home", "Shopping"];
+    const cats = ["Groceries", "Eating out", "Transport", "Bills", "Household", "Shopping"];
     const amounts = [500_000, 4_000, 90_000, 200_000, 60_000, 120_000];
     for (let i = 0; i < cats.length; i++) await addEntry(h, { amount: amounts[i], at: yesterday + (7 + i * 3) * 3_600_000, category: cats[i] });
     const body = await view(h);

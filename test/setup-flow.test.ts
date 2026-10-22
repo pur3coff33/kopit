@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { asc, eq } from "drizzle-orm";
 import { categories, households, profiles } from "../src/db/schema";
+import { FIXED } from "../src/lib/categories";
 import { authCookie, db, form, html, req, seedHousehold } from "./helpers";
 
 const sessionFrom = (res: Response) => res.headers.get("Set-Cookie")!.split(";")[0];
 
 describe("create household", () => {
-  it("creates the household, signs in and seeds starter categories", async () => {
+  it("creates the household, signs in and seeds the fixed categories", async () => {
     const res = await req("/setup", form({ username: "Jon", pin: "482913", pinConfirm: "482913" }));
     expect(res.status).toBe(302);
     expect(res.headers.get("Location")).toBe("/setup/profiles");
@@ -14,10 +15,8 @@ describe("create household", () => {
     const [h] = await db().select().from(households);
     expect(h.username).toBe("jon");
     const cats = await db().select().from(categories).where(eq(categories.householdId, h.id)).orderBy(asc(categories.sortOrder));
-    expect(cats.map((c) => `${c.emoji} ${c.name}`)).toEqual([
-      "🛒 Groceries", "🍜 Food", "🚌 Transport", "💡 Bills", "🏠 Home", "💊 Health",
-      "🛍️ Shopping", "🎉 Fun", "☕ Coffee", "📱 Load / Data", "🎁 Gifts", "✈️ Travel",
-    ]);
+    expect(cats.map((c) => c.key)).toEqual(FIXED.map((c) => c.key));
+    expect(h.categoriesSet).toBe(2);
   });
 
   it("explains bad input", async () => {

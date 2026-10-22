@@ -14,13 +14,13 @@ describe("spending screen", () => {
   it("shows this month's total, rows by amount, pace and no-spend days", async () => {
     const now = Date.now();
     const h = await seedHousehold({ createdAt: addMonths(now, -2) });
-    await addEntry(h, { amount: 435000, at: now - 2000, category: "Food" });
+    await addEntry(h, { amount: 435000, at: now - 2000, category: "Eating out" });
     await addEntry(h, { amount: 790000, at: now - 1000, category: "Groceries" });
     await addEntry(h, { amount: 2000000, at: addMonths(now, -1) + 60_000, category: "Bills" });
     const body = await page("/spending", h);
     expect(body).toContain("₱12,250");
     expect(body).toContain("2 expenses");
-    expect(body.indexOf("Groceries")).toBeLessThan(body.indexOf("Food"));
+    expect(body.indexOf("Groceries")).toBeLessThan(body.indexOf("Eating out"));
     expect(body).toContain("↓ ₱7,750 · 🌸 on track");
     expect(body).toContain('class="bud"');
     expect(body).toMatch(/🍃 \d+ good days? · \d+ perfect · 2 expenses/);
@@ -31,8 +31,8 @@ describe("spending screen", () => {
 
   it("treats a reversed custom range as the right way round", async () => {
     const h = await seedHousehold();
-    await addEntry(h, { amount: 1000, at: fromDateInput("2026-10-05")! + 4 * 3_600_000, category: "Food" });
-    await addEntry(h, { amount: 5000, at: fromDateInput("2026-10-12")! + 4 * 3_600_000, category: "Food" });
+    await addEntry(h, { amount: 1000, at: fromDateInput("2026-10-05")! + 4 * 3_600_000, category: "Eating out" });
+    await addEntry(h, { amount: 5000, at: fromDateInput("2026-10-12")! + 4 * 3_600_000, category: "Eating out" });
     const body = await page("/spending?range=custom&from=2026-10-10&to=2026-10-03", h);
     expect(body).toContain("₱10");
     expect(body).not.toContain("₱60");
@@ -42,8 +42,8 @@ describe("spending screen", () => {
   it("filters by person", async () => {
     const now = Date.now();
     const h = await seedHousehold();
-    await addEntry(h, { amount: 1000, at: now - 1000, category: "Food", profile: 0 });
-    await addEntry(h, { amount: 2000, at: now - 1000, category: "Food", profile: 1 });
+    await addEntry(h, { amount: 1000, at: now - 1000, category: "Eating out", profile: 0 });
+    await addEntry(h, { amount: 2000, at: now - 1000, category: "Eating out", profile: 1 });
     const body = await page(`/spending?who=${h.profileIds[1]}`, h);
     expect(body).toContain("₱20");
     expect(body).toMatch(/1 expense(?!s)/);
@@ -61,7 +61,7 @@ describe("spending screen", () => {
     const now = Date.now();
     const h = await seedHousehold({ createdAt: addMonths(now, -2) });
     await addEntry(h, { amount: 1000, at: addMonths(now, -1) + 60_000, category: "Bills" });
-    await addEntry(h, { amount: 9000, at: now - 1000, category: "Food" });
+    await addEntry(h, { amount: 9000, at: now - 1000, category: "Eating out" });
     const body = await page("/spending", h);
     expect(body).toMatch(/class="pill neutral">₱80 more than this time last month</);
     expect(body).not.toContain('class="bud"');
@@ -96,8 +96,8 @@ describe("spending screen", () => {
     const now = Date.now();
     const h = await seedHousehold({ createdAt: addMonths(now, -2) });
     await addEntry(h, { amount: 10000, at: addMonths(now, -1) + 60_000, category: "Bills", profile: 0 });
-    await addEntry(h, { amount: 1000, at: addMonths(now, -1) + 60_000, category: "Food", profile: 1 });
-    await addEntry(h, { amount: 5000, at: now - 1000, category: "Food", profile: 1 });
+    await addEntry(h, { amount: 1000, at: addMonths(now, -1) + 60_000, category: "Eating out", profile: 1 });
+    await addEntry(h, { amount: 5000, at: now - 1000, category: "Eating out", profile: 1 });
     const body = await page(`/spending?who=${h.profileIds[1]}`, h);
     expect(body).toContain('class="bud"'); // the household is ₱60 under last month
     expect(body).toMatch(/class="pill neutral">₱40 more than this time last month</); // Partner alone is ₱40 over
@@ -121,7 +121,7 @@ describe("spending screen", () => {
 
   it("labels the plant as the household's when one person is picked", async () => {
     const h = await seedHousehold();
-    await addEntry(h, { amount: 2000, at: Date.now() - 1000, category: "Food", profile: 1 });
+    await addEntry(h, { amount: 2000, at: Date.now() - 1000, category: "Eating out", profile: 1 });
     expect(await page(`/spending?who=${h.profileIds[1]}`, h)).toContain("the household's garden");
   });
 });
@@ -130,10 +130,10 @@ describe("category detail", () => {
   it("lists that category's expenses newest first with who logged them", async () => {
     const now = Date.now();
     const h = await seedHousehold();
-    await addEntry(h, { amount: 1100, at: now - 5000, category: "Food", profile: 0 });
-    await addEntry(h, { amount: 2200, at: now - 1000, category: "Food", profile: 1 });
+    await addEntry(h, { amount: 1100, at: now - 5000, category: "Eating out", profile: 0 });
+    await addEntry(h, { amount: 2200, at: now - 1000, category: "Eating out", profile: 1 });
     await addEntry(h, { amount: 7700, at: now - 1000, category: "Bills" });
-    const body = await page(`/spending/category/${h.categoryIds.Food}`, h);
+    const body = await page(`/spending/category/${h.categoryIds["Eating out"]}`, h);
     expect(body.indexOf("₱22")).toBeGreaterThan(-1);
     expect(body.indexOf("₱22")).toBeLessThan(body.indexOf("₱11"));
     expect(body).toContain("Partner");
@@ -144,9 +144,9 @@ describe("category detail", () => {
 
   it("shows each expense's note", async () => {
     const h = await seedHousehold();
-    const id = await addEntry(h, { amount: 1100, at: Date.now() - 1000, category: "Food" });
+    const id = await addEntry(h, { amount: 1100, at: Date.now() - 1000, category: "Eating out" });
     await db().update(entries).set({ note: "Jollibee with Ana" }).where(eq(entries.id, id));
-    expect(await page(`/spending/category/${h.categoryIds.Food}`, h)).toContain("Jollibee with Ana");
+    expect(await page(`/spending/category/${h.categoryIds["Eating out"]}`, h)).toContain("Jollibee with Ana");
   });
 
   it("shows uncategorized expenses under /none", async () => {
@@ -160,24 +160,24 @@ describe("category detail", () => {
   it("shows its share of everything, its change against last month, and its weeks", async () => {
     const now = Date.now();
     const h = await seedHousehold({ createdAt: addMonths(now, -2) });
-    await addEntry(h, { amount: 1000, at: addMonths(now, -1) + 60_000, category: "Food" });
-    await addEntry(h, { amount: 3000, at: monthStart(now) + 60_000, category: "Food" });
+    await addEntry(h, { amount: 1000, at: addMonths(now, -1) + 60_000, category: "Eating out" });
+    await addEntry(h, { amount: 3000, at: monthStart(now) + 60_000, category: "Eating out" });
     await addEntry(h, { amount: 1000, at: monthStart(now) + 120_000, category: "Bills" });
-    const body = await page(`/spending/category/${h.categoryIds.Food}`, h);
+    const body = await page(`/spending/category/${h.categoryIds["Eating out"]}`, h);
     expect(body).toContain("‹ Garden");
     expect(body).toContain("75% of everything");
     expect(body).toContain("↑ ₱20 vs");
 
     const from = new Date(now - 20 * DAY + 8 * 3_600_000).toISOString().slice(0, 10);
     const to = new Date(now + 8 * 3_600_000).toISOString().slice(0, 10);
-    await addEntry(h, { amount: 500, at: now - 15 * DAY, category: "Food" });
-    expect(await page(`/spending/category/${h.categoryIds.Food}?range=custom&from=${from}&to=${to}`, h)).toContain('class="weeks"');
+    await addEntry(h, { amount: 500, at: now - 15 * DAY, category: "Eating out" });
+    expect(await page(`/spending/category/${h.categoryIds["Eating out"]}?range=custom&from=${from}&to=${to}`, h)).toContain('class="weeks"');
   });
 
   it("is a 404 for another household's category", async () => {
     const h = await seedHousehold();
     const other = await seedHousehold();
-    const res = await req(`/spending/category/${other.categoryIds.Food}`, { cookie: await authCookie(h.householdId, h.profileIds[0]) });
+    const res = await req(`/spending/category/${other.categoryIds["Eating out"]}`, { cookie: await authCookie(h.householdId, h.profileIds[0]) });
     expect(res.status).toBe(404);
   });
 });

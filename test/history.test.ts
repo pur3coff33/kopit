@@ -56,7 +56,7 @@ describe("history page", () => {
   it("lists every expense newest first, grouped by day, with note or category", async () => {
     const h = await seedHousehold();
     const now = Date.now();
-    const a = await addEntry(h, { amount: 25000, at: now - 1000, category: "Food" });
+    const a = await addEntry(h, { amount: 25000, at: now - 1000, category: "Eating out" });
     await db().update(entries).set({ note: "Jollibee with Ana" }).where(eq(entries.id, a));
     await addEntry(h, { amount: 4500, at: now - DAY, category: "Transport", profile: 1 });
     await addEntry(h, { amount: 999, at: now - 2000, category: null });
@@ -72,9 +72,9 @@ describe("history page", () => {
   it("filters by person and keeps other households out", async () => {
     const h = await seedHousehold();
     const other = await seedHousehold();
-    await addEntry(h, { amount: 1100, at: Date.now() - 1000, category: "Food", profile: 0 });
-    await addEntry(h, { amount: 2200, at: Date.now() - 1000, category: "Food", profile: 1 });
-    await addEntry(other, { amount: 7700, at: Date.now() - 1000, category: "Food" });
+    await addEntry(h, { amount: 1100, at: Date.now() - 1000, category: "Eating out", profile: 0 });
+    await addEntry(h, { amount: 2200, at: Date.now() - 1000, category: "Eating out", profile: 1 });
+    await addEntry(other, { amount: 7700, at: Date.now() - 1000, category: "Eating out" });
     const body = await view(`/history?who=${h.profileIds[1]}`, h);
     expect(body).toContain("₱22");
     expect(body).not.toContain("₱11");
@@ -86,8 +86,8 @@ describe("history page", () => {
     const now = Date.now();
     const h = await seedHousehold({ createdAt: now - 20 * DAY });
     const ago = (k: number) => (k === 0 ? now - 1000 : dayStart(now) - k * DAY + 12 * 3_600_000);
-    for (const k of [0, 1, 3, 4, 8, 12]) await addEntry(h, { amount: 100 + k, at: ago(k), category: "Food" });
-    for (let i = 0; i < 3; i++) await addEntry(h, { amount: 700 + i, at: ago(7) + i, category: "Food" });
+    for (const k of [0, 1, 3, 4, 8, 12]) await addEntry(h, { amount: 100 + k, at: ago(k), category: "Eating out" });
+    for (let i = 0; i < 3; i++) await addEntry(h, { amount: 700 + i, at: ago(7) + i, category: "Eating out" });
     const ids = (s: string) => [...s.matchAll(/\/entries\/([0-9a-f-]{36})\/edit/g)].map((m) => m[1]);
     const quiet = (s: string) => [...s.matchAll(/<p class="quiet">(.*?)<\/p>/g)].map((m) => m[1].replace(/<[^>]+>/g, ""));
 
@@ -112,7 +112,7 @@ describe("history page", () => {
     const now = Date.now();
     const h = await seedHousehold({ createdAt: now - 320 * DAY });
     const ago = (k: number) => (k === 0 ? now - 1000 : dayStart(now) - k * DAY + 12 * 3_600_000);
-    for (const k of [0, 1, 2, 3, 4, 300]) await addEntry(h, { amount: 100 + k, at: ago(k), category: "Food" });
+    for (const k of [0, 1, 2, 3, 4, 300]) await addEntry(h, { amount: 100 + k, at: ago(k), category: "Eating out" });
     const first = await view("/history", h);
     const more = /href="(\/history\?[^"]*before=([0-9-]+))"/.exec(first);
     expect(more?.[2]).toBe(toDateInput(ago(4)));
@@ -125,7 +125,7 @@ describe("history page", () => {
   it("doesn't call today quiet before it's over", async () => {
     const now = Date.now();
     const h = await seedHousehold({ createdAt: now - 3 * DAY });
-    await addEntry(h, { amount: 500, at: dayStart(now) - 2 * DAY + 12 * 3_600_000, category: "Food" });
+    await addEntry(h, { amount: 500, at: dayStart(now) - 2 * DAY + 12 * 3_600_000, category: "Eating out" });
     const body = await view("/history", h);
     expect(body).not.toContain("Today");
     expect(body).toContain("<b>Yesterday</b>");
@@ -134,8 +134,8 @@ describe("history page", () => {
   it("names the person when filtered, and says when nothing is left", async () => {
     const now = Date.now();
     const h = await seedHousehold({ createdAt: now - 2 * DAY });
-    await addEntry(h, { amount: 300, at: now - 1000, category: "Food", profile: 1 });
-    await addEntry(h, { amount: 900, at: dayStart(now) - DAY + 12 * 3_600_000, category: "Food", profile: 0 });
+    await addEntry(h, { amount: 300, at: now - 1000, category: "Eating out", profile: 1 });
+    await addEntry(h, { amount: 900, at: dayStart(now) - DAY + 12 * 3_600_000, category: "Eating out", profile: 0 });
     const body = await view(`/history?who=${h.profileIds[1]}`, h);
     expect(body).toContain("nothing by Partner");
     expect(body).not.toContain("nothing spent");
@@ -157,7 +157,7 @@ describe("history's missions", () => {
   it("fold each day's missions under its heading, for the whole household", async () => {
     const now = Date.now();
     const h = await seedHousehold({ createdAt: now - 10 * DAY });
-    await addEntry(h, { amount: 15_000, at: now - 3 * DAY, category: "Food" });
+    await addEntry(h, { amount: 15_000, at: now - 3 * DAY, category: "Eating out" });
     await addEntry(h, { amount: 900_000, at: now - 2 * DAY, category: "Shopping" });
     const body = await view("/history?who=all", h);
     const lines = body.match(/<details class="missions day-missions">/g) ?? [];
@@ -172,7 +172,7 @@ describe("history's missions", () => {
   it("show today's as on track so far", async () => {
     const now = Date.now();
     const h = await seedHousehold({ createdAt: now - 10 * DAY });
-    await addEntry(h, { amount: 1_000, at: now - 60_000, category: "Food" });
+    await addEntry(h, { amount: 1_000, at: now - 60_000, category: "Eating out" });
     const body = await view("/history?who=all", h);
     expect(body).toMatch(/\d of \d missions on track so far/);
   });

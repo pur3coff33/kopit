@@ -16,7 +16,7 @@ const cached = async (householdId: number) =>
 
 /** A day that breaks every mission a new household can get: early, late, big, tiny, many buys, many categories. */
 async function splurge(h: Awaited<ReturnType<typeof seedHousehold>>, m: number, d: number) {
-  const cats = ["Groceries", "Food", "Transport", "Bills", "Home", "Shopping"];
+  const cats = ["Groceries", "Eating out", "Transport", "Bills", "Household", "Shopping"];
   const amounts = [500_000, 4_000, 90_000, 200_000, 60_000, 120_000];
   for (let i = 0; i < cats.length; i++) await addEntry(h, { amount: amounts[i], at: manila(m, d, 7 + i * 3), category: cats[i] });
 }
@@ -61,7 +61,7 @@ describe("day results", () => {
     const created = manila(9, 1, 9);
     const h = await seedHousehold({ createdAt: created });
     await dayResults(env, h.householdId, created, dayKey(monthOf(9)), dayKey(now), now);
-    const id = await addEntry(h, { amount: 5_000, at: manila(9, 5), category: "Food" });
+    const id = await addEntry(h, { amount: 5_000, at: manila(9, 5), category: "Eating out" });
     await deleteEntry(env, h.householdId, id, now);
     const left = (await db().select().from(gardenDays).where(eq(gardenDays.householdId, h.householdId))).map((r) => r.day);
     const oct = (d: number) => dayKey(manila(9, d));
@@ -108,17 +108,17 @@ describe("monthGarden", () => {
   it("blooms a finished month only when lower than the month before", async () => {
     const created = manila(6, 1);
     const lower = await seedHousehold({ createdAt: created });
-    await addEntry(lower, { amount: 50000, at: manila(7, 10), category: "Food" });
-    await addEntry(lower, { amount: 40000, at: manila(8, 10), category: "Food" });
+    await addEntry(lower, { amount: 50000, at: manila(7, 10), category: "Eating out" });
+    await addEntry(lower, { amount: 40000, at: manila(8, 10), category: "Eating out" });
     expect(await monthGarden(env, lower.householdId, monthOf(8), created, now)).toMatchObject({ bloomed: true, prevTotal: 50000, total: 40000 });
 
     const same = await seedHousehold({ createdAt: created });
-    await addEntry(same, { amount: 50000, at: manila(7, 10), category: "Food" });
-    await addEntry(same, { amount: 50000, at: manila(8, 10), category: "Food" });
+    await addEntry(same, { amount: 50000, at: manila(7, 10), category: "Eating out" });
+    await addEntry(same, { amount: 50000, at: manila(8, 10), category: "Eating out" });
     expect((await monthGarden(env, same.householdId, monthOf(8), created, now)).bloomed).toBe(false);
 
     const noAugust = await seedHousehold({ createdAt: created });
-    await addEntry(noAugust, { amount: 40000, at: manila(8, 10), category: "Food" });
+    await addEntry(noAugust, { amount: 40000, at: manila(8, 10), category: "Eating out" });
     expect(await monthGarden(env, noAugust.householdId, monthOf(8), created, now)).toMatchObject({ prevTotal: null, bloomed: false });
   });
 });
@@ -160,7 +160,7 @@ describe("today", () => {
     const titles = async () => (await todayMissions(env, h.householdId, now)).items.map((m) => m.title);
     const first = await titles();
     // Three weeks of back-dated history arrives after the first open.
-    for (let d = 1; d <= 20; d++) await addEntry(h, { amount: 15_000, at: manila(9, d), category: "Food" });
+    for (let d = 1; d <= 20; d++) await addEntry(h, { amount: 15_000, at: manila(9, d), category: "Eating out" });
     expect(await titles()).toEqual(first);
     // Without the stored copy, today's missions would have come out differently.
     await db().delete(dayMissions).where(eq(dayMissions.householdId, h.householdId));

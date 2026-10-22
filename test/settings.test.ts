@@ -2,7 +2,7 @@ import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { households, profiles } from "../src/db/schema";
-import { listCategories, topCategories } from "../src/lib/categories";
+import { FIXED, listCategories } from "../src/lib/categories";
 import { verifyLogin } from "../src/lib/login";
 import { authCookie, db, form, html, req, seedHousehold } from "./helpers";
 
@@ -15,7 +15,7 @@ describe("settings page", () => {
   it("has every section", async () => {
     const { cookie } = await setup();
     const body = await html(await req("/settings", { cookie }));
-    for (const s of ["This phone's gardener", "People", "Categories", "Change PIN", "Log out of this phone", 'action="/logout"', 'href="/profile"']) {
+    for (const s of ["This phone's gardener", "People", "Change PIN", "Log out of this phone", 'action="/logout"', 'href="/profile"']) {
       expect(body, s).toContain(s);
     }
   });
@@ -44,23 +44,11 @@ describe("people", () => {
 });
 
 describe("categories", () => {
-  it("hides and shows a category", async () => {
+  it("can't be renamed or hidden any more", async () => {
     const { h, cookie } = await setup();
-    await req(`/settings/categories/${h.categoryIds.Groceries}/hidden`, { ...form({ hidden: "1" }), cookie });
-    expect((await topCategories(env, h.householdId)).map((c) => c.name)).not.toContain("Groceries");
-    expect(await html(await req("/", { cookie }))).not.toContain('data-name="Groceries"');
-    expect((await listCategories(env, h.householdId, { includeHidden: true })).map((c) => c.name)).toContain("Groceries");
-    await req(`/settings/categories/${h.categoryIds.Groceries}/hidden`, { ...form({ hidden: "0" }), cookie });
-    expect((await topCategories(env, h.householdId)).map((c) => c.name)).toContain("Groceries");
-  });
-
-  it("renames, but not onto an existing name", async () => {
-    const { h, cookie } = await setup();
-    const ok = await req(`/settings/categories/${h.categoryIds.Fun}`, { ...form({ name: "Movies", emoji: "🎬" }), cookie });
-    expect(ok.status).toBe(302);
-    const clash = await req(`/settings/categories/${h.categoryIds.Fun}`, { ...form({ name: "FOOD", emoji: "" }), cookie });
-    expect(await html(clash)).toContain("That category already exists");
-    expect((await listCategories(env, h.householdId)).find((c) => c.id === h.categoryIds.Fun)?.name).toBe("Movies");
+    expect((await req(`/settings/categories/${h.categoryIds.Groceries}/hidden`, { ...form({ hidden: "1" }), cookie })).status).toBe(404);
+    expect((await req(`/settings/categories/${h.categoryIds.Groceries}`, { ...form({ name: "Food", emoji: "🍔" }), cookie })).status).toBe(404);
+    expect((await listCategories(env, h.householdId)).map((c) => c.name)).toEqual(FIXED.map((c) => c.name));
   });
 });
 

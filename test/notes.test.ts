@@ -45,8 +45,8 @@ describe("noteSuggestions", () => {
   it("ranks notes by use, merges case, and remembers the latest category", async () => {
     const { h, post } = await setup();
     const t = Date.now() - 10_000;
-    await post({ note: "Jollibee", categoryId: h.categoryIds.Food, spentAt: t });
-    await post({ note: "jollibee", categoryId: h.categoryIds.Fun, spentAt: t + 1000 });
+    await post({ note: "Jollibee", categoryId: h.categoryIds["Eating out"], spentAt: t });
+    await post({ note: "jollibee", categoryId: h.categoryIds["Fun & outings"], spentAt: t + 1000 });
     await post({ note: "Meralco", categoryId: h.categoryIds.Bills, spentAt: t + 2000 });
     const other = await seedHousehold();
     await db().insert(entries).values({
@@ -54,7 +54,7 @@ describe("noteSuggestions", () => {
       amountCentavos: 1, note: "Secret", spentAt: t, createdAt: t, updatedAt: t,
     });
     expect(await noteSuggestions(env, h.householdId)).toEqual([
-      { note: "jollibee", categoryId: h.categoryIds.Fun, count: 2 },
+      { note: "jollibee", categoryId: h.categoryIds["Fun & outings"], count: 2 },
       { note: "Meralco", categoryId: h.categoryIds.Bills, count: 1 },
     ]);
   });
