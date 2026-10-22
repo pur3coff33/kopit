@@ -9,10 +9,13 @@ import { formatPeso } from "./money";
 import { DAY_MS, MANILA_OFFSET_MS } from "./time";
 
 /** One setting of a mission: whatever it needs to say and check itself. Stored in the day's baseline. */
-export type Params = { cat?: CatInfo; cat2?: CatInfo; amount?: number; n?: number; hour?: number; day?: number };
+export type Params = { cat?: CatInfo; cat2?: CatInfo; cats?: CatInfo[]; amount?: number; n?: number; hour?: number; day?: number };
 
-/** A mission the household's days passed: its setting, level, and how often it would have been met. */
-export type Aligned = { type: string; level: 1 | 2; params: Params; rate: number };
+/**
+ * A mission the household's days passed: its setting, level, and how often it would have been met. Set 4 also keeps
+ * starters, given only when the tried missions run short (see gentle.ts).
+ */
+export type Aligned = { type: string; level: 1 | 2; params: Params; rate: number; starter?: true };
 
 export type AlignedDef = {
   type: string;
@@ -24,6 +27,8 @@ export type AlignedDef = {
   build(p: Params): Omit<Mission, "level">;
   /** Days this mission would have been given (a comparison needs a day to compare with). Default: every day. */
   appliesOn?(f: DayFacts, p: Params): boolean;
+  /** Tried days it needs (default 7): fewer for a mission that only applies on some days, like weekends. */
+  minTried?: number;
   /** A setting for the guide's made-up household. */
   demo: Params;
 };
@@ -38,25 +43,29 @@ export type Ctx = {
   day: number;
   yesterday: DayExpense[];
   lastWeek: DayExpense[];
+  /** Spent this week (from Monday) before the day. */
+  weekBefore: number;
 };
 
-const BANDS = {
+export type Bands = Record<1 | 2, { target: number; lo: number; hi: number }>;
+
+const BANDS: Bands = {
   1: { target: 0.7, lo: 0.6, hi: 0.85 },
   2: { target: 0.4, lo: 0.3, hi: 0.55 },
-} as const;
+};
 /** Fewer spending days than this in the last 28 and the household gets the starter missions instead. */
 export const MIN_SPENDING_DAYS = 10;
 /** A mission needs this many days to be tried on. */
 const MIN_TRIED = 7;
-const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+export const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-const sum = (xs: DayExpense[]) => xs.reduce((s, e) => s + e.amount, 0);
-const inCat = (xs: DayExpense[], id: number) => xs.filter((e) => e.categoryId === id);
+export const sum = (xs: DayExpense[]) => xs.reduce((s, e) => s + e.amount, 0);
+export const inCat = (xs: DayExpense[], id: number) => xs.filter((e) => e.categoryId === id);
 /** The Manila hour of `ms`, by arithmetic: a Date per expense per try was most of the CPU time of align(). */
-const hour = (ms: number) => Math.floor((((ms + MANILA_OFFSET_MS) % DAY_MS) + DAY_MS) % DAY_MS / 3_600_000);
-const label = (c: CatInfo) => `${c.emoji} ${c.name}`;
-const peso = formatPeso;
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+export const hour = (ms: number) => Math.floor((((ms + MANILA_OFFSET_MS) % DAY_MS) + DAY_MS) % DAY_MS / 3_600_000);
+export const label = (c: CatInfo) => `${c.emoji} ${c.name}`;
+export const peso = formatPeso;
+export const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** "8 am", "12 noon", "9 pm". */
 export function clock(h: number): string {
@@ -72,7 +81,7 @@ export function friendlyUp(centavos: number): number {
 }
 
 /** Round down the same way, never below ₱10. */
-function friendlyDown(centavos: number): number {
+export function friendlyDown(centavos: number): number {
   const step = centavos < 20_000 ? 1_000 : centavos < 100_000 ? 5_000 : 10_000;
   return Math.max(1_000, Math.floor(centavos / step) * step);
 }
@@ -81,16 +90,16 @@ function friendlyDown(centavos: number): number {
 const QUANTILES = [0.2, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.9];
 
 /** "Under ₱L" limits worth trying: just above some tried days' values, so each one lands on a real day's edge. */
-function limits(values: number[]): number[] {
+export function limits(values: number[], quantiles: readonly number[] = QUANTILES): number[] {
   const v = values.filter((x) => x > 0).sort((a, b) => a - b);
   if (v.length === 0) return [];
-  const at = QUANTILES.map((q) => v[Math.min(v.length - 1, Math.floor(q * v.length))]);
+  const at = quantiles.map((q) => v[Math.min(v.length - 1, Math.floor(q * v.length))]);
   return [...new Set(at.map((x) => friendlyUp(x + 1)))].sort((a, b) => a - b);
 }
-const range = (lo: number, hi: number) => Array.from({ length: Math.max(0, hi - lo + 1) }, (_, i) => lo + i);
+export const range = (lo: number, hi: number) => Array.from({ length: Math.max(0, hi - lo + 1) }, (_, i) => lo + i);
 
 /** Categories on at least `share` of the tried days: the 6 used most, so a long category list stays quick to try. */
-const usedOn = (ctx: Ctx, share: number) => ctx.cats.filter((c) => c.days >= Math.max(2, share * ctx.days.length)).slice(0, 6);
+export const usedOn = (ctx: Ctx, share: number) => ctx.cats.filter((c) => c.days >= Math.max(2, share * ctx.days.length)).slice(0, 6);
 
 function amountUnder(
   type: string,
@@ -461,17 +470,17 @@ const groupOf = (p: Params) => `${p.cat?.id ?? ""}/${p.cat2?.id ?? ""}`;
 
 /**
  * Tries every mission's settings on the household's days and keeps, per mission and category, the setting closest to
- * "met on about 7 of 10 days" (easy) and to "about 4 of 10" (medium). Pure.
+ * "met on about 7 of 10 days" (easy) and to "about 4 of 10" (medium), or to set 4's `bands`. Pure.
  */
-export function align(ctx: Ctx): Aligned[] {
+export function align(ctx: Ctx, defs: ReadonlyArray<AlignedDef> = ALIGNED, bands: Bands = BANDS): Aligned[] {
   if (ctx.days.length < MIN_SPENDING_DAYS) return [];
   const out: Aligned[] = [];
-  for (const def of ALIGNED) {
+  for (const def of defs) {
     const groups = new Map<string, { params: Params; rate: number }[]>();
     for (const params of def.variants(ctx)) {
       const mission = def.build(params);
       const tried = ctx.days.filter((f) => def.appliesOn?.(f, params) ?? true);
-      if (tried.length < MIN_TRIED) continue;
+      if (tried.length < (def.minTried ?? MIN_TRIED)) continue;
       const rate = tried.filter((f) => mission.check(f).ok).length / tried.length;
       const key = groupOf(params);
       if (!groups.has(key)) groups.set(key, []);
@@ -479,7 +488,7 @@ export function align(ctx: Ctx): Aligned[] {
     }
     for (const tries of groups.values()) {
       for (const level of [1, 2] as const) {
-        const band = BANDS[level];
+        const band = bands[level];
         let best: { params: Params; rate: number } | null = null;
         for (const t of tries) {
           if (t.rate < band.lo || t.rate > band.hi) continue;
@@ -507,6 +516,8 @@ export function alignContext(history: DayExpense[], day: number, cats: CatInfo[]
   const days: DayFacts[] = [];
   const catDays = new Map<number, number>();
   const people = new Set<number>();
+  let weekBefore = 0;
+  for (let d = day - ((new Date(day * DAY_MS).getUTCDay() + 6) % 7); d < day; d++) weekBefore += sum(get(d));
   for (let d = day - 28; d < day; d++) {
     const expenses = get(d);
     if (expenses.length === 0) continue;
@@ -521,5 +532,6 @@ export function alignContext(history: DayExpense[], day: number, cats: CatInfo[]
     day,
     yesterday: get(day - 1),
     lastWeek: get(day - 7),
+    weekBefore,
   };
 }

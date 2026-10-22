@@ -110,7 +110,7 @@ describe("aligned missions", () => {
 
   it("aren't tried until the household has enough spending days: new ones get the starters", () => {
     const few = Array.from({ length: MIN_SPENDING_DAYS - 1 }, (_, k) => spend(D - 1 - k, 2, 15_000));
-    const b = baseline(few, D, CATS);
+    const b = baseline(few, D, CATS, 3);
     expect(b.aligned).toEqual([]);
     const starters = new Set(TEMPLATES.filter((t) => !t.needsHistory).map((t) => t.type));
     for (let h = 1; h <= 30; h++) {
@@ -124,7 +124,7 @@ describe("aligned missions", () => {
     const families = new Map(ALIGNED.map((d) => [d.type, d.family]));
     for (let h = 1; h <= 30; h++) {
       for (let d = D; d < D + 7; d++) {
-        const b = baseline(household(d, { seed: h }), d, CATS);
+        const b = baseline(household(d, { seed: h }), d, CATS, 3);
         const ms = missionsFor(h, d, b);
         expect(ms.length).toBeGreaterThanOrEqual(3);
         expect(ms.length).toBeLessThanOrEqual(5);
@@ -140,7 +140,7 @@ describe("aligned missions", () => {
   });
 
   it("give an ordinary day about half its missions or more, and a splurge few", () => {
-    const b = baseline(household(D), D, CATS);
+    const b = baseline(household(D), D, CATS, 3);
     const ms = missionsFor(3, D, b);
     const usual = judgeDay(ms, { expenses: [spend(D, 2, 15_000, 12), spend(D, 3, 6_000, 16)], yesterday: [], lastWeek: [] });
     expect(usual.done * 2).toBeGreaterThanOrEqual(usual.missions);

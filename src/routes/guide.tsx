@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../env";
-import { ALIGNED, MIN_SPENDING_DAYS } from "../lib/aligned";
-import { TEMPLATES, type Baseline } from "../lib/missions";
+import { MIN_SPENDING_DAYS, type Ctx } from "../lib/aligned";
+import { GENTLE, GENTLE_BY_TYPE, starters } from "../lib/gentle";
 import { Plant, Sky, type Weather } from "../views/garden";
 import { Layout } from "../views/layout";
 
@@ -11,15 +11,15 @@ export const REPO_URL = "https://github.com/pur3coff33/kopit";
 
 /** Every mission of the current set, with an example setting from a made-up household. */
 function missionExamples() {
-  return ALIGNED.map((d) => ({ name: d.name, example: d.build(d.demo).title }));
+  return GENTLE.map((d) => ({ name: d.name, example: d.build(d.demo).title }));
 }
 
-/** What a household still new gets until it has enough days to try missions on. */
+/** What a household still new gets until it has enough days to try missions on: its very first day's. */
 function starterExamples() {
-  return TEMPLATES.filter((t) => !t.needsHistory && (t.since ?? 1) <= 2 && t.level === 1).map((t) => t.make(STARTER_DEMO, () => 0)!.title);
+  return starters(NEW_HOUSEHOLD).map((a) => GENTLE_BY_TYPE.get(a.type)!.build(a.params).title);
 }
 
-const STARTER_DEMO: Baseline = { day: 20_382, rules: 2, historyDays: 0, usualDay: 0, usualCount: 0, bigBuy: 0, yesterdayTotal: 0, lastWeekTotal: 0, cats: [] };
+const NEW_HOUSEHOLD: Ctx = { days: [], cats: [], people: 1, day: 20_382, yesterday: [], lastWeek: [], weekBefore: 0 };
 
 const STAGES = [
   { plant: <Plant leaves={0} width={84} />, title: "Sprout", text: "Every month starts as a sprout." },
@@ -106,13 +106,14 @@ guide.get("/guide", (c) => {
       <section class="card guide-sec" id="missions">
         <h2>Missions</h2>
         <p>
-          Every day the household gets 3 to 5 missions, at least two of them easy. They're made from your own last 28 days:
-          the amounts, hours, counts and categories all come from how your household really spends.
+          Every day the household gets 3 missions: two easy, one medium. They're only ever about how much you spend, never
+          about who buys or when to stop, and none of them asks for a day without spending. The amounts and categories come
+          from your own last 28 days.
         </p>
         <p>
-          Each one is tried on those days first. An <b>easy</b> mission is one you'd have met on about 7 of 10 of them, a{" "}
-          <b>medium</b> one on about 4 of 10. Anything you'd almost never have met isn't given, and neither is anything
-          you'd always meet. So a household that eats late gets a later "nothing after" hour than one that's done by six.
+          Each one is tried on those days first. An <b>easy</b> mission is one you'd have met on about 9 of 10 of them, a{" "}
+          <b>medium</b> one on about 6 of 10. So an ordinary day meets the easy ones, and only a heavier one than usual
+          misses them. A category is only ever skipped if it's one you buy now and then anyway.
         </p>
         <ul class="missions-list">
           {missions.map((m) => (

@@ -1,10 +1,11 @@
-// Daily missions: 3–5 small "spend less" goals a day (easy or medium, at least two easy), checked automatically from what the household logs.
+// Daily missions: a few small "spend less" goals a day (three from set 4: two easy, one medium), checked automatically from what the household logs.
 // Pure code (no database): garden.ts feeds it expenses and stores the results.
 //
 // Adding a mission: add one entry to TEMPLATES. Its make() gets the household's 28-day baseline and returns a
 // concrete mission, or null when it doesn't fit (e.g. no category to talk about yet). Every check() must pass on a
 // day with no spending, and more spending may only ever make it fail (so "not today" during the day is final).
-import { ALIGNED, ALIGNED_BY_TYPE, align, alignContext, type Aligned } from "./aligned";
+import { ALIGNED, ALIGNED_BY_TYPE, align, alignContext, type Aligned, type AlignedDef } from "./aligned";
+import { GENTLE, GENTLE_BY_TYPE, alignGentle } from "./gentle";
 import { formatPeso } from "./money";
 import { DAY_MS, MANILA_OFFSET_MS, dayKey } from "./time";
 
@@ -29,6 +30,8 @@ export type Baseline = {
   cats: CatBaseline[];
   /** Rule set 3: the missions tried on the household's own days, with their settings (see aligned.ts). */
   aligned?: Aligned[];
+  /** Rule set 4: the gentle missions tried on the household's own days, and the starters (see gentle.ts). */
+  gentle?: Aligned[];
 };
 
 export type DayFacts = { expenses: DayExpense[]; yesterday: DayExpense[]; lastWeek: DayExpense[] };
@@ -59,11 +62,13 @@ export type Template = {
  * each time, so adding rules or changing the draw needs a new set, or days already given missions would get new ones.
  * Set 1: the original 14, at least one easy a day. Set 2: six more easy ones, at least two easy a day, one per family.
  * Set 3: missions aligned with the household (aligned.ts), with set 2's no-history rules for households still new.
+ * Set 4: gentle missions (gentle.ts), three a day, only about amounts: easy ones met on about 9 of 10 days.
  */
-export const RULES = 3;
+export const RULES = 4;
 /**
  * The first day of set 3 (Manila day key of 2026-10-22). A day before it that was never stored gets set 2, as it would
- * have when it happened, so a past day's leaf can't change. Today is moved up to set 3 (see frozenBaselines).
+ * have when it happened, so a past day's leaf can't change. Today is moved up to the current set (see frozenBaselines).
+ * Set 4 came the same day, so set 3 lives on only in days stored with it that day.
  */
 export const ALIGNED_FROM = 20_748;
 const EASY_PER_DAY: Record<number, number> = { 1: 1, 2: 2, 3: 2 };
@@ -127,7 +132,8 @@ export function baseline(history: DayExpense[], day: number, cats: CatInfo[], ru
     cats: [...perCat]
       .map(([id, c]) => ({ cat: visible.get(id)!, daysWith: c.days.size, usualOnDay: c.sum / c.days.size, buysOnDay: c.count / c.days.size }))
       .sort((a, b) => b.daysWith - a.daysWith || a.cat.id - b.cat.id),
-    ...(rules >= 3 ? { aligned: align(alignContext(history, day, cats, dayKey)) } : {}),
+    ...(rules === 3 ? { aligned: align(alignContext(history, day, cats, dayKey)) } : {}),
+    ...(rules >= 4 ? { gentle: alignGentle(alignContext(history, day, cats, dayKey)) } : {}),
   };
 }
 
@@ -375,22 +381,27 @@ const NAMES: Readonly<Record<string, string>> = {
   "half-of-yesterday": "Half of yesterday",
   "cat-under-half": "Half a category's budget",
 };
-/** Set 3's own names for the types it adds; the ones it shares keep their old names. */
+/** Sets 3 and 4's own names for the types they add; the ones they share keep their old names. */
 export const TYPE_NAMES: Readonly<Record<string, string>> = {
   ...Object.fromEntries(ALIGNED.map((d) => [d.type, d.name])),
+  ...Object.fromEntries(GENTLE.map((d) => [d.type, d.name])),
   ...NAMES,
 };
 
-/** Set 3's missions as templates for the draw: one per mission and level, picking one of its categories by `rnd`. */
-function alignedTemplates(b: Baseline): Template[] {
+/** Tried missions as templates for the draw: one per mission and level, picking one of its categories by `rnd`. */
+function alignedTemplates(
+  stored: Aligned[] | undefined,
+  defs: ReadonlyArray<AlignedDef> = ALIGNED,
+  byType: ReadonlyMap<string, AlignedDef> = ALIGNED_BY_TYPE,
+): Template[] {
   const groups = new Map<string, Aligned[]>();
-  for (const a of b.aligned ?? []) {
+  for (const a of stored ?? []) {
     const key = `${a.type}/${a.level}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(a);
   }
   const out: Template[] = [];
-  for (const def of ALIGNED) {
+  for (const def of defs) {
     for (const level of [1, 2] as const) {
       const picks = groups.get(`${def.type}/${level}`);
       if (!picks) continue;
@@ -399,7 +410,7 @@ function alignedTemplates(b: Baseline): Template[] {
         level,
         needsHistory: false,
         family: def.family,
-        make: (_b, rnd) => ({ ...ALIGNED_BY_TYPE.get(def.type)!.build(pick(picks, rnd)!.params), level }),
+        make: (_b, rnd) => ({ ...byType.get(def.type)!.build(pick(picks, rnd)!.params), level }),
       });
     }
   }
@@ -426,16 +437,8 @@ const shuffle = <T>(xs: T[], rnd: () => number): T[] => {
   return xs;
 };
 
-/** The day's 3–5 missions from its rule set: at least one easy (two from set 2), no rule, category or family twice. */
-export function missionsFor(householdId: number, day: number, b: Baseline): Mission[] {
-  const rules = b.rules ?? 1;
-  const rnd = mulberry32(Math.imul(householdId, 0x9e3779b1) ^ Math.imul(day, 0x85ebca6b));
-  const want = 3 + Math.floor(rnd() * 3);
-  if (rules >= 3) return alignedDraw(b, rnd, want);
-  const order = shuffle(
-    TEMPLATES.filter((t) => (t.since ?? 1) <= rules && (b.historyDays >= MIN_HISTORY || !t.needsHistory)),
-    rnd,
-  );
+/** A day's draw so far, and `take`, which adds a template unless its rule, family or a category is already in. */
+function drawer(b: Baseline, rnd: () => number) {
   const picked: Mission[] = [];
   const usedCats = new Set<number>();
   const families = new Set<string>();
@@ -448,6 +451,24 @@ export function missionsFor(householdId: number, day: number, b: Baseline): Miss
     if (t.family) families.add(t.family);
     return true;
   };
+  return { picked, take };
+}
+
+/**
+ * The day's missions from its rule set: 3–5 up to set 3 (at least one easy, two from set 2), exactly 3 from set 4.
+ * Never a rule, category or family twice.
+ */
+export function missionsFor(householdId: number, day: number, b: Baseline): Mission[] {
+  const rules = b.rules ?? 1;
+  const rnd = mulberry32(Math.imul(householdId, 0x9e3779b1) ^ Math.imul(day, 0x85ebca6b));
+  const want = 3 + Math.floor(rnd() * 3);
+  if (rules >= 4) return gentleDraw(b, rnd);
+  if (rules === 3) return alignedDraw(b, rnd, want);
+  const order = shuffle(
+    TEMPLATES.filter((t) => (t.since ?? 1) <= rules && (b.historyDays >= MIN_HISTORY || !t.needsHistory)),
+    rnd,
+  );
+  const { picked, take } = drawer(b, rnd);
   // The easy ones first, then the rest in the shuffled order.
   let easy = 0;
   for (const t of order) if (easy < (EASY_PER_DAY[rules] ?? 2) && t.level === 1 && take(t)) easy++;
@@ -460,28 +481,35 @@ export function missionsFor(householdId: number, day: number, b: Baseline): Miss
  * (a new household, or one with few spending days) does it fill up to 3 from set 2's no-history rules.
  */
 function alignedDraw(b: Baseline, rnd: () => number, want: number): Mission[] {
-  const aligned = shuffle(alignedTemplates(b), rnd);
+  const aligned = shuffle(alignedTemplates(b.aligned), rnd);
   const starters = shuffle(
     TEMPLATES.filter((t) => !t.needsHistory && (t.since ?? 1) <= 2),
     rnd,
   );
-  const picked: Mission[] = [];
-  const usedCats = new Set<number>();
-  const families = new Set<string>();
-  const take = (t: Template) => {
-    if (picked.some((m) => m.type === t.type) || (t.family && families.has(t.family))) return false;
-    const m = t.make(b, rnd);
-    if (!m || m.catIds.some((id) => usedCats.has(id))) return false;
-    picked.push(m);
-    m.catIds.forEach((id) => usedCats.add(id));
-    if (t.family) families.add(t.family);
-    return true;
-  };
+  const { picked, take } = drawer(b, rnd);
   const easy = () => picked.filter((m) => m.level === 1).length;
   for (const t of aligned) if (easy() < EASY_PER_DAY[3] && t.level === 1) take(t);
   for (const t of aligned) if (picked.length < want) take(t);
   for (const t of starters) if (easy() < EASY_PER_DAY[3] && t.level === 1) take(t);
   for (const t of starters) if (picked.length < 3) take(t);
+  return picked;
+}
+
+/**
+ * Set 4's draw: two easy and one medium from the household's tried missions. The starters fill in only what those
+ * can't (a new household, or one whose days fit few missions); with no medium at all, a third easy one.
+ */
+function gentleDraw(b: Baseline, rnd: () => number): Mission[] {
+  const all = b.gentle ?? [];
+  const tried = shuffle(alignedTemplates(all.filter((a) => !a.starter), GENTLE, GENTLE_BY_TYPE), rnd);
+  const starters = shuffle(alignedTemplates(all.filter((a) => a.starter), GENTLE, GENTLE_BY_TYPE), rnd);
+  const { picked, take } = drawer(b, rnd);
+  const count = (level: 1 | 2) => picked.filter((m) => m.level === level).length;
+  for (const pool of [tried, starters]) {
+    for (const t of pool) if (count(1) < 2 && t.level === 1) take(t);
+    for (const t of pool) if (count(2) < 1 && t.level === 2) take(t);
+  }
+  for (const pool of [tried, starters]) for (const t of pool) if (picked.length < 3) take(t);
   return picked;
 }
 

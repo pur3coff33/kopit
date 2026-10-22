@@ -1,4 +1,4 @@
-// The money garden. Every day the household gets 3–5 "spend less" missions (missions.ts); a day with at least half
+// The money garden. Every day the household gets a few "spend less" missions (missions.ts, 3 from set 4); a day with at least half
 // of them done grows a leaf, a day with all done adds a small flower, and a month that ends lower than the one before
 // blooms on top. Always the whole household's, whatever person filter a screen has on.
 //

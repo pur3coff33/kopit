@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALIGNED } from "../src/lib/aligned";
+import { GENTLE } from "../src/lib/gentle";
 import { authCookie, html, req, seedHousehold } from "./helpers";
 
 describe("guide", () => {
@@ -21,12 +21,14 @@ describe("guide", () => {
 
   it("lists every current mission with an example, and the starters a new household gets", async () => {
     const body = await html(await req("/guide"));
-    for (const d of ALIGNED) expect(body, d.type).toContain(d.name);
-    expect(body).toContain("“Keep 🍜 Food under ₱250”");
-    expect(body).toContain("“Nothing spent after 9 pm”");
-    expect(body).toContain("about 7 of 10");
+    for (const d of GENTLE) expect(body, d.type).toContain(d.name);
+    expect(body).toContain("“Keep 🍜 Food under ₱300”");
+    expect(body).toContain("“Keep merienda (2 to 5 pm) under ₱100”");
+    expect(body).toContain("about 9 of 10");
     expect(body).toContain("While your garden is new");
-    expect(body).toContain("“Nothing spent before 10 am”");
+    expect(body).toContain("“No single buy over ₱1,000”");
+    expect(body).toContain("“Keep today under ₱1,500”");
+    expect(body).not.toContain("Nothing spent");
   });
 
   it("links GitHub for help, privately for security, and the legal pages", async () => {

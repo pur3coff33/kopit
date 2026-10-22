@@ -30,7 +30,8 @@ function history(d: number): DayExpense[] {
   return out;
 }
 
-const rich = (d: number, cats = CATS) => baseline(history(d), d, cats);
+/** Set 2, the rules these tests are about (sets 3 and 4 have their own tests). */
+const rich = (d: number, cats = CATS) => baseline(history(d), d, cats, 2);
 
 describe("mission rules", () => {
   it("has 20 rule types, 11 of them easy, easy or medium only, each with its own name", () => {
@@ -131,7 +132,7 @@ describe("a day's missions", () => {
   });
 
   it("give a new household only rules that need no history", () => {
-    const fresh = baseline([spend(D - 2, 2, 15_000)], D, CATS);
+    const fresh = baseline([spend(D - 2, 2, 15_000)], D, CATS, 2);
     expect(fresh.historyDays).toBeLessThan(14);
     const allowed = new Set(TEMPLATES.filter((t) => !t.needsHistory).map((t) => t.type));
     for (let h = 1; h <= 40; h++) for (const m of missionsFor(h, D, fresh)) expect(allowed.has(m.type)).toBe(true);

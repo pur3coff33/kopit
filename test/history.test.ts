@@ -63,7 +63,7 @@ describe("history page", () => {
     const body = await view("/history", h);
     expect(body).toMatch(/class="tab on"[^>]*>[\s\S]*?history<\/a>/);
     const order = ["Today", "₱259.99", "Jollibee with Ana", "₱250", "Uncategorized", "₱9.99", "Yesterday", "₱45", "Transport", "Partner"];
-    const list = body.slice(body.indexOf('id="history"'));
+    const list = body.slice(body.indexOf('id="history"')).replace(/<details class="missions[\s\S]*?<\/details>/g, "");
     const at = order.map((s) => list.indexOf(s));
     expect(at.every((i) => i > -1)).toBe(true);
     expect([...at].sort((x, y) => x - y)).toEqual(at);

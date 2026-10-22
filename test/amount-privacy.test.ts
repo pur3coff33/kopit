@@ -50,7 +50,8 @@ describe("the eye by the total", () => {
 
     const garden = await html(await req("/spending", { cookie: jon }));
     expect(total(garden)).toBe("₱1•,•••");
-    expect(garden).not.toContain("₱12,250");
+    // Missions keep their amounts too ("Keep today under ₱1,500 · ₱12,250 spent" here, all of it spent today).
+    expect(garden.slice(0, garden.indexOf('class="missions"'))).not.toContain("₱12,250");
     expect(garden).toContain('aria-label="Show total"');
     // Everything else keeps its amounts: the rows, and history.
     expect(garden).toContain("₱7,900");
