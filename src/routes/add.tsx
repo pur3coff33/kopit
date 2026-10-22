@@ -58,6 +58,14 @@ add.get("/", requireSession, requireProfile, async (c) => {
         </button>
         <div class="sync" id="sync"></div>
       </section>
+      {/* For a phone still running the add.js from before the fixed categories (loaded before an update): it looks these
+          up when it starts and empties #more on every save. Never shown. Can go once phones have moved on. */}
+      <span id="more" hidden></span>
+      <dialog id="sheet" hidden>
+        <div id="all"></div>
+        <button id="close" type="button"></button>
+        <form id="newcat"></form>
+      </dialog>
       <dialog class="sheet note-sheet" id="note-sheet" aria-labelledby="note-sheet-title">
         <div class="sheet-head">
           <h2 id="note-sheet-title" style="margin:0"></h2>

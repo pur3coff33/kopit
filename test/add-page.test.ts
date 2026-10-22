@@ -28,9 +28,18 @@ describe("add screen", () => {
     const body = await html(res);
     const names = [...body.matchAll(/data-name="([^"]+)"/g)].map((m) => m[1]);
     expect(names).toEqual(FIXED.map((c) => c.name));
-    expect(body).not.toContain('id="more"');
-    expect(body).not.toContain('id="newcat"');
+    expect(body).not.toMatch(/class="cat"[^>]*id="more"/); // no More tile any more
     expect(body).toContain(`data-profile-id="${profileIds[1]}"`);
+  });
+
+  it("keeps hidden stand-ins for what an older add.js still in a phone's memory looks up, so its Save keeps working", async () => {
+    // Right after an update, a phone can show the new add screen to the add.js it loaded before. That script looks up
+    // these elements when it starts (and empties #more on every save); without them it stops before Save is wired up.
+    const h = await seedHousehold();
+    const body = await html(await req("/", { cookie: await authCookie(h.householdId, h.profileIds[0]) }));
+    for (const id of ["more", "sheet", "all", "close", "newcat"]) expect(body, id).toMatch(new RegExp(`id="${id}"`));
+    expect(body).toMatch(/<span id="more" hidden=""><\/span>/);
+    expect(body).toMatch(/<dialog id="sheet" hidden="">/);
   });
 
   it("groups the tiles under Needs and Wants, carries each one's presets, and keeps the note sheet closed", async () => {

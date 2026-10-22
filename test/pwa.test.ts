@@ -36,6 +36,16 @@ describe("installable app", () => {
     }
   });
 
+  it("carries the saved add screen over from an older cache before deleting it, so the next offline launch still opens", async () => {
+    const sw = await (await asset("/sw.js")).text();
+    const activate = sw.slice(sw.indexOf('addEventListener("activate"'));
+    expect(activate.indexOf("carryAddScreen(")).toBeGreaterThan(-1);
+    expect(activate.indexOf("carryAddScreen(")).toBeLessThan(activate.indexOf("caches.delete"));
+    const carry = sw.slice(sw.indexOf("async function carryAddScreen"), sw.indexOf('addEventListener("activate"'));
+    expect(carry).toContain('.match("/")');
+    expect(carry).toContain('put("/"');
+  });
+
   it("clears the cached add screen after logout", async () => {
     // raw text on purpose: script bodies must not be HTML-escaped or the browser can't run them
     expect(await (await req("/login?bye=1")).text()).toContain("caches.open('kopit-v2')");

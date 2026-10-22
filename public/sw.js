@@ -39,11 +39,26 @@ self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
 });
 
+// An older version's cache goes, but its saved add screen comes along first: switching screens doesn't save a new
+// one, so without it the next launch with no signal would only say "No signal".
+async function carryAddScreen(old) {
+  const cache = await caches.open(CACHE);
+  if (await cache.match("/")) return;
+  for (const name of old) {
+    const page = await (await caches.open(name)).match("/");
+    if (page) return cache.put("/", page);
+  }
+}
+
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(async (keys) => {
+        const old = keys.filter((k) => k !== CACHE);
+        await carryAddScreen(old.filter((k) => k.startsWith("kopit")));
+        await Promise.all(old.map((k) => caches.delete(k)));
+      })
       .then(() => self.clients.claim()),
   );
 });
