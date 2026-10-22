@@ -17,6 +17,7 @@ describe("installable app", () => {
     for (const p of ["/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"]) expect((await asset(p)).status, p).toBe(200);
     const swText = await (await asset("/sw.js")).text();
     expect(swText).toContain('"/js/router.js"'); // precached, so screens still switch with no signal
+    expect(swText).toContain('"/js/update.js"'); // the router imports it: missing offline, the router wouldn't load
   });
 
   it("uses one cache name everywhere, new since the fixed categories, so a phone never mixes old and new add screens", async () => {

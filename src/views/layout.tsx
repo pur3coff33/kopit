@@ -1,5 +1,6 @@
 import { raw } from "hono/html";
 import type { Child } from "hono/jsx";
+import { version } from "../lib/version";
 import { Avatar, Wordmark } from "./garden";
 
 type Tab = "add" | "spending" | "history";
@@ -32,7 +33,11 @@ export function Layout(props: {
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-title" content="kop.it" />
+          {/* The deploy that made this page; /js/update.js asks for a reload once a newer one is live. */}
+          <meta name="kopit-version" content={version()} />
+          {/* Both halves of Nunito: ₱ lives in latin-ext, and loading it late makes every amount jump. */}
           <link rel="preload" href="/fonts/nunito-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin="" />
+          <link rel="preload" href="/fonts/nunito-latin-ext-wght-normal.woff2" as="font" type="font/woff2" crossorigin="" />
           <link rel="stylesheet" href="/app.css" />
           <script type="module" src="/js/install.js"></script>
           {/* The router runs first; it starts each page script (data-page) and stops it when you leave. */}

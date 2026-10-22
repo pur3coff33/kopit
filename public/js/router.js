@@ -2,6 +2,8 @@
 // the header, content and bottom bar in place. Anything unusual (offline, a redirect to log in, an error)
 // falls back to a normal page load, so the server-rendered pages keep working on their own.
 
+import { askToUpdate, needsUpdate, versionOf } from "./update.js";
+
 /** The same-site path a click should open in place, or null to leave it to the browser. */
 export function navTarget({ href, target, download, button, modified }, here) {
   if (button !== 0 || modified || download || (target && target !== "_self")) return null;
@@ -180,6 +182,12 @@ if (typeof document !== "undefined" && typeof history.pushState === "function") 
     if (!doc?.querySelector(".app > main")) {
       if (push) location.assign(url);
       else location.reload();
+      return;
+    }
+    // A screen from a newer deploy won't work with this page's scripts: ask for a reload instead of swapping it in.
+    if (needsUpdate(versionOf(document), versionOf(doc))) {
+      loading = false;
+      askToUpdate();
       return;
     }
     const mods = await importScripts(doc);

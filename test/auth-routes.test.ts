@@ -5,13 +5,14 @@ import { households, sessions } from "../src/db/schema";
 import { authCookie, db, form, html, req, seedHousehold } from "./helpers";
 
 describe("login page", () => {
-  it("is autofill-friendly and links to setup", async () => {
+  it("fills in the username, keeps the PIN out of password managers, and links to setup", async () => {
     const res = await req("/login");
     expect(res.status).toBe(200);
     const body = await html(res);
     expect(body).toContain('autocomplete="username"');
     expect(body).toContain('inputmode="numeric"');
-    expect(body).toContain('autocomplete="current-password"');
+    // A password field gets checked against leaked passwords, and nearly every 6-digit PIN is on that list.
+    expect(body).not.toContain('type="password"');
     expect(body).toContain('maxlength="6"');
     expect(body).toContain('href="/setup"');
   });

@@ -6,7 +6,7 @@ import { REPO_URL } from "./guide";
 
 export const legal = new Hono<AppEnv>();
 
-const UPDATED = "October 21, 2026";
+const UPDATED = "October 23, 2026";
 
 function LegalPage(props: { title: string; heading: string; children?: Child }) {
   return (
@@ -42,7 +42,7 @@ legal.get("/privacy", (c) =>
       <h2>What kop.it keeps</h2>
       <ul>
         <li>Your household's username, and its PIN as a salted hash (never the PIN itself).</li>
-        <li>The names of the people in the household, and whether each one has hidden the total with the eye.</li>
+        <li>The names of the people in the household, whether each one has hidden the total with the eye, and which screens' first-time tours they've seen.</li>
         <li>Every expense: the amount, its category, the optional note, who logged it and when.</li>
         <li>How each day's missions went (to grow the plant).</li>
         <li>Logins (as hashed tokens) and failed PIN tries, to keep the household safe.</li>

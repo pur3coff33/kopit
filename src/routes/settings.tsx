@@ -12,8 +12,10 @@ import { PROFILE_COOKIE, SESSION_COOKIE, clearCookie, deleteOtherSessions } from
 import { hashPin, isValidPin } from "../lib/pin";
 import { clockTime } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
+import { PinInput } from "../views/components";
 import { Avatar, Welcome } from "../views/garden";
 import { InlineScript, Layout } from "../views/layout";
+import { Tour } from "../views/tour";
 import { safeBack } from "./entries";
 import { REPO_URL } from "./guide";
 import { householdProfiles } from "./setup";
@@ -36,7 +38,7 @@ async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: stri
   ]);
   const ok = OK[c.req.query("ok") ?? ""];
   return (
-    <Layout title="Garden shed" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")}>
+    <Layout title="Garden shed" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/tour-page.js"]}>
       <p>
         <a href="/">‹ Back</a>
       </p>
@@ -44,7 +46,7 @@ async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: stri
       <p class="muted">Settings for the {home?.username} household</p>
       {(message ?? ok) && <p class="msg">{message ?? ok}</p>}
 
-      <div class="card gardener">
+      <div class="card gardener" data-spot="household">
         <Avatar index={c.get("profileIndex")} name={c.get("profileName")} size={42} />
         <div>
           <b>{c.get("profileName")}</b>
@@ -56,7 +58,7 @@ async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: stri
       </div>
 
 
-      <section class="card">
+      <section class="card" data-spot="household">
         <h2>People</h2>
         {people.map((p) => (
           <form class="form inline" method="post" action={`/settings/profiles/${p.id}`}>
@@ -75,20 +77,20 @@ async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: stri
 
       </section>
 
-      <section class="card">
+      <section class="card" data-spot="pin">
         <h2>Change PIN</h2>
         <form class="form" method="post" action="/settings/pin">
           <label>
             Current PIN
-            <input name="current" type="password" inputmode="numeric" autocomplete="current-password" pattern="\d{6}" maxlength={6} required />
+            <PinInput name="current" />
           </label>
           <label>
             New PIN
-            <input name="next" type="password" inputmode="numeric" autocomplete="new-password" pattern="\d{6}" maxlength={6} required />
+            <PinInput name="next" />
           </label>
           <label>
             New PIN again
-            <input name="nextConfirm" type="password" inputmode="numeric" autocomplete="new-password" pattern="\d{6}" maxlength={6} required />
+            <PinInput name="nextConfirm" />
           </label>
           <button class="save" type="submit">Change PIN</button>
         </form>
@@ -114,6 +116,7 @@ async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: stri
       <p class="far-away">
         <a href="/settings/delete">Delete household…</a>
       </p>
+      <Tour screen="shed" profileId={c.get("profileId")} profileName={c.get("profileName")} seen={c.get("toursSeen")} />
     </Layout>
   );
 }
@@ -199,7 +202,7 @@ async function DeletePage({ c, message }: { c: Context<AppEnv>; message?: string
       <form class="form delete-form" method="post" action="/settings/delete">
         <label>
           Household PIN
-          <input name="pin" type="password" inputmode="numeric" autocomplete="current-password" pattern="\d{6}" maxlength={6} required />
+          <PinInput name="pin" />
         </label>
         <label>
           Type DELETE to confirm

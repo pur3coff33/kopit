@@ -70,6 +70,9 @@ guide.get("/guide", (c) => {
           Spending less grows a plant. Every day brings a few small missions, checked automatically from what you log. Good
           days grow leaves, perfect days grow flowers, and a cheaper month blooms. It only ever rewards, never scolds.
         </p>
+        <p>
+          <a href="/?tour">Take the tour again</a>
+        </p>
       </section>
 
       <section class="card guide-sec" id="plant">

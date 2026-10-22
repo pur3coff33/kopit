@@ -1,0 +1,1 @@
+ALTER TABLE `profiles` ADD `tours_seen` text DEFAULT '' NOT NULL;

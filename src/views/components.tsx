@@ -5,7 +5,7 @@ const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back"];
 
 export function Keypad() {
   return (
-    <div class="keys" id="keys">
+    <div class="keys" id="keys" data-spot="keypad">
       {KEYS.map((k) => (
         <button type="button" data-key={k} aria-label={k === "back" ? "Delete" : k}>
           {k === "back" ? "⌫" : k}
@@ -32,7 +32,7 @@ const GROUPS = [
 /** The ten tiles, always in the same places: needs on top, wants below. */
 export function CategoryTiles({ cats }: { cats: Cat[] }) {
   return (
-    <div class="tiles" id="tiles">
+    <div class="tiles" id="tiles" data-spot="categories">
       {GROUPS.map((g) => (
         <div class="cat-group">
           <div class="cat-label">{g.label}</div>
@@ -72,10 +72,34 @@ export function Amount({ value = "0" }: { value?: string }) {
   );
 }
 
+/**
+ * A 6-digit PIN box, dotted out. Deliberately not a password field: Chrome checks typed passwords against leaked
+ * ones, and nearly every 6-digit number is on that list, so it kept warning people. The cost is that password
+ * managers don't save or fill the PIN; a login lasts a year, so it's rarely typed.
+ */
+export function PinInput({ name }: { name: string }) {
+  return (
+    <input
+      class="pin"
+      name={name}
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      autocapitalize="off"
+      spellcheck={false}
+      data-1p-ignore=""
+      data-lpignore="true"
+      pattern="\d{6}"
+      maxlength={6}
+      required
+    />
+  );
+}
+
 /** The eye by a total: hides the totals for this phone's person (or shows them again), then comes back to `back`. */
 export function AmountsEye({ hidden, back }: { hidden: boolean; back: string }) {
   return (
-    <form class="eye" method="post" action="/settings/amounts">
+    <form class="eye" method="post" action="/settings/amounts" data-spot="eye">
       <input type="hidden" name="hide" value={hidden ? "0" : "1"} />
       <input type="hidden" name="back" value={back} />
       <button type="submit" aria-label={hidden ? "Show total" : "Hide total"} title={hidden ? "Show total" : "Hide total"}>

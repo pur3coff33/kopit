@@ -3,10 +3,27 @@ import { isStale, shouldCelebrate, shouldShowWrapped } from "./leaf.js";
 import { sheetNotes, suggest, withPresets } from "./notes.js";
 import { count, enqueue, flush, remove } from "./queue.js";
 import { saveEntry } from "./save.js";
+import { startTour } from "./tour.js";
 
 const $ = (sel) => document.querySelector(sel);
 const LEAF_SEEN = "kopit-leaf-seen";
 const WRAPPED_SEEN = "kopit-wrapped-seen";
+const DRAFT = "kopit-draft"; // what was typed when an update reloaded the app (sessionStorage)
+
+/** The amount, category and note kept across an update's reload, or null when there's nothing worth bringing back. */
+export function readDraft(raw) {
+  try {
+    const d = JSON.parse(raw ?? "null");
+    if (typeof d?.typed !== "string" || !/^\d+(\.\d{0,2})?$/.test(d.typed) || toCentavos(d.typed) === 0) return null;
+    return {
+      typed: d.typed,
+      categoryId: Number.isInteger(d.categoryId) ? d.categoryId : null,
+      note: typeof d.note === "string" ? d.note : "",
+    };
+  } catch {
+    return null;
+  }
+}
 
 function remember(key) {
   try {
@@ -230,8 +247,21 @@ function onVisible() {
   if (root) showGarden(root);
 }
 
+/**
+ * Opens the add screen's first-time tour if it's due (or asked for again with ?tour); returns whether it opened.
+ * Yesterday's leaf and Wrapped wait until it's closed.
+ */
+function showTour(root) {
+  const replay = new URLSearchParams(location.search).has("tour");
+  if (replay) history.replaceState(history.state, "", "/"); // a reload shouldn't play it again
+  const dialog = $("#tour");
+  if (!dialog) return false; // an older offline copy of the screen, from before the tour
+  return startTour(dialog, { replay, onDone: () => root === $("#add") && showGarden(root) });
+}
+
 /** Celebrate yesterday's leaf once on this phone (fetching a fresh stamp first if this screen is from an earlier day). */
 function showGarden(root) {
+  if ($("#tour")?.open) return; // the tour is on: the leaf waits for it to close
   if (isStale(root.dataset.day, Date.now())) {
     refreshGarden(root); // rendered on an earlier day: fetch today's leaf in the background
     return;
@@ -285,6 +315,31 @@ async function refreshGarden(root) {
   } catch {} // offline: the leaf waits for a launch with signal
 }
 
+/** Keeps what's typed for after an update's reload. */
+function keepDraft() {
+  if (toCentavos(typed) === 0) return;
+  try {
+    sessionStorage.setItem(DRAFT, JSON.stringify({ typed, categoryId, note: noteInput.value }));
+  } catch {}
+}
+
+/** Puts back what was typed before an update's reload, once. */
+function restoreDraft() {
+  let draft = null;
+  try {
+    draft = readDraft(sessionStorage.getItem(DRAFT));
+    sessionStorage.removeItem(DRAFT);
+  } catch {}
+  if (!draft) return;
+  typed = draft.typed;
+  if (draft.categoryId !== null && tiles.querySelector(`.cat[data-id="${draft.categoryId}"]`)) select(draft.categoryId);
+  if (draft.note) {
+    noteInput.value = draft.note;
+    noteBox.hidden = false;
+    noteToggle.hidden = true;
+  }
+}
+
 /** Starts the add screen; returns a function that stops it. */
 export function mount() {
   const root = $("#add");
@@ -334,13 +389,16 @@ export function mount() {
   noteInput.addEventListener("keydown", onNoteKey);
   save.addEventListener("click", onSave);
   window.addEventListener("online", sync);
+  window.addEventListener("kopit:update", keepDraft);
   document.addEventListener("visibilitychange", onVisible);
+  restoreDraft();
   render();
   sync();
-  showGarden(root);
+  if (!showTour(root)) showGarden(root);
 
   return () => {
     window.removeEventListener("online", sync);
+    window.removeEventListener("kopit:update", keepDraft);
     document.removeEventListener("visibilitychange", onVisible);
     clearTimeout(toastTimer);
   };

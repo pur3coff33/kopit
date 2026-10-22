@@ -18,6 +18,16 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+/* Arial sized to Nunito's measure (ascent 1011, descent 353 per 1000), for the moment before Nunito is ready:
+   when it swaps in, the text keeps its place instead of twitching. */
+@font-face {
+  font-family: "Nunito fallback";
+  src: local("Arial");
+  size-adjust: 101.39%;
+  ascent-override: 99.71%;
+  descent-override: 34.82%;
+  line-gap-override: 0%;
+}
 
 :root {
   --bg: #eef4ea;
@@ -47,7 +57,7 @@ html, body { margin: 0; height: 100%; }
 body {
   background-color: var(--bg);
   color: var(--ink);
-  font-family: "Nunito", system-ui, sans-serif;
+  font-family: "Nunito", "Nunito fallback", system-ui, sans-serif;
   font-weight: 700;
   -webkit-tap-highlight-color: transparent;
 }
@@ -214,6 +224,10 @@ p { margin: 6px 0; }
 .sheet::backdrop { background: rgba(31, 51, 38, 0.35); }
 .sheet .cats { grid-template-columns: repeat(3, 1fr); }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; }
+/* The update note (public/js/update.js): a sheet that can't be dismissed, only reloaded from. */
+.update { text-align: center; padding: 22px 18px 18px; }
+.update h2 { margin: 0 0 6px; font-size: 20px; font-weight: 900; }
+.update p { margin: 0 0 6px; color: var(--muted); font-size: 15px; line-height: 1.4; }
 .x { border: 0; background: none; font-size: 22px; cursor: pointer; }
 
 /* ---------- chips, nudges, rows ---------- */
@@ -704,3 +718,45 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 .legal h2 { margin-top: 20px; }
 .legal ul { padding-left: 20px; }
 .legal li { margin: 4px 0; }
+
+/* ---------- the first-time tours: the screen dims, one part lights up, a note beside it ---------- */
+/* A full-screen, see-through dialog: the dimming is the light's huge shadow, so the lit-up part shows through. */
+.tour {
+  position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; background: transparent; overflow: hidden; color: var(--ink);
+}
+.tour::backdrop { background: transparent; }
+.tour-spot {
+  position: fixed; border-radius: 18px; pointer-events: none;
+  box-shadow: 0 0 0 3px #f2c94c, 0 0 0 200vmax rgba(31, 51, 38, 0.62);
+  transition: left 0.25s ease, top 0.25s ease, width 0.25s ease, height 0.25s ease;
+}
+.tour-spot.none { box-shadow: 0 0 0 200vmax rgba(31, 51, 38, 0.62); }
+.tour-note {
+  position: fixed; width: min(360px, calc(100% - 24px)); padding: 14px 16px 12px; border-radius: 20px;
+  background: #f7faf4; box-shadow: 0 16px 40px rgba(31, 51, 38, 0.3);
+  transition: left 0.25s ease, top 0.25s ease;
+}
+.tour-note[data-side]:not([data-side=""])::before {
+  content: ""; position: absolute; left: var(--tip, 50%); width: 14px; height: 14px; background: #f7faf4;
+  transform: translateX(-50%) rotate(45deg);
+}
+.tour-note[data-side="below"]::before { top: -7px; }
+.tour-note[data-side="above"]::before { bottom: -7px; }
+.tour-step[hidden] { display: none; }
+.tour-step h2 { font-size: 17px; margin: 0 0 4px; }
+.tour-step p { font-size: 14px; line-height: 1.45; margin: 0; color: var(--muted); }
+.tour-btns { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.tour-btns button { border: 0; background: none; cursor: pointer; font: inherit; font-weight: 800; touch-action: manipulation; }
+.tour-btns [hidden] { display: none; }
+.tour-skip, .tour-back { padding: 8px 2px; font-size: 14px; color: var(--muted); }
+.tour-count { flex: 1; text-align: center; font-size: 12px; color: var(--muted); }
+.tour-btns .tour-next {
+  padding: 9px 18px; border-radius: 18px; font-size: 15px; color: #fff; background: var(--btn);
+  box-shadow: 0 4px 12px rgba(62, 122, 74, 0.35);
+}
+.tour-next:focus-visible, .tour-skip:focus-visible, .tour-back:focus-visible { outline: 2px solid var(--deep); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .tour-spot, .tour-note { transition: none; } }
+
+/* PIN boxes are text fields (see PinInput), dotted out like a password. */
+.pin { -webkit-text-security: disc; letter-spacing: 0.15em; }

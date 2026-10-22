@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "84f7582a-56e2-44ad-b200-d1565093bf4a",
+  "id": "298cce61-3294-45bc-9770-63ee6e7802e1",
   "prevId": "f10a5d39-ec38-4af4-befb-b9636da36bd4",
   "tables": {
     "categories": {
@@ -35,27 +35,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "key": {
-          "name": "key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "moved_to": {
-          "name": "moved_to",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "moved_note": {
-          "name": "moved_note",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "hidden": {
           "name": "hidden",
           "type": "integer",
@@ -85,14 +64,6 @@
           "columns": [
             "household_id",
             "name"
-          ],
-          "isUnique": true
-        },
-        "categories_household_key": {
-          "name": "categories_household_key",
-          "columns": [
-            "household_id",
-            "key"
           ],
           "isUnique": true
         }
@@ -380,21 +351,6 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "items": {
-          "name": "items",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "final": {
-          "name": "final",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
         }
       },
       "indexes": {},
@@ -477,14 +433,6 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "categories_set": {
-          "name": "categories_set",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 2
         }
       },
       "indexes": {
@@ -532,6 +480,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": false
+        },
+        "tours_seen": {
+          "name": "tours_seen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
         },
         "created_at": {
           "name": "created_at",

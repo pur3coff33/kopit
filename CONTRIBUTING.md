@@ -45,6 +45,20 @@ test/               one test file per area
 
 There's no frontend framework. Pages are rendered on the server, and the small scripts in `public/js/` add the keypad, the offline queue and navigation between tabs.
 
+## The first-time tours
+
+The add, garden, history and garden shed screens each have a short tour that each person sees the first time they open the screen. It dims the screen and lights up one part at a time, with a note beside it. The stops and their words live in `tourSteps` in `src/views/tour.tsx`. Each stop points at the parts of its screen that carry its `data-spot` name, for example `data-spot="keypad"` on the keypad.
+
+**When you change one of these screens, check its tour too.**
+
+- **Moving or redesigning a part a stop points at:** keep its `data-spot` on the new element, and read the stop's note again. It may describe where things are or what they do.
+- **Removing a part:** remove its stop, or point the stop at what replaced it.
+- **Renaming a button or label:** update any note that mentions it by name (for example **More**, **＋ note**, **Undo**, **Switch**).
+- **Adding something people need to know about:** add a stop. Keep each tour to 2–4 stops.
+- **A new screen that needs a tour:** add it to `TOUR_SCREENS` and `tourSteps`, render `<Tour screen="…">` in the page, add `/js/tour-page.js` to its scripts, and add its path to `PATHS` in `test/tour.test.ts`.
+
+`test/tour.test.ts` fails if a stop points at a `data-spot` its screen doesn't have. It can't tell when a note's words no longer match the screen, so that part is on you. To see a tour again, open `/?tour` while logged in: it plays the add screen's tour, and the others the next time each screen is opened.
+
 ## Changing the database
 
 1. Edit `src/db/schema.ts`.
@@ -81,6 +95,8 @@ After that, apply any new migrations, then deploy:
 npx wrangler d1 migrations apply kopit --remote
 npm run deploy
 ```
+
+Phones with kopit open notice the new deploy (on their next screen change, or when the app comes back to the front) and show an "update" note that can't be dismissed. Its Reload clears the saved copies of the app and reloads, and anything still waiting to sync is kept. Every deploy counts, even one that changes only server code, because the deploy's upload time is the version. A `wrangler rollback` goes back to an *older* upload time, so open apps won't be asked to reload onto it. They pick it up on their next full reload.
 
 ## Backups and restore
 
