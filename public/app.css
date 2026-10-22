@@ -240,6 +240,9 @@ p { margin: 6px 0; }
 }
 .rows:empty { display: none; }
 .rows li + li { border-top: 1px solid var(--line); }
+/* The garden's Needs / Wants headings, each with its subtotal. */
+.rows li.group { display: flex; justify-content: space-between; padding: 14px 0 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.rows li.group, .rows li.group + li { border-top: 0; }
 .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; text-decoration: none; }
 .row .ic {
   width: 34px; height: 34px; flex: none; display: flex; align-items: center; justify-content: center;
@@ -555,6 +558,7 @@ p { margin: 6px 0; }
 .cat-chips::-webkit-scrollbar { display: none; }
 .cat-chips .chip { position: relative; flex: none; display: flex; align-items: center; white-space: nowrap; cursor: pointer; font-size: 13px; padding: 6px 12px; flex-direction: row; gap: 0; }
 .cat-chips .chip input { position: absolute; opacity: 0; pointer-events: none; }
+.cat-chips .chip-label { flex: none; align-self: center; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.55; padding: 0 2px 0 6px; }
 .cat-chips .chip:has(input:checked) { background: rgba(127, 176, 140, 0.42); color: var(--ink); outline: 2px solid #2f6b3c; outline-offset: 1px; }
 .cat-chips .chip:has(input:focus-visible) { outline: 2px solid var(--deep); }
 .pair { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 8px; }

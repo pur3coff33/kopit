@@ -61,7 +61,7 @@ describe("history page", () => {
     await addEntry(h, { amount: 4500, at: now - DAY, category: "Transport", profile: 1 });
     await addEntry(h, { amount: 999, at: now - 2000, category: null });
     const body = await view("/history", h);
-    const order = ["Today", "₱259.99", "Jollibee with Ana", "₱250", "Uncategorized", "₱9.99", "Yesterday", "₱45", "Transport", "Partner"];
+    const order = ["Today", "₱259.99", "Jollibee with Ana", "₱250", "No category", "₱9.99", "Yesterday", "₱45", "Transport", "Partner"];
     const list = body.slice(body.indexOf('id="history"')).replace(/<details class="missions[\s\S]*?<\/details>/g, "");
     const at = order.map((s) => list.indexOf(s));
     expect(at.every((i) => i > -1)).toBe(true);

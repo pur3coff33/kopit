@@ -1,14 +1,16 @@
-// Earthy colours for categories (by id) and flowers for people (by their place in the household). No data needed.
+// Earthy colours for the ten categories (one each, in the fixed order) and flowers for people (by their place in the
+// household). No data needed.
+import { FIXED, type CategoryKey } from "./categories";
 
-const FILLS = ["#7FB08C", "#E3A857", "#D98A7A", "#8AA6C9", "#B39BC8", "#C9B89A", "#E3A2B4", "#9DB36B"];
+const FILLS = ["#7FB08C", "#E3A857", "#D98A7A", "#8AA6C9", "#B39BC8", "#C9B89A", "#E3A2B4", "#9DB36B", "#6FA8A8", "#D4A06A"];
 
 /** `tint` is the fill at low opacity, for the soft badge behind an emoji. */
-export const CATEGORY_COLORS: ReadonlyArray<{ fill: string; tint: string }> = FILLS.map((fill) => ({ fill, tint: `${fill}38` }));
+const COLORS = new Map(FIXED.map((c, i) => [c.key, { fill: FILLS[i], tint: `${FILLS[i]}38` }]));
 
-const UNCATEGORIZED = { fill: "#A9B5AA", tint: "#A9B5AA38" };
+const NO_CATEGORY = { fill: "#A9B5AA", tint: "#A9B5AA38" };
 
-export function categoryColor(id: number | null): { fill: string; tint: string } {
-  return id === null ? UNCATEGORIZED : CATEGORY_COLORS[((id % 8) + 8) % 8];
+export function categoryColor(key: CategoryKey | null): { fill: string; tint: string } {
+  return (key !== null && COLORS.get(key)) || NO_CATEGORY;
 }
 
 export type Flower = { petal: string; centre: string; shape: "round" | "oval" };

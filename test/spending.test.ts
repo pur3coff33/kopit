@@ -11,6 +11,22 @@ async function page(path: string, h: Awaited<ReturnType<typeof seedHousehold>>) 
 }
 
 describe("spending screen", () => {
+  it("adds up needs and wants separately, biggest first in each, with no category last", async () => {
+    const now = Date.now();
+    const h = await seedHousehold();
+    await addEntry(h, { amount: 80_000, at: now - 4000, category: "Groceries" });
+    await addEntry(h, { amount: 150_000, at: now - 3000, category: "Bills" });
+    await addEntry(h, { amount: 25_000, at: now - 2000, category: "Eating out" });
+    await addEntry(h, { amount: 10_000, at: now - 1000, category: null });
+    const body = await page("/spending", h);
+    const list = body.slice(body.indexOf('class="rows'));
+    const order = ["Needs", "₱2,300", "Bills", "Groceries", "Wants", "₱250", "Eating out", "No category"];
+    const at = order.map((s) => list.indexOf(s));
+    expect(at.every((i) => i >= 0), JSON.stringify(at)).toBe(true);
+    expect([...at].sort((a, b) => a - b)).toEqual(at);
+  });
+
+
   it("shows this month's total, rows by amount, pace and no-spend days", async () => {
     const now = Date.now();
     const h = await seedHousehold({ createdAt: addMonths(now, -2) });
@@ -153,7 +169,7 @@ describe("category detail", () => {
     const h = await seedHousehold();
     await addEntry(h, { amount: 4400, at: Date.now() - 1000, category: null });
     const body = await page("/spending/category/none", h);
-    expect(body).toContain("Uncategorized");
+    expect(body).toContain("No category");
     expect(body).toContain("₱44");
   });
 

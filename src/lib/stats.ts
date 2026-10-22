@@ -4,6 +4,7 @@ import { categories, entries } from "../db/schema";
 import type { Env } from "../env";
 import { formatPeso } from "./money";
 import { DAY_MS, addMonths, dayStart, monthStart, weekStart, type RangeKind } from "./time";
+import type { CategoryKey } from "./categories";
 
 export type Filter = { householdId: number; profileId: number | null; start: number; end: number };
 
@@ -32,12 +33,12 @@ export async function weekCategoryTotal(env: Env, householdId: number, categoryI
   return (await total(env, householdId, null, start, start + 7 * DAY_MS, cat)).total;
 }
 
-export type BreakdownRow = { categoryId: number | null; name: string; emoji: string; amount: number; count: number };
+export type BreakdownRow = { categoryId: number | null; key: CategoryKey | null; name: string; emoji: string; amount: number; count: number };
 
 export async function breakdown(env: Env, f: Filter): Promise<{ total: number; count: number; rows: BreakdownRow[] }> {
   const amount = sum(entries.amountCentavos);
   const rows = await getDb(env)
-    .select({ categoryId: entries.categoryId, name: categories.name, emoji: categories.emoji, amount, count: count() })
+    .select({ categoryId: entries.categoryId, key: categories.key, name: categories.name, emoji: categories.emoji, amount, count: count() })
     .from(entries)
     .leftJoin(categories, eq(categories.id, entries.categoryId))
     .where(where(f.householdId, f.profileId, f.start, f.end))
@@ -45,7 +46,8 @@ export async function breakdown(env: Env, f: Filter): Promise<{ total: number; c
     .orderBy(desc(amount));
   const out = rows.map((r) => ({
     categoryId: r.categoryId,
-    name: r.categoryId === null ? "Uncategorized" : (r.name ?? "?"),
+    key: (r.key as CategoryKey | null) ?? null,
+    name: r.categoryId === null ? "No category" : (r.name ?? "?"),
     emoji: r.categoryId === null ? "·" : (r.emoji ?? "·"),
     amount: Number(r.amount ?? 0),
     count: r.count,

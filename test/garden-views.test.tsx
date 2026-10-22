@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { FIXED } from "../src/lib/categories";
 import { categoryColor, flowerFor } from "../src/lib/colors";
 import { Avatar, Plant, Wordmark } from "../src/views/garden";
 
 const count = (s: string, needle: string) => s.split(needle).length - 1;
 
 describe("colours", () => {
-  it("gives each category a colour by id, cycling through eight, and uncategorized one of its own", () => {
-    const fills = Array.from({ length: 8 }, (_, i) => categoryColor(i).fill);
-    expect(new Set(fills).size).toBe(8);
-    expect(categoryColor(9)).toEqual(categoryColor(1));
+  it("gives each of the ten its own colour, and no category one of its own", () => {
+    const fills = FIXED.map((c) => categoryColor(c.key).fill);
+    expect(new Set(fills).size).toBe(10);
     expect(fills).not.toContain(categoryColor(null).fill);
   });
 

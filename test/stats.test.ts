@@ -18,7 +18,8 @@ describe("breakdown", () => {
     const b = await breakdown(env, { householdId: h.householdId, profileId: null, start, end });
     expect(b.total).toBe(1340000);
     expect(b.count).toBe(3);
-    expect(b.rows.map((r) => [r.name, r.amount])).toEqual([["Groceries", 790000], ["Eating out", 435000], ["Uncategorized", 115000]]);
+    expect(b.rows.map((r) => [r.name, r.amount])).toEqual([["Groceries", 790000], ["Eating out", 435000], ["No category", 115000]]);
+    expect(b.rows.map((r) => r.key)).toEqual(["groceries", "eating-out", null]);
     expect(b.rows[2]).toMatchObject({ categoryId: null, emoji: "·", count: 1 });
   });
 

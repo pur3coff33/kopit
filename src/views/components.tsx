@@ -17,7 +17,7 @@ export function Keypad() {
 
 export function Tile({ cat, id }: { cat: Cat; id?: string }) {
   return (
-    <button type="button" class="cat" id={id} data-id={String(cat.id)} data-key={cat.key} data-name={cat.name} data-emoji={cat.emoji} style={`--tint:${categoryColor(cat.id).tint}`}>
+    <button type="button" class="cat" id={id} data-id={String(cat.id)} data-key={cat.key} data-name={cat.name} data-emoji={cat.emoji} style={`--tint:${categoryColor(cat.key).tint}`}>
       <span class="e">{cat.emoji}</span>
       {cat.name}
     </button>

@@ -59,12 +59,13 @@ async function EditPage(props: {
             <input type="radio" name="categoryId" value="" checked={props.categoryId === null} />
             No category
           </label>
-          {cats.map((cat) => (
-            <label class="chip" style={`--tint:${categoryColor(cat.id).tint}`}>
+          {cats.flatMap((cat, i) => [
+            ...(i === 0 || cats[i - 1].group !== cat.group ? [<span class="chip-label">{cat.group === "need" ? "Needs" : "Wants"}</span>] : []),
+            <label class="chip" style={`--tint:${categoryColor(cat.key).tint}`}>
               <input type="radio" name="categoryId" value={String(cat.id)} checked={cat.id === props.categoryId} />
               {`${cat.emoji} ${cat.name}`}
-            </label>
-          ))}
+            </label>,
+          ])}
         </div>
         <div class="pair">
           <label>

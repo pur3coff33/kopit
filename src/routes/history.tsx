@@ -3,6 +3,7 @@ import { and, desc, eq, gte, lt, min, sql } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { categories, entries, profiles } from "../db/schema";
 import type { AppEnv } from "../env";
+import type { CategoryKey } from "../lib/categories";
 import { categoryColor } from "../lib/colors";
 import { missionDays, type DayMissions } from "../lib/garden";
 import { formatPeso } from "../lib/money";
@@ -143,6 +144,7 @@ history.get("/history", async (c) => {
             who: profiles.name,
             categoryId: entries.categoryId,
             category: categories.name,
+            key: categories.key,
             emoji: categories.emoji,
           })
           .from(entries)
@@ -204,10 +206,10 @@ history.get("/history", async (c) => {
                 {missions?.has(item.day) && <DayMissionsLine m={missions.get(item.day)!} today={item.day === today} />}
                 <ul class="rows">
                   {list.map((r) => {
-                    const what = r.category ?? "Uncategorized";
+                    const what = r.category ?? "No category";
                     return (
                       <li>
-                        <a class="row" href={`/entries/${r.id}/edit?back=${back}`} style={`--tint:${categoryColor(r.categoryId).tint}`}>
+                        <a class="row" href={`/entries/${r.id}/edit?back=${back}`} style={`--tint:${categoryColor(r.key as CategoryKey | null).tint}`}>
                           <span class="ic">{r.emoji ?? "·"}</span>
                           <span class="mid">
                             <span class="nm">

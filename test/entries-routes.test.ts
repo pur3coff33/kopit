@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { getEntry } from "../src/lib/entries";
 import { safeBack } from "../src/routes/entries";
 import { addEntry, authCookie, form, html, req, seedHousehold } from "./helpers";
+import { FIXED } from "../src/lib/categories";
 
 async function setup() {
   const h = await seedHousehold();
@@ -21,6 +22,11 @@ describe("edit expense", () => {
     expect(body).toMatch(/<input type="radio" name="categoryId" value="\d+" checked=""\/>\s*🍜 Eating out/);
     expect(body).toMatch(/<input type="radio" name="categoryId" value=""\/>\s*No category/);
     expect(body).not.toContain("<select");
+    const names = [...body.matchAll(/name="categoryId" value="\d+"[^>]*\/>\s*\S+ ([^<]+)</g)].map((m) => m[1].trim());
+    expect(names).toEqual(FIXED.map((c) => c.name));
+    expect(body.indexOf("Needs")).toBeLessThan(body.indexOf("🛒 Groceries"));
+    expect(body.indexOf("Wants")).toBeLessThan(body.indexOf("🍜 Eating out"));
+    expect(body.indexOf("🧴 Household")).toBeLessThan(body.indexOf("Wants"));
   });
 
   it("changes the amount and category, keeping the time when the date is unchanged", async () => {

@@ -3,11 +3,11 @@ import { and, desc, eq, gte, isNull, lt } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { entries, profiles } from "../db/schema";
 import type { AppEnv } from "../env";
-import { getCategory } from "../lib/categories";
+import { FIXED, getCategory, type CategoryKey } from "../lib/categories";
 import { categoryColor } from "../lib/colors";
 import { monthGarden, monthName, rangeDays, todayMissions, wholePastMonth } from "../lib/garden";
 import { formatPeso, maskPeso } from "../lib/money";
-import { breakdown, categoryPace, pace, paceText, rangeTotal, weeklyTotals } from "../lib/stats";
+import { breakdown, categoryPace, pace, paceText, rangeTotal, weeklyTotals, type BreakdownRow } from "../lib/stats";
 import { addMonths, dayStart, isNight, rangeLabel, resolveRange, toDateInput, type Range, type RangeKind } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { AmountsEye, herePath } from "../views/components";
@@ -220,8 +220,15 @@ spending.get("/spending", async (c) => {
         <p class="muted" style="margin-top:18px">Nothing logged yet.</p>
       ) : (
         <ul class="rows">
-          {b.rows.map((r) => {
-            const col = categoryColor(r.categoryId);
+          {groupRows(b.rows).map((r) => {
+            if ("label" in r)
+              return (
+                <li class="group">
+                  <span>{r.label}</span>
+                  <span>{formatPeso(r.total)}</span>
+                </li>
+              );
+            const col = categoryColor(r.key);
             return (
               <li>
                 <a class="row" href={`/spending/category/${r.categoryId ?? "none"}?${q}`} style={`--fill:${col.fill};--tint:${col.tint}`}>
@@ -245,16 +252,30 @@ spending.get("/spending", async (c) => {
   );
 });
 
+const GROUP_OF = new Map(FIXED.map((c) => [c.key, c.group]));
+
+/** The garden's rows as Needs, then Wants (each with its subtotal, biggest first), then No category. */
+function groupRows(rows: BreakdownRow[]): Array<BreakdownRow | { label: string; total: number }> {
+  const out: Array<BreakdownRow | { label: string; total: number }> = [];
+  for (const [group, label] of [["need", "Needs"], ["want", "Wants"]] as const) {
+    const mine = rows.filter((r) => r.key !== null && GROUP_OF.get(r.key) === group);
+    if (mine.length) out.push({ label, total: mine.reduce((s, r) => s + r.amount, 0) }, ...mine);
+  }
+  return [...out, ...rows.filter((r) => r.key === null)];
+}
+
 spending.get("/spending/category/:id", async (c) => {
   const householdId = c.get("householdId");
   const raw = c.req.param("id");
   let categoryId: number | null = null;
   let emoji = "·";
-  let name = "Uncategorized";
+  let name = "No category";
+  let key: CategoryKey | null = null;
   if (raw !== "none") {
     const cat = /^\d+$/.test(raw) ? await getCategory(c.env, householdId, Number(raw)) : undefined;
     if (!cat) return c.notFound();
     categoryId = cat.id;
+    key = cat.key;
     emoji = cat.emoji;
     name = cat.name;
   }
@@ -284,7 +305,7 @@ spending.get("/spending/category/:id", async (c) => {
     .orderBy(desc(entries.spentAt), desc(entries.createdAt));
   const total = rows.reduce((s, r) => s + r.amount, 0);
   const q = qs({ kind: view.range.kind, who: view.who, from: view.from, to: view.to });
-  const col = categoryColor(categoryId);
+  const col = categoryColor(key);
   const whoName = view.people.find((p) => p.id === view.who)?.name ?? "Everyone";
   const hidden = c.get("hideAmounts");
   const share = everything > 0 ? Math.round((total / everything) * 100) : 0;
