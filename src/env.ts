@@ -3,6 +3,7 @@ export type Env = {
   /** Optional: R2 needs a payment method on the Cloudflare account, so backups start switched off. */
   BACKUPS?: R2Bucket;
   ASSETS: Fetcher;
+  CF_VERSION_METADATA: WorkerVersionMetadata;
   PIN_PEPPER: string;
 };
 

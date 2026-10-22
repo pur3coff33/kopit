@@ -8,6 +8,22 @@ import { startTour } from "./tour.js";
 const $ = (sel) => document.querySelector(sel);
 const LEAF_SEEN = "kopit-leaf-seen";
 const WRAPPED_SEEN = "kopit-wrapped-seen";
+const DRAFT = "kopit-draft"; // what was typed when an update reloaded the app (sessionStorage)
+
+/** The amount, category and note kept across an update's reload, or null when there's nothing worth bringing back. */
+export function readDraft(raw) {
+  try {
+    const d = JSON.parse(raw ?? "null");
+    if (typeof d?.typed !== "string" || !/^\d+(\.\d{0,2})?$/.test(d.typed) || toCentavos(d.typed) === 0) return null;
+    return {
+      typed: d.typed,
+      categoryId: Number.isInteger(d.categoryId) ? d.categoryId : null,
+      note: typeof d.note === "string" ? d.note : "",
+    };
+  } catch {
+    return null;
+  }
+}
 
 function remember(key) {
   try {
@@ -322,6 +338,32 @@ async function refreshGarden(root) {
   } catch {} // offline: the leaf waits for a launch with signal
 }
 
+/** Keeps what's typed for after an update's reload. */
+function keepDraft() {
+  if (toCentavos(typed) === 0) return;
+  try {
+    sessionStorage.setItem(DRAFT, JSON.stringify({ typed, categoryId, note: noteInput.value }));
+  } catch {}
+}
+
+/** Puts back what was typed before an update's reload, once. */
+function restoreDraft() {
+  let draft = null;
+  try {
+    draft = readDraft(sessionStorage.getItem(DRAFT));
+    sessionStorage.removeItem(DRAFT);
+  } catch {}
+  if (!draft) return;
+  typed = draft.typed;
+  const btn = draft.categoryId === null ? null : $(`#tiles .cat[data-id="${draft.categoryId}"]:not(#more)`) ?? $(`#all .cat[data-id="${draft.categoryId}"]`);
+  if (btn) selectCategory(draft.categoryId, btn.dataset.emoji, btn.dataset.name);
+  if (draft.note) {
+    noteInput.value = draft.note;
+    noteBox.hidden = false;
+    noteToggle.hidden = true;
+  }
+}
+
 /** Starts the add screen; returns a function that stops it. */
 export function mount() {
   const root = $("#add");
@@ -362,13 +404,16 @@ export function mount() {
   noteInput.addEventListener("keydown", onNoteKey);
   save.addEventListener("click", onSave);
   window.addEventListener("online", sync);
+  window.addEventListener("kopit:update", keepDraft);
   document.addEventListener("visibilitychange", onVisible);
+  restoreDraft();
   render();
   sync();
   if (!showTour(root)) showGarden(root);
 
   return () => {
     window.removeEventListener("online", sync);
+    window.removeEventListener("kopit:update", keepDraft);
     document.removeEventListener("visibilitychange", onVisible);
     clearTimeout(toastTimer);
   };

@@ -96,6 +96,8 @@ npx wrangler d1 migrations apply kopit --remote
 npm run deploy
 ```
 
+Phones with kopit open notice the new deploy (on their next screen change, or when the app comes back to the front) and show an "update" note that can't be dismissed. Its Reload clears the saved copies of the app and reloads, and anything still waiting to sync is kept. Every deploy counts, even one that changes only server code, because the deploy's upload time is the version. A `wrangler rollback` goes back to an *older* upload time, so open apps won't be asked to reload onto it. They pick it up on their next full reload.
+
 ## Backups and restore
 
 Nightly backups to R2 are switched off because R2 needs a payment method on the Cloudflare account. Two free options still work:

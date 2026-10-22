@@ -18,6 +18,7 @@ describe("installable app", () => {
     const swText = await (await asset("/sw.js")).text();
     expect(swText).toContain("kopit-v1");
     expect(swText).toContain('"/js/router.js"'); // precached, so screens still switch with no signal
+    expect(swText).toContain('"/js/update.js"'); // the router imports it: missing offline, the router wouldn't load
   });
 
   it("clears the cached add screen after logout", async () => {

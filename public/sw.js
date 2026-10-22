@@ -11,6 +11,7 @@ const PRECACHE = [
   "/js/install.js",
   "/js/notes.js",
   "/js/router.js",
+  "/js/update.js",
   "/js/leaf.js",
   "/js/tour.js",
   "/js/tour-page.js",
