@@ -12,6 +12,7 @@ import { PROFILE_COOKIE, SESSION_COOKIE, clearCookie, deleteOtherSessions } from
 import { hashPin, isValidPin } from "../lib/pin";
 import { clockTime } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
+import { PinInput } from "../views/components";
 import { Avatar, Welcome } from "../views/garden";
 import { InlineScript, Layout } from "../views/layout";
 import { safeBack } from "./entries";
@@ -105,15 +106,15 @@ async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: stri
         <form class="form" method="post" action="/settings/pin">
           <label>
             Current PIN
-            <input name="current" type="password" inputmode="numeric" autocomplete="current-password" pattern="\d{6}" maxlength={6} required />
+            <PinInput name="current" />
           </label>
           <label>
             New PIN
-            <input name="next" type="password" inputmode="numeric" autocomplete="new-password" pattern="\d{6}" maxlength={6} required />
+            <PinInput name="next" />
           </label>
           <label>
             New PIN again
-            <input name="nextConfirm" type="password" inputmode="numeric" autocomplete="new-password" pattern="\d{6}" maxlength={6} required />
+            <PinInput name="nextConfirm" />
           </label>
           <button class="save" type="submit">Change PIN</button>
         </form>
@@ -240,7 +241,7 @@ async function DeletePage({ c, message }: { c: Context<AppEnv>; message?: string
       <form class="form delete-form" method="post" action="/settings/delete">
         <label>
           Household PIN
-          <input name="pin" type="password" inputmode="numeric" autocomplete="current-password" pattern="\d{6}" maxlength={6} required />
+          <PinInput name="pin" />
         </label>
         <label>
           Type DELETE to confirm

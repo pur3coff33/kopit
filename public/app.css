@@ -685,3 +685,6 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 .legal h2 { margin-top: 20px; }
 .legal ul { padding-left: 20px; }
 .legal li { margin: 4px 0; }
+
+/* PIN boxes are text fields (see PinInput), dotted out like a password. */
+.pin { -webkit-text-security: disc; letter-spacing: 0.15em; }

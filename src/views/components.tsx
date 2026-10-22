@@ -60,6 +60,30 @@ export function Amount({ value = "0" }: { value?: string }) {
   );
 }
 
+/**
+ * A 6-digit PIN box, dotted out. Deliberately not a password field: Chrome checks typed passwords against leaked
+ * ones, and nearly every 6-digit number is on that list, so it kept warning people. The cost is that password
+ * managers don't save or fill the PIN; a login lasts a year, so it's rarely typed.
+ */
+export function PinInput({ name }: { name: string }) {
+  return (
+    <input
+      class="pin"
+      name={name}
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      autocapitalize="off"
+      spellcheck={false}
+      data-1p-ignore=""
+      data-lpignore="true"
+      pattern="\d{6}"
+      maxlength={6}
+      required
+    />
+  );
+}
+
 /** The eye by a total: hides the totals for this phone's person (or shows them again), then comes back to `back`. */
 export function AmountsEye({ hidden, back }: { hidden: boolean; back: string }) {
   return (

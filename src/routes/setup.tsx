@@ -7,6 +7,7 @@ import { createHousehold, isFull } from "../lib/households";
 import { PROFILE_COOKIE, SESSION_COOKIE, createSession, setLongCookie } from "../lib/session";
 import { requireSession } from "../middleware/auth";
 import { Avatar, Welcome } from "../views/garden";
+import { PinInput } from "../views/components";
 import { Layout } from "../views/layout";
 
 export const setup = new Hono<AppEnv>();
@@ -49,11 +50,11 @@ function SetupPage(props: { username?: string; message?: string }) {
         </label>
         <label>
           6-digit PIN
-          <input name="pin" type="password" inputmode="numeric" autocomplete="new-password" pattern="\d{6}" maxlength={6} required />
+          <PinInput name="pin" />
         </label>
         <label>
           PIN again
-          <input name="pinConfirm" type="password" inputmode="numeric" autocomplete="new-password" pattern="\d{6}" maxlength={6} required />
+          <PinInput name="pinConfirm" />
         </label>
         <button class="save" type="submit">
           Create household

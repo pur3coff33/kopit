@@ -4,6 +4,7 @@ import type { AppEnv } from "../env";
 import { verifyLogin } from "../lib/login";
 import { PROFILE_COOKIE, SESSION_COOKIE, clearCookie, createSession, deleteSession, setLongCookie } from "../lib/session";
 import { clockTime } from "../lib/time";
+import { PinInput } from "../views/components";
 import { Welcome } from "../views/garden";
 import { InlineScript, Layout } from "../views/layout";
 
@@ -21,15 +22,7 @@ function LoginPage(props: { username?: string; message?: string; bye?: boolean }
         </label>
         <label>
           PIN
-          <input
-            name="pin"
-            type="password"
-            inputmode="numeric"
-            autocomplete="current-password"
-            pattern="\d{6}"
-            maxlength={6}
-            required
-          />
+          <PinInput name="pin" />
         </label>
         <button class="save" type="submit">Open the garden</button>
       </form>
