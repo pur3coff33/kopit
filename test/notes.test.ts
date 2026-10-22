@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 // @ts-ignore plain browser module
-import { suggest } from "../public/js/notes.js";
+import { sheetNotes, suggest, withPresets } from "../public/js/notes.js";
 import { entries } from "../src/db/schema";
 import { noteSuggestions } from "../src/lib/notes";
 import { authCookie, db, seedHousehold } from "./helpers";
@@ -19,6 +19,36 @@ async function setup() {
     });
   return { h, post };
 }
+
+describe("notes in the category sheet", () => {
+  const own = [
+    { note: "Meralco", categoryId: 2, count: 5 },
+    { note: "Jollibee", categoryId: 7, count: 3 },
+    { note: "electricity", categoryId: 2, count: 1 },
+  ];
+
+  it("puts the household's own notes for the category first, then presets without repeats", () => {
+    expect(sheetNotes(own, 2, ["Electricity", "Water"])).toEqual(["Meralco", "electricity", "Water"]);
+  });
+
+  it("filters by what's typed", () => {
+    expect(sheetNotes(own, 2, ["Electricity", "Water"], "wa")).toEqual(["Water"]);
+    expect(sheetNotes(own, 2, ["Electricity", "Water"], "ELEC")).toEqual(["electricity"]);
+  });
+
+  it("works for a category with no presets or own notes", () => {
+    expect(sheetNotes(own, 9, undefined)).toEqual([]);
+  });
+
+  it("adds every preset to the note box's suggestions, own notes winning", () => {
+    expect(withPresets(own, { 7: ["Jollibee", "KFC"] }).map((n: { note: string; categoryId: number }) => [n.note, n.categoryId])).toEqual([
+      ["Meralco", 2],
+      ["Jollibee", 7],
+      ["electricity", 2],
+      ["KFC", 7],
+    ]);
+  });
+});
 
 describe("notes on expenses", () => {
   it("stores a trimmed note, and an empty one as none", async () => {

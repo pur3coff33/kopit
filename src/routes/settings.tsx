@@ -226,7 +226,7 @@ function DeletedPage() {
       <a class="save" href="/setup" style="text-align:center;text-decoration:none;margin-top:14px">
         Start a new household
       </a>
-      <InlineScript code="try{if(self.caches)caches.delete('kopit-v1');if(self.indexedDB)indexedDB.deleteDatabase('kopit');for(var k of Object.keys(localStorage))if(k.indexOf('kopit')===0)localStorage.removeItem(k)}catch(e){}" />
+      <InlineScript code="try{if(self.caches)caches.delete('kopit-v2');if(self.indexedDB)indexedDB.deleteDatabase('kopit');for(var k of Object.keys(localStorage))if(k.indexOf('kopit')===0)localStorage.removeItem(k)}catch(e){}" />
     </Layout>
   );
 }

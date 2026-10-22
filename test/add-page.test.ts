@@ -32,6 +32,23 @@ describe("add screen", () => {
     expect(body).not.toContain('id="newcat"');
     expect(body).toContain(`data-profile-id="${profileIds[1]}"`);
   });
+
+  it("groups the tiles under Needs and Wants, carries each one's presets, and keeps the note sheet closed", async () => {
+    const h = await seedHousehold();
+    const raw = await (await req("/", { cookie: await authCookie(h.householdId, h.profileIds[0]) })).text();
+    const body = raw.replace(/&#39;|&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+    const tiles = body.slice(body.indexOf('id="tiles"'));
+    expect(tiles.indexOf("Needs")).toBeLessThan(tiles.indexOf('data-name="Groceries"'));
+    expect(tiles.indexOf('data-name="Household"')).toBeLessThan(tiles.indexOf("Wants"));
+    expect(tiles.indexOf("Wants")).toBeLessThan(tiles.indexOf('data-name="Eating out"'));
+    const attr = /data-presets="([^"]*)"/.exec(raw)![1];
+    const presets = JSON.parse(attr.replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&amp;/g, "&"));
+    expect(presets[h.categoryIds["Eating out"]]).toContain("Jollibee");
+    expect(presets[h.categoryIds.Bills]).toContain("Electricity");
+    const sheet = body.match(/<dialog[^>]*id="note-sheet"[^>]*>/)![0];
+    expect(sheet).not.toContain("open");
+    expect(body).toContain('id="note-other"');
+  });
 });
 
 describe("add screen garden", () => {

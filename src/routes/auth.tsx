@@ -39,7 +39,7 @@ function LoginPage(props: { username?: string; message?: string; bye?: boolean }
       <p class="fine">
         <a href="/guide">Guide</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a>
       </p>
-      {props.bye && <InlineScript code="if(self.caches)caches.open('kopit-v1').then(function(c){return c.delete('/')})" />}
+      {props.bye && <InlineScript code="if(self.caches)caches.open('kopit-v2').then(function(c){return c.delete('/')})" />}
     </Layout>
   );
 }

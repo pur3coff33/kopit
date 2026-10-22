@@ -1,6 +1,6 @@
 import { attachKeypad, display, toCentavos } from "./keypad.js";
 import { isStale, shouldCelebrate, shouldShowWrapped } from "./leaf.js";
-import { suggest } from "./notes.js";
+import { sheetNotes, suggest, withPresets } from "./notes.js";
 import { count, enqueue, flush, remove } from "./queue.js";
 import { saveEntry } from "./save.js";
 
@@ -16,9 +16,10 @@ function remember(key) {
   }
 }
 // The screen's elements: looked up again each time the screen is mounted.
-let profileId, amt, save, tiles, toastEl, toastText, undoBtn, noteToggle, noteBox, noteInput, suggestEl;
+let profileId, amt, save, tiles, noteSheet, noteChips, noteOther, toastEl, toastText, undoBtn, noteToggle, noteBox, noteInput, suggestEl;
 
 let notes = [];
+let presets = {}; // category id → its ready-made notes
 let typed = "0";
 let categoryId = null;
 let toastTimer;
@@ -59,14 +60,61 @@ function onTile(ev) {
   const t = ev.target.closest(".cat");
   if (!t) return;
   const id = Number(t.dataset.id);
-  select(categoryId === id ? null : id);
+  if (categoryId === id) {
+    select(null);
+    return;
+  }
+  select(id);
+  openSheet(t);
+}
+
+// ---------- the category's notes, sliding up after a tile is tapped ----------
+
+function openSheet(tile) {
+  if (!noteSheet) return; // an older offline copy of the screen, from before the sheet
+  $("#note-sheet-title").textContent = `${tile.dataset.emoji} ${tile.dataset.name}: what was it?`;
+  $("#note-skip").textContent = `Skip: just ${tile.dataset.name}`;
+  noteOther.value = "";
+  renderSheet();
+  noteSheet.showModal();
+}
+
+function renderSheet() {
+  noteChips.replaceChildren(
+    ...sheetNotes(notes, categoryId, presets[categoryId], noteOther.value).map((text) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip";
+      b.textContent = text;
+      b.addEventListener("click", () => useSheetNote(text));
+      return b;
+    }),
+  );
+}
+
+/** The picked note goes in the note box (where it can still be changed), and the sheet closes. */
+function useSheetNote(text) {
+  noteInput.value = text;
+  noteBox.hidden = false;
+  noteToggle.hidden = true;
+  suggestEl.replaceChildren();
+  noteOther.blur(); // closes the keyboard so the amount and Save are visible again
+  noteSheet.close();
+}
+
+function onOtherKey(ev) {
+  if (ev.key !== "Enter") return;
+  ev.preventDefault();
+  const text = noteOther.value.trim().replace(/\s+/g, " ");
+  if (text) useSheetNote(text);
+  else noteSheet.close();
 }
 
 // ---------- note with autocomplete ----------
 
 function renderSuggestions() {
   suggestEl.replaceChildren(
-    ...suggest(notes, noteInput.value, 5).map((n) => {
+    ...suggest(withPresets(notes, presets), noteInput.value, 5).map((n) => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "chip";
@@ -221,7 +269,7 @@ async function refreshGarden(root) {
     const res = await fetch("/", { credentials: "same-origin" });
     if (!res.ok || res.redirected) return;
     const copy = res.clone();
-    self.caches?.open("kopit-v1").then((c) => c.put("/", copy)).catch(() => {});
+    self.caches?.open("kopit-v2").then((c) => c.put("/", copy)).catch(() => {});
     const doc = new DOMParser().parseFromString(await res.text(), "text/html");
     const fresh = doc.querySelector("#add");
     if (!fresh || root !== $("#add") || isStale(fresh.dataset.day, Date.now())) return; // left the screen, or still stale
@@ -244,6 +292,9 @@ export function mount() {
   amt = $("#amt");
   save = $("#save");
   tiles = $("#tiles");
+  noteSheet = $("#note-sheet");
+  noteChips = $("#note-chips");
+  noteOther = $("#note-other");
   toastEl = $("#toast");
   toastText = $("#toast-text");
   undoBtn = $("#toast-undo");
@@ -256,6 +307,11 @@ export function mount() {
   } catch {
     notes = [];
   }
+  try {
+    presets = JSON.parse(root.dataset.presets || "{}");
+  } catch {
+    presets = {};
+  }
   typed = "0";
   categoryId = null;
   undoAction = null;
@@ -266,6 +322,12 @@ export function mount() {
   });
   undoBtn.addEventListener("click", onUndo);
   tiles.addEventListener("click", onTile);
+  if (noteSheet) {
+    noteOther.addEventListener("input", renderSheet);
+    noteOther.addEventListener("keydown", onOtherKey);
+    $("#note-skip").addEventListener("click", () => noteSheet.close());
+    $("#note-close").addEventListener("click", () => noteSheet.close());
+  }
   noteToggle.addEventListener("click", openNote);
   noteInput.addEventListener("input", renderSuggestions);
   noteInput.addEventListener("focus", renderSuggestions);

@@ -1,5 +1,5 @@
 // kopit service worker: keeps the add screen usable with no signal.
-const CACHE = "kopit-v1";
+const CACHE = "kopit-v2";
 const PRECACHE = [
   "/app.css",
   "/js/history.js",

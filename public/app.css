@@ -131,6 +131,13 @@ p { margin: 6px 0; }
   font-size: 18px; border-radius: 50% 50% 50% 12px; background: var(--tint, rgba(255, 255, 255, 0.6));
 }
 .cat.on { background: rgba(127, 176, 140, 0.42); outline: 2px solid #2f6b3c; outline-offset: 1px; transform: scale(1.04); }
+/* The add screen's ten: six needs in a row, four wants below, always in the same places. */
+.tiles { margin: 6px 0 10px; }
+.cat-label { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.55; margin: 6px 2px 4px; }
+.tiles .cats { gap: 5px; margin: 0; }
+.tiles .cats.needs { grid-template-columns: repeat(6, 1fr); }
+.tiles .cat { font-size: 10px; padding: 6px 1px 5px; }
+.tiles .needs .cat .e { width: 26px; height: 26px; font-size: 16px; }
 
 .keys {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: auto; padding: 8px;
@@ -187,6 +194,14 @@ p { margin: 6px 0; }
   background: var(--solid); font-size: 16px; font-weight: 700; box-shadow: var(--lift);
 }
 .note-box input:focus { outline: 2px solid var(--deep); outline-offset: 1px; }
+.note-sheet .chips { max-height: 42dvh; overflow-y: auto; margin: 10px 0; }
+.note-sheet .chip { cursor: pointer; }
+.note-sheet input {
+  width: 100%; box-sizing: border-box; border: 1px solid var(--edge); border-radius: 14px; padding: 10px 12px;
+  font: inherit; background: var(--glass); color: var(--ink);
+}
+.note-sheet input:focus { outline: 2px solid var(--deep); outline-offset: 1px; }
+.note-sheet .linkbtn { display: block; margin: 10px auto 0; }
 .suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .suggest .chip { cursor: pointer; font-size: 13px; }
 .row .note { display: block; font-size: 12px; opacity: 0.75; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

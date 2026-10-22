@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../env";
-import { listCategories } from "../lib/categories";
+import { FIXED, listCategories } from "../lib/categories";
 import { todayGarden } from "../lib/garden";
 import { DAY_MS, fromDateInput, weekdayDate } from "../lib/time";
 import { noteSuggestions } from "../lib/notes";
@@ -26,6 +26,7 @@ add.get("/", requireSession, requireProfile, async (c) => {
     noteSuggestions(c.env, householdId),
     todayGarden(c.env, householdId, c.get("householdCreatedAt"), now),
   ]);
+  const presets = Object.fromEntries(cats.map((c) => [c.id, FIXED.find((f) => f.key === c.key)!.presets]));
   const leafAt = garden.leafDay ? (fromDateInput(garden.leafDay) ?? now - DAY_MS) : null;
   return c.html(
     <Layout title="kop.it" tab="add" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/add.js"]}>
@@ -33,6 +34,7 @@ add.get("/", requireSession, requireProfile, async (c) => {
         id="add"
         data-profile-id={String(c.get("profileId"))}
         data-notes={JSON.stringify(notes)}
+        data-presets={JSON.stringify(presets)}
         data-day={garden.today}
         data-leaf={garden.leafDay ?? undefined}
         data-wrapped={garden.wrappedMonth ?? undefined}
@@ -55,6 +57,17 @@ add.get("/", requireSession, requireProfile, async (c) => {
         </button>
         <div class="sync" id="sync"></div>
       </section>
+      <dialog class="sheet note-sheet" id="note-sheet" aria-labelledby="note-sheet-title">
+        <div class="sheet-head">
+          <h2 id="note-sheet-title" style="margin:0"></h2>
+          <button class="x" type="button" id="note-close" aria-label="Close">
+            ×
+          </button>
+        </div>
+        <div class="chips" id="note-chips"></div>
+        <input id="note-other" maxlength={60} placeholder="Something else…" autocomplete="off" enterkeyhint="done" aria-label="Something else" />
+        <button class="linkbtn" type="button" id="note-skip"></button>
+      </dialog>
       {garden.leafDay && leafAt !== null && (
         <dialog class="sheet leaf-sheet" id="leaf-sheet" aria-labelledby="leaf-title">
           <Plant leaves={garden.leafNumber} newLeaf width={140} />

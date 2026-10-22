@@ -17,18 +17,33 @@ export function Keypad() {
 
 export function Tile({ cat, id }: { cat: Cat; id?: string }) {
   return (
-    <button type="button" class="cat" id={id} data-id={String(cat.id)} data-name={cat.name} data-emoji={cat.emoji} style={`--tint:${categoryColor(cat.id).tint}`}>
+    <button type="button" class="cat" id={id} data-id={String(cat.id)} data-key={cat.key} data-name={cat.name} data-emoji={cat.emoji} style={`--tint:${categoryColor(cat.id).tint}`}>
       <span class="e">{cat.emoji}</span>
       {cat.name}
     </button>
   );
 }
 
+const GROUPS = [
+  { group: "need", label: "Needs" },
+  { group: "want", label: "Wants" },
+] as const;
+
+/** The ten tiles, always in the same places: needs on top, wants below. */
 export function CategoryTiles({ cats }: { cats: Cat[] }) {
   return (
-    <div class="cats" id="tiles">
-      {cats.map((cat) => (
-        <Tile cat={cat} />
+    <div class="tiles" id="tiles">
+      {GROUPS.map((g) => (
+        <div class="cat-group">
+          <div class="cat-label">{g.label}</div>
+          <div class={`cats ${g.group}s`}>
+            {cats
+              .filter((c) => c.group === g.group)
+              .map((cat) => (
+                <Tile cat={cat} />
+              ))}
+          </div>
+        </div>
       ))}
     </div>
   );
