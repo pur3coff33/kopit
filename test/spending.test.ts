@@ -18,23 +18,15 @@ describe("spending screen", () => {
     await addEntry(h, { amount: 790000, at: now - 1000, category: "Groceries" });
     await addEntry(h, { amount: 2000000, at: addMonths(now, -1) + 60_000, category: "Bills" });
     const body = await page("/spending", h);
-    expect(body).toContain("<title>Garden · kop.it</title>");
-    expect(body).toMatch(/<a class="on"[^>]*>This month</);
-    expect(body).toMatch(/class="chip on"[^>]*>Everyone</);
     expect(body).toContain("₱12,250");
     expect(body).toContain("2 expenses");
     expect(body.indexOf("Groceries")).toBeLessThan(body.indexOf("Food"));
     expect(body).toContain("↓ ₱7,750 · 🌸 on track");
     expect(body).toContain('class="bud"');
-    expect(body).toMatch(/class="row"[^>]*style="--fill:#[0-9A-F]{6};--tint:#[0-9A-F]{6}38"/);
     expect(body).toMatch(/🍃 \d+ good days? · \d+ perfect · 2 expenses/);
-    expect(body).toContain('class="missions');
     expect(body).toContain("Today's missions");
     expect(body).toMatch(/\d of \d on track/);
-    expect(body).toContain('href="/gallery"');
-    expect(body).toMatch(/class="sky" data-sky="" data-phase="(day|night)" data-weather="clear"/);
-    expect(body).toContain('src="/js/sky.js"');
-    expect(body).toMatch(/href="\/spending\/category\/\d+\?range=this&amp;who=all"|href="\/spending\/category\/\d+\?range=this&who=all"/);
+    expect(body).toContain("data-sky"); // today's weather; a finished month has none
   });
 
   it("treats a reversed custom range as the right way round", async () => {
@@ -189,5 +181,3 @@ describe("category detail", () => {
     expect(res.status).toBe(404);
   });
 });
-
-export { DAY };

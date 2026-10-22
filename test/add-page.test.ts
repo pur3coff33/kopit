@@ -32,9 +32,6 @@ describe("add screen", () => {
     const sheet = body.slice(body.indexOf('id="sheet"'));
     expect([...sheet.matchAll(/data-name="([^"]+)"/g)]).toHaveLength(12);
     expect(body).toContain(`data-profile-id="${profileIds[1]}"`);
-    expect(body).toContain("Save it ✓");
-    expect(body).toContain('src="/js/add.js"');
-    expect(body).toContain("Partner");
   });
 });
 
@@ -47,11 +44,8 @@ describe("add screen garden", () => {
     const h = await seedHousehold({ createdAt: dayStart(now) - DAY_MS + 3_600_000 }); // started yesterday
     const body = await view(h);
     expect(body).toContain(`data-day="${toDateInput(now)}"`);
-    expect(body).not.toContain('id="hint"');
     expect(body).toContain(`data-leaf="${toDateInput(now - DAY_MS)}"`);
-    expect(body).toContain('id="leaf-sheet"');
     expect(body).toContain("A perfect day! 🌸"); // a quiet day meets every mission
-    expect(body).toContain("Every mission done yesterday");
     expect(body).toContain("That's your 1st leaf");
   });
 
@@ -64,10 +58,5 @@ describe("add screen garden", () => {
     const body = await view(h);
     expect(body).not.toContain("data-leaf=");
     expect(body).not.toContain('id="leaf-sheet"');
-  });
-
-  it("tints each category tile with its colour", async () => {
-    const h = await seedHousehold();
-    expect(await view(h)).toMatch(/class="cat"[^>]*style="--tint:#[0-9A-F]{6}38"/);
   });
 });

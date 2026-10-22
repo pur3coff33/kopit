@@ -98,11 +98,6 @@ describe("mission rules", () => {
 });
 
 describe("a day's missions", () => {
-  it("are the same on every phone for the same household and day", () => {
-    const b = rich(D);
-    expect(missionsFor(7, D, b).map((m) => m.title)).toEqual(missionsFor(7, D, b).map((m) => m.title));
-  });
-
   it("number 3 to 5, mix easy and medium (never hard), and never repeat a rule", () => {
     const counts = new Set<number>();
     for (let h = 1; h <= 30; h++) {

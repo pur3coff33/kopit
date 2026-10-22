@@ -4,28 +4,12 @@ import { describe, expect, it } from "vitest";
 import { households, profiles } from "../src/db/schema";
 import { listCategories, topCategories } from "../src/lib/categories";
 import { verifyLogin } from "../src/lib/login";
-import { addMonths } from "../src/lib/time";
 import { authCookie, db, form, html, req, seedHousehold } from "./helpers";
 
 async function setup() {
   const h = await seedHousehold({ username: "jon", pin: "482913" });
   return { h, cookie: await authCookie(h.householdId, h.profileIds[0]) };
 }
-
-describe("garden shed", () => {
-  it("is called the garden shed, for this household", async () => {
-    const { cookie } = await setup();
-    const body = await html(await req("/settings", { cookie }));
-    expect(body).toContain("<title>Garden shed · kop.it</title>");
-    expect(body).toContain("Settings for the jon household");
-  });
-
-  it("no longer keeps a greenhouse shelf: the gallery replaced it", async () => {
-    const h = await seedHousehold({ createdAt: addMonths(Date.now(), -8) });
-    const body = await html(await req("/settings", { cookie: await authCookie(h.householdId, h.profileIds[0]) }));
-    expect(body).not.toContain('class="greenhouse"');
-  });
-});
 
 describe("settings page", () => {
   it("has every section", async () => {

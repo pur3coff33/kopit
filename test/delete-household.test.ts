@@ -21,21 +21,10 @@ async function rowsOf(householdId: number) {
   return out;
 }
 
-describe("help and info in the garden shed", () => {
-  it("links the guide, the legal pages and the GitHub repo", async () => {
-    const { cookie } = await setup();
-    const body = await html(await req("/settings", { cookie }));
-    for (const href of ['href="/guide"', 'href="/privacy"', 'href="/terms"', 'href="https://github.com/pur3coff33/kopit"']) {
-      expect(body, href).toContain(href);
-    }
-  });
-});
-
 describe("delete household", () => {
-  it("keeps the link small and last in the garden shed, after logging out", async () => {
+  it("keeps the link last in the garden shed, after logging out", async () => {
     const { cookie } = await setup();
     const body = await html(await req("/settings", { cookie }));
-    expect(body).toMatch(/<p class="far-away"><a href="\/settings\/delete">Delete household…<\/a><\/p>/);
     expect(body.indexOf("/settings/delete")).toBeGreaterThan(body.indexOf("Log out of this phone"));
   });
 

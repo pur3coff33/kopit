@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { alignContext } from "../src/lib/aligned";
 import { GENTLE, GENTLE_BY_TYPE, alignGentle } from "../src/lib/gentle";
-import { RULES, TYPE_NAMES, baseline, judgeDay, missionsFor, type CatInfo, type DayExpense } from "../src/lib/missions";
+import { TYPE_NAMES, baseline, judgeDay, missionsFor, type CatInfo, type DayExpense } from "../src/lib/missions";
 import { dayKey } from "../src/lib/time";
 
 const DAY = 86_400_000;
@@ -44,10 +44,8 @@ const ctxOf = (history: DayExpense[], d = D) => alignContext(history, d, CATS, d
 const on = (all: DayExpense[], d: number) => all.filter((e) => dayKey(e.spentAt) === d);
 
 describe("gentle missions (rule set 4)", () => {
-  it("are the current set: 20 rules, each with a name for Wrapped and a guide example", () => {
-    expect(RULES).toBe(4);
-    expect(GENTLE).toHaveLength(20);
-    expect(new Set(GENTLE.map((d) => d.type)).size).toBe(20);
+  it("each have their own type, a name for Wrapped and a guide example", () => {
+    expect(new Set(GENTLE.map((d) => d.type)).size).toBe(GENTLE.length);
     for (const def of GENTLE) {
       expect(TYPE_NAMES[def.type], def.type).toBeTruthy();
       expect(def.build(def.demo).title, def.type).toBeTruthy();

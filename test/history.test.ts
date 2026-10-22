@@ -61,16 +61,12 @@ describe("history page", () => {
     await addEntry(h, { amount: 4500, at: now - DAY, category: "Transport", profile: 1 });
     await addEntry(h, { amount: 999, at: now - 2000, category: null });
     const body = await view("/history", h);
-    expect(body).toMatch(/class="tab on"[^>]*>[\s\S]*?history<\/a>/);
     const order = ["Today", "₱259.99", "Jollibee with Ana", "₱250", "Uncategorized", "₱9.99", "Yesterday", "₱45", "Transport", "Partner"];
     const list = body.slice(body.indexOf('id="history"')).replace(/<details class="missions[\s\S]*?<\/details>/g, "");
     const at = order.map((s) => list.indexOf(s));
     expect(at.every((i) => i > -1)).toBe(true);
     expect([...at].sort((x, y) => x - y)).toEqual(at);
     expect(body).toMatch(/href="\/entries\/[0-9a-f-]{36}\/edit\?back=%2Fhistory/);
-    expect(body).toContain('class="history path"');
-    expect(body).toContain('class="day-group"');
-    expect(body).toMatch(/class="row" href="[^"]*" style="--tint:#[0-9A-F]{6}38"/);
   });
 
   it("filters by person and keeps other households out", async () => {

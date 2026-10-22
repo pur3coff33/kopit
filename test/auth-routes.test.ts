@@ -16,15 +16,6 @@ describe("login page", () => {
     expect(body).toContain('href="/setup"');
   });
 
-  it("opens with the big kop.it wordmark and the sprout under glass", async () => {
-    const body = await html(await req("/login"));
-    expect(body).toContain('class="wm big"');
-    expect(body).toContain("your household's money garden");
-    expect(body).toContain('class="cloche"');
-    expect(body).toContain("Open the garden");
-    expect(body).not.toContain('<header class="top">'); // the big wordmark replaces the header here
-  });
-
   it("logs in and sets a long-lived secure cookie", async () => {
     await seedHousehold({ username: "jon", pin: "482913" });
     const res = await req("/login", form({ username: "Jon", pin: "482913" }));

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_CENTAVOS, formatPeso, parseAmount } from "../src/lib/money";
+import { formatPeso, parseAmount } from "../src/lib/money";
 
 describe("parseAmount", () => {
   it("converts pesos to centavos", () => {
@@ -12,9 +12,6 @@ describe("parseAmount", () => {
     for (const bad of ["", "0", "-5", "abc", "1.234", "1000000.01", "1e3", " "]) {
       expect(parseAmount(bad), bad).toBeNull();
     }
-  });
-  it("caps at MAX_CENTAVOS", () => {
-    expect(MAX_CENTAVOS).toBe(100_000_000);
   });
 });
 

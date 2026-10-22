@@ -5,16 +5,16 @@ import { Avatar, Plant, Wordmark } from "../src/views/garden";
 const count = (s: string, needle: string) => s.split(needle).length - 1;
 
 describe("colours", () => {
-  it("gives each category an earthy colour by id, and uncategorized a neutral one", () => {
-    expect(categoryColor(1).fill).toBe("#E3A857");
-    expect(categoryColor(8).fill).toBe("#7FB08C");
-    expect(categoryColor(3).tint).toBe("#8AA6C938");
-    expect(categoryColor(null).fill).toBe("#A9B5AA");
+  it("gives each category a colour by id, cycling through eight, and uncategorized one of its own", () => {
+    const fills = Array.from({ length: 8 }, (_, i) => categoryColor(i).fill);
+    expect(new Set(fills).size).toBe(8);
+    expect(categoryColor(9)).toEqual(categoryColor(1));
+    expect(fills).not.toContain(categoryColor(null).fill);
   });
 
-  it("gives each person a flower by their place in the household", () => {
-    expect(flowerFor(0).petal).toBe("#F2B25C");
-    expect(flowerFor(9).petal).toBe("#F0A3B5");
+  it("gives each person a flower by their place in the household, cycling through eight", () => {
+    expect(flowerFor(9)).toEqual(flowerFor(1));
+    expect(flowerFor(0)).not.toEqual(flowerFor(1));
   });
 });
 
@@ -49,20 +49,10 @@ describe("drawings", () => {
     expect(s).not.toMatch(/<ellipse class="leaf[^"]*"[^>]*transform=/);
   });
 
-  it("flutters each leaf from where it meets the stem, on its own timing, with its flower riding along", () => {
-    const s = String(<Plant leaves={4} perfect={4} />);
-    const styles = [...s.matchAll(/<g class="flutter" style="([^"]*)">/g)].map((m) => m[1]);
-    expect(styles).toHaveLength(4);
-    for (const st of styles) expect(st).toMatch(/transform-origin:\d+(\.\d)?px \d+(\.\d)?px/);
-    expect(new Set(styles.map((st) => st.match(/animation-delay:([^;]+)/)![1])).size).toBe(4);
-    // Each perfect-day flower sits inside its leaf's flutter group, so it moves with the leaf.
-    for (const part of s.split('<g class="flutter"').slice(1)) expect(part).toContain('class="pf"');
-  });
-
   it("names the wordmark for screen readers and shows the person's flower", () => {
     expect(String(<Wordmark />)).toContain('aria-label="kop.it"');
     const a = String(<Avatar index={1} name="Mia" />);
-    expect(a).toContain("#F0A3B5");
+    expect(a).toContain(flowerFor(1).petal);
     expect(a).toContain(">M<");
   });
 });

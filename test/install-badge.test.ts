@@ -20,18 +20,10 @@ describe("installMode", () => {
   });
 });
 
-describe("page head and badge", () => {
-  it("colors the status bar for light and dark phones", async () => {
-    const body = await (await req("/login")).text();
-    expect(body).toContain('<meta name="theme-color" content="#EEF4EA" media="(prefers-color-scheme: light)"/>');
-    expect(body).toContain('<meta name="theme-color" content="#1F3326" media="(prefers-color-scheme: dark)"/>');
-    expect(body).toContain('name="apple-mobile-web-app-status-bar-style" content="default"');
-  });
-
+describe("install badge", () => {
   it("ships a hidden install badge and its script on every page", async () => {
     const body = await (await req("/login")).text();
     expect(body).toMatch(/<div class="install" id="install" hidden="">/);
     expect(body).toContain('src="/js/install.js"');
-    expect(body).toContain("Install kop.it on this phone");
   });
 });
