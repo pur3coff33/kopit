@@ -67,10 +67,10 @@ const perPersonMost = (xs: DayExpense[]) => {
   for (const e of xs) per.set(e.profileId, (per.get(e.profileId) ?? 0) + e.amount);
   return Math.max(0, ...per.values());
 };
-const FOOD: CatInfo = { id: 1, name: "Food", emoji: "🍜" };
-const TRANSPORT: CatInfo = { id: 2, name: "Transport", emoji: "🚌" };
+const EATING_OUT: CatInfo = { id: 1, name: "Eating out", emoji: "🍜" };
+const GIFTS: CatInfo = { id: 2, name: "Gifts & occasions", emoji: "🎁" };
 const SHOPPING: CatInfo = { id: 3, name: "Shopping", emoji: "🛍️" };
-const FUN: CatInfo = { id: 4, name: "Fun", emoji: "🎮" };
+const FUN: CatInfo = { id: 4, name: "Fun & outings", emoji: "🎉" };
 
 /** "Keep … under ₱X" on part of the day's spending: `of` picks the part. */
 function under(
@@ -128,7 +128,7 @@ function lessThanYesterday(type: string, name: string, family: string | undefine
         return { ok: t === 0 || t < ref, note: `${peso(t)} vs ${peso(ref)}` };
       },
     }),
-    demo: catShare === null ? { amount: 0 } : { cat: FOOD, amount: 0 },
+    demo: catShare === null ? { amount: 0 } : { cat: EATING_OUT, amount: 0 },
   };
 }
 
@@ -218,7 +218,7 @@ export const GENTLE: ReadonlyArray<AlignedDef> = [
     }),
     demo: { n: 6 },
   },
-  under("cat-under", "Keeping a category under budget", undefined, (xs, p) => inCat(xs, p.cat!.id), (p) => `Keep ${label(p.cat!)} under ${peso(p.amount!)}`, { cat: FOOD, amount: 30_000 }, {
+  under("cat-under", "Keeping a category under budget", undefined, (xs, p) => inCat(xs, p.cat!.id), (p) => `Keep ${label(p.cat!)} under ${peso(p.amount!)}`, { cat: EATING_OUT, amount: 30_000 }, {
     variants: (ctx) =>
       usedOn(ctx, RARE).flatMap((c) => roomy(ctx.days.map((f) => sum(inCat(f.expenses, c.cat.id)))).map((amount) => ({ cat: c.cat, amount }))),
   }),
@@ -239,7 +239,7 @@ export const GENTLE: ReadonlyArray<AlignedDef> = [
         return { ok: top <= p.amount!, note: top ? `biggest ${peso(top)}` : "none" };
       },
     }),
-    demo: { cat: FOOD, amount: 20_000 },
+    demo: { cat: EATING_OUT, amount: 20_000 },
   },
   lessThanYesterday("less-cat-than-yesterday", "A category under yesterday's", undefined, RARE),
   {
@@ -283,7 +283,7 @@ export const GENTLE: ReadonlyArray<AlignedDef> = [
     undefined,
     (xs, p) => xs.filter((e) => e.categoryId === p.cat!.id || e.categoryId === p.cat2!.id),
     (p) => `Keep ${label(p.cat!)} and ${label(p.cat2!)} under ${peso(p.amount!)} together`,
-    { cat: FOOD, cat2: TRANSPORT, amount: 40_000 },
+    { cat: EATING_OUT, cat2: GIFTS, amount: 40_000 },
     {
       variants: (ctx) =>
         pairs(usedOn(ctx, RARE).slice(0, 4)).flatMap(([a, b]) =>

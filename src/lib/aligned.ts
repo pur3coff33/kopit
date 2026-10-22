@@ -148,7 +148,7 @@ function quietFrom(type: string, name: string, family: string, catShare: number 
         return { ok: n === 0, note: n === 0 ? "none" : plural(n, "buy") };
       },
     }),
-    demo: catShare === null ? { hour: before ? 9 : 21 } : { cat: { id: 1, name: "Food", emoji: "🍜" }, hour: 20 },
+    demo: catShare === null ? { hour: before ? 9 : 21 } : { cat: { id: 1, name: "Eating out", emoji: "🍜" }, hour: 20 },
   };
 }
 
@@ -207,7 +207,7 @@ export const ALIGNED: ReadonlyArray<AlignedDef> = [
         return { ok: t < p.amount!, note: t ? `${peso(t)} spent` : "none" };
       },
     }),
-    demo: { cat: { id: 1, name: "Food", emoji: "🍜" }, amount: 25_000 },
+    demo: { cat: { id: 1, name: "Eating out", emoji: "🍜" }, amount: 25_000 },
   },
   {
     type: "no-big-buy",
@@ -242,7 +242,7 @@ export const ALIGNED: ReadonlyArray<AlignedDef> = [
         return { ok: top <= p.amount!, note: top ? `biggest ${peso(top)}` : "none" };
       },
     }),
-    demo: { cat: { id: 1, name: "Food", emoji: "🍜" }, amount: 20_000 },
+    demo: { cat: { id: 1, name: "Eating out", emoji: "🍜" }, amount: 20_000 },
   },
   {
     type: "no-small-buys",
@@ -276,7 +276,7 @@ export const ALIGNED: ReadonlyArray<AlignedDef> = [
         return { ok: n <= p.n!, note: plural(n, "buy") };
       },
     }),
-    demo: { cat: { id: 1, name: "Food", emoji: "🍜" }, n: 2 },
+    demo: { cat: { id: 1, name: "Eating out", emoji: "🍜" }, n: 2 },
   },
   countAtMost(
     "few-cats",
@@ -373,7 +373,7 @@ export const ALIGNED: ReadonlyArray<AlignedDef> = [
         return { ok: t === 0, note: t ? `${peso(t)} spent` : "none" };
       },
     }),
-    demo: { cat: { id: 4, name: "Shopping", emoji: "🛍️" }, cat2: { id: 3, name: "Transport", emoji: "🚌" } },
+    demo: { cat: { id: 4, name: "Shopping", emoji: "🛍️" }, cat2: { id: 3, name: "Gifts & occasions", emoji: "🎁" } },
   },
   {
     type: "less-than-yesterday",
@@ -443,7 +443,7 @@ export const ALIGNED: ReadonlyArray<AlignedDef> = [
         return { ok: t === 0 || t < ref, note: `${peso(t)} vs ${peso(ref)}` };
       },
     }),
-    demo: { cat: { id: 1, name: "Food", emoji: "🍜" } },
+    demo: { cat: { id: 1, name: "Eating out", emoji: "🍜" } },
   },
   amountUnder(
     "morning-under",

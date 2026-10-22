@@ -11,6 +11,12 @@ describe("guide", () => {
     for (const stage of ["Sprout", "A leaf a good day", "Perfect days", "On track", "Bloom"]) expect(body, stage).toContain(stage);
   });
 
+  it("gives each mission an example on today's categories, only ever a want", () => {
+    const examples = GENTLE.map((d) => d.build(d.demo).title).join(" | ");
+    for (const old of ["Food", "🎮", "🛒", "💡", "🚌", "💊", "📚", "🧴"]) expect(examples).not.toContain(old);
+    expect(examples).toContain("🍜 Eating out");
+  });
+
   it("shows all eight skies, fixed, so the live weather script leaves them alone", async () => {
     const body = await html(await req("/guide"));
     for (const p of ["day", "night"]) for (const w of ["clear", "cloudy", "rain", "storm"]) expect(body).toContain(`data-phase="${p}" data-weather="${w}"`);

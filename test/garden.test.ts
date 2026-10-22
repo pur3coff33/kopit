@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { dayMissions, gardenDays } from "../src/db/schema";
 import { deleteEntry, insertEntry, updateEntry } from "../src/lib/entries";
 import { dayResults, frozenBaselines, gardenMonths, monthGarden, todayGarden, todayMissions, wholePastMonth } from "../src/lib/garden";
+import type { Aligned } from "../src/lib/aligned";
 import { RULES, baseline } from "../src/lib/missions";
 import { dayKey, resolveRange } from "../src/lib/time";
 import { addEntry, db, seedHousehold } from "./helpers";
@@ -143,6 +144,27 @@ describe("gardenMonths", () => {
 });
 
 describe("today", () => {
+  it("never names a need in a mission", async () => {
+    const h = await seedHousehold({ createdAt: manila(8, 15) });
+    // Three weeks of everyday spending that varies from day to day, so missions can be tried on it.
+    for (let d = 1; d <= 20; d++) {
+      const k = 5 + ((d * 7) % 11); // 5..15, a different mix each day
+      await addEntry(h, { amount: k * 8_000, at: manila(9, d, 9), category: "Groceries" });
+      await addEntry(h, { amount: (20 - k) * 9_000, at: manila(9, d, 10), category: "Bills" });
+      await addEntry(h, { amount: k * 1_500, at: manila(9, d, 11), category: "Transport" });
+      await addEntry(h, { amount: (25 - k) * 2_000, at: manila(9, d, 12), category: "Eating out" });
+      if (d % 3 === 0) await addEntry(h, { amount: k * 5_000, at: manila(9, d, 16), category: "Shopping" });
+    }
+    const { items } = await todayMissions(env, h.householdId, now);
+    for (const m of items) for (const e of ["🛒", "💡", "🚌", "💊", "📚", "🧴"]) expect(m.title).not.toContain(e);
+    const [row] = await db().select().from(dayMissions).where(and(eq(dayMissions.householdId, h.householdId), eq(dayMissions.day, dayKey(now))));
+    const picked = (JSON.parse(row.baseline).gentle as Aligned[]).flatMap((a) => [a.params.cat, a.params.cat2, ...(a.params.cats ?? [])]);
+    const ids = picked.filter((c) => c !== undefined).map((c) => c!.id);
+    expect(ids.length).toBeGreaterThan(0); // some missions were about a category at all
+    const wants = ["Eating out", "Shopping", "Fun & outings", "Gifts & occasions"].map((n) => h.categoryIds[n]);
+    expect(ids.every((id) => wants.includes(id))).toBe(true);
+  });
+
   it("lists today's missions, on track until broken", async () => {
     const created = manila(9, 1, 9);
     const h = await seedHousehold({ createdAt: created });

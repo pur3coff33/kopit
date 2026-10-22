@@ -11,6 +11,7 @@ import { and, count, eq, gte, inArray, lt, sql, sum } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { categories, entries, gardenDays } from "../db/schema";
 import type { Env } from "../env";
+import { WANTS } from "./categories";
 import { ALIGNED_FROM, RULES, TYPE_NAMES, baseline, judgeDay, missionsFor, type Baseline, type CatInfo, type DayExpense, type DayFacts } from "./missions";
 import { DAY_MS, MANILA_OFFSET_MS, addMonths, dayKey, dayStart, monthStart, toDateInput, type Range } from "./time";
 
@@ -43,11 +44,12 @@ async function expensesBetween(env: Env, householdId: number, fromDay: number, t
     .where(and(eq(entries.householdId, householdId), gte(entries.spentAt, startOf(fromDay)), lt(entries.spentAt, startOf(toDay))));
 }
 
-async function visibleCats(env: Env, householdId: number): Promise<CatInfo[]> {
+/** The categories a mission may name: only wants. Asking a household to spend less on groceries or bills isn't kind. */
+async function missionCats(env: Env, householdId: number): Promise<CatInfo[]> {
   return getDb(env)
     .select({ id: categories.id, name: categories.name, emoji: categories.emoji })
     .from(categories)
-    .where(and(eq(categories.householdId, householdId), eq(categories.hidden, false)));
+    .where(and(eq(categories.householdId, householdId), inArray(categories.key, [...WANTS])));
 }
 
 /** Expenses sorted into Manila days once, so each day reads only its own 28 days instead of the whole span. */
@@ -149,7 +151,7 @@ export async function dayResults(env: Env, householdId: number, createdAt: numbe
 
   const first = Math.min(...missing);
   const last = Math.max(...missing);
-  const [all, cats] = await Promise.all([expensesBetween(env, householdId, first - BASELINE_DAYS, last + 1), visibleCats(env, householdId)]);
+  const [all, cats] = await Promise.all([expensesBetween(env, householdId, first - BASELINE_DAYS, last + 1), missionCats(env, householdId)]);
   const on = byDay(all);
   const judged = judgeDays(householdId, missing, on, await baselinesFor(env, householdId, missing, on, cats));
   const fresh = missing.map((day) => {
@@ -285,7 +287,7 @@ export type TodayMission = { title: string; level: 1 | 2; status: "track" | "mis
 /** Today's missions, judged live: on track while still met, "not today" once broken (more spending can't undo that). */
 export async function todayMissions(env: Env, householdId: number, now: number) {
   const today = dayKey(now);
-  const [all, cats] = await Promise.all([expensesBetween(env, householdId, today - BASELINE_DAYS, today + 1), visibleCats(env, householdId)]);
+  const [all, cats] = await Promise.all([expensesBetween(env, householdId, today - BASELINE_DAYS, today + 1), missionCats(env, householdId)]);
   const on = byDay(all);
   const facts = factsOn(on, today);
   const fixed = (await baselinesFor(env, householdId, [today], on, cats, today)).get(today)!;
@@ -323,7 +325,7 @@ export async function missionDays(env: Env, householdId: number, createdAt: numb
   if (wanted.length === 0) return new Map(inRange.map((d) => [d, out.get(d)!]));
   const [all, cats] = await Promise.all([
     expensesBetween(env, householdId, Math.min(...wanted) - BASELINE_DAYS, Math.max(...wanted) + 1),
-    visibleCats(env, householdId),
+    missionCats(env, householdId),
   ]);
   const on = byDay(all);
   const fixed = await baselinesFor(env, householdId, wanted, on, cats, wanted.includes(today) ? today : undefined);

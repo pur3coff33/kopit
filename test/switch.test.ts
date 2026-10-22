@@ -4,10 +4,10 @@ import { describe, expect, it } from "vitest";
 import { categories, dayMissions, entries, gardenDays, households } from "../src/db/schema";
 import { FIXED, listCategories } from "../src/lib/categories";
 import { deleteEntry, getEntry, updateEntry } from "../src/lib/entries";
-import { dayResults, missionDays, todayMissions } from "../src/lib/garden";
+import { dayResults, freezeResults, missionDays } from "../src/lib/garden";
 import { breakdown } from "../src/lib/stats";
 import { planSwitch, switchCategories } from "../src/lib/switch";
-import { dayKey } from "../src/lib/time";
+import { DAY_MS, dayKey } from "../src/lib/time";
 import { addEntry, authCookie, db, html, req, seedLegacyHousehold } from "./helpers";
 
 const now = Date.UTC(2026, 9, 21, 4); // Wed Oct 21, 12:00 Manila
@@ -82,8 +82,12 @@ async function legacy() {
   ids.pets = await addEntry(h, { amount: 50_000, at: manila(9, 16, 12), category: "Pets" });
   ids.school = await addEntry(h, { amount: 70_000, at: manila(9, 15, 12), category: "school" });
   ids.today = await addEntry(h, { amount: 5_000, at: manila(9, 21, 8), category: "Coffee" });
-  // Today's missions were drawn this morning, on the old categories.
-  await todayMissions(env, h.householdId, now);
+  // The household used the app every day until now: each day's missions (today's too) were drawn on its old
+  // categories, the ones it hadn't hidden, and stored then. freezeResults stores them the same way.
+  const old = (await db().select().from(categories).where(and(eq(categories.householdId, h.householdId), eq(categories.hidden, false)))).map(
+    (c) => ({ id: c.id, name: c.name, emoji: c.emoji }),
+  );
+  await freezeResults(env, h.householdId, created, now + DAY_MS, old);
   return { h, ids };
 }
 
