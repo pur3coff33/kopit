@@ -5,6 +5,8 @@
 // A day's missions are fixed the first time they're needed (day_missions, see frozenBaselines). Finished days'
 // results are cached in garden_days (working one out means reading up to 35 earlier days of expenses); today is
 // always judged live. Today alone moves up to a newer rule set: it has no leaf yet, so nothing earned can change.
+// Days from before a household moved to the fixed categories are `final` rows: kept for good with their missions as
+// history shows them (freezeResults, switch.ts), never worked out again.
 import { and, count, eq, gte, inArray, lt, sql, sum } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { categories, entries, gardenDays } from "../db/schema";
@@ -172,12 +174,13 @@ export async function dayResults(env: Env, householdId: number, createdAt: numbe
 /**
  * An expense on `spentAt` changed: forget that day's result and the two that compare with it ("less than yesterday"
  * the day after, "less than last week" a week later). Missions themselves are fixed, so no other day can change.
+ * Final days stay as they are.
  */
 export async function invalidateGarden(env: Env, householdId: number, spentAt: number): Promise<void> {
   const d = dayKey(spentAt);
   await getDb(env)
     .delete(gardenDays)
-    .where(and(eq(gardenDays.householdId, householdId), inArray(gardenDays.day, [d, d + 1, d + 7])));
+    .where(and(eq(gardenDays.householdId, householdId), inArray(gardenDays.day, [d, d + 1, d + 7]), eq(gardenDays.final, false)));
 }
 
 export type MonthGarden = {
@@ -306,8 +309,18 @@ export function pastNote(note: string): string {
 export async function missionDays(env: Env, householdId: number, createdAt: number, days: number[], now: number) {
   const out = new Map<number, DayMissions>();
   const today = dayKey(now);
-  const wanted = days.filter((d) => d >= dayKey(createdAt) && d <= today);
-  if (wanted.length === 0) return out;
+  const inRange = days.filter((d) => d >= dayKey(createdAt) && d <= today);
+  if (inRange.length === 0) return out;
+  const finals = await getDb(env)
+    .select({ day: gardenDays.day, items: gardenDays.items })
+    .from(gardenDays)
+    .where(and(eq(gardenDays.householdId, householdId), eq(gardenDays.final, true), inArray(gardenDays.day, inRange)));
+  for (const f of finals) {
+    const items = JSON.parse(f.items ?? "[]") as PastMission[];
+    out.set(f.day, { items, done: items.filter((m) => m.ok).length });
+  }
+  const wanted = inRange.filter((d) => !out.has(d));
+  if (wanted.length === 0) return new Map(inRange.map((d) => [d, out.get(d)!]));
   const [all, cats] = await Promise.all([
     expensesBetween(env, householdId, Math.min(...wanted) - BASELINE_DAYS, Math.max(...wanted) + 1),
     visibleCats(env, householdId),
@@ -322,7 +335,31 @@ export async function missionDays(env: Env, householdId: number, createdAt: numb
     });
     out.set(day, { items, done: items.filter((m) => m.ok).length });
   }
-  return out;
+  return new Map(inRange.filter((d) => out.has(d)).map((d) => [d, out.get(d)!]));
+}
+
+export type FrozenDay = DayResult & { day: number; items: PastMission[] };
+
+/**
+ * Every finished day since the household began (up to yesterday), judged as it stands now, with its missions as
+ * history shows them: what the switch to the fixed categories keeps for good. `cats` are the categories the
+ * household's missions were drawn from until then.
+ */
+export async function freezeResults(env: Env, householdId: number, createdAt: number, now: number, cats: CatInfo[]): Promise<FrozenDay[]> {
+  const days: number[] = [];
+  for (let d = dayKey(createdAt); d < dayKey(now); d++) days.push(d);
+  if (days.length === 0) return [];
+  const on = byDay(await expensesBetween(env, householdId, days[0] - BASELINE_DAYS, days[days.length - 1] + 1));
+  const fixed = await baselinesFor(env, householdId, days, on, cats);
+  return days.map((day) => {
+    const facts = factsOn(on, day);
+    const ms = missionsFor(householdId, day, fixed.get(day)!);
+    const items = ms.map((m) => {
+      const r = m.check(facts);
+      return { title: m.title, level: m.level, ok: r.ok, note: pastNote(r.note) };
+    });
+    return { day, ...judgeDay(ms, facts), items };
+  });
 }
 
 export type TodayGarden = {

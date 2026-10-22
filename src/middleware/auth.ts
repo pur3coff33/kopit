@@ -2,6 +2,7 @@ import { getCookie } from "hono/cookie";
 import { createMiddleware } from "hono/factory";
 import type { AppEnv } from "../env";
 import { PROFILE_COOKIE, SESSION_COOKIE, lookupAuth } from "../lib/session";
+import { switchCategories } from "../lib/switch";
 
 const isApi = (path: string) => path.startsWith("/api/");
 
@@ -15,6 +16,8 @@ export const requireSession = createMiddleware<AppEnv>(async (c, next) => {
   c.set("householdId", auth.householdId);
   c.set("householdCreatedAt", auth.householdCreatedAt);
   c.set("profile", auth.profile);
+  // A household from before the fixed categories moves to them on its first visit (once; see switch.ts).
+  if (auth.categoriesSet === 1) await switchCategories(c.env, auth.householdId, auth.householdCreatedAt, Date.now());
   await next();
 });
 

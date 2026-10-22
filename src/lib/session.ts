@@ -36,6 +36,8 @@ export async function lookupSession(env: Env, token: string, now: number): Promi
 export type AuthInfo = {
   householdId: number;
   householdCreatedAt: number;
+  /** 1 until the household has moved to the fixed categories (switch.ts). */
+  categoriesSet: number;
   /** `index`: the profile's place in the household, oldest first; picks the person's flower. */
   profile: { id: number; name: string; index: number; hideAmounts: boolean } | null;
 };
@@ -46,7 +48,7 @@ export type AuthInfo = {
  */
 export async function lookupAuth(env: Env, token: string, profileId: number | null, now: number): Promise<AuthInfo | null> {
   const row = await env.DB.prepare(
-    `SELECT s.household_id AS householdId, h.created_at AS householdCreatedAt, p.id AS profileId, p.name AS profileName,
+    `SELECT s.household_id AS householdId, h.created_at AS householdCreatedAt, h.categories_set AS categoriesSet, p.id AS profileId, p.name AS profileName,
             p.hide_amounts AS hideAmounts,
             (SELECT count(*) FROM profiles p2 WHERE p2.household_id = s.household_id AND p2.id < p.id) AS profileIndex
      FROM sessions s
@@ -55,11 +57,12 @@ export async function lookupAuth(env: Env, token: string, profileId: number | nu
      WHERE s.token_hash = ? AND s.expires_at > ?`,
   )
     .bind(profileId, await sha256Hex(token), now)
-    .first<{ householdId: number; householdCreatedAt: number; profileId: number | null; profileName: string | null; profileIndex: number | null; hideAmounts: number | null }>();
+    .first<{ householdId: number; householdCreatedAt: number; categoriesSet: number; profileId: number | null; profileName: string | null; profileIndex: number | null; hideAmounts: number | null }>();
   if (!row) return null;
   return {
     householdId: row.householdId,
     householdCreatedAt: row.householdCreatedAt,
+    categoriesSet: row.categoriesSet,
     profile: row.profileId !== null && row.profileName !== null ? { id: row.profileId, name: row.profileName, index: row.profileIndex ?? 0, hideAmounts: !!row.hideAmounts } : null,
   };
 }

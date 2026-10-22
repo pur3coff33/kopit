@@ -32,6 +32,41 @@ export async function seedHousehold(opts: { username?: string; pin?: string; pro
   return { householdId: h.id, profileIds, categoryIds };
 }
 
+/** The twelve categories every household started with before the fixed ten. */
+export const LEGACY_STARTERS: ReadonlyArray<{ emoji: string; name: string }> = [
+  { emoji: "🛒", name: "Groceries" },
+  { emoji: "🍜", name: "Food" },
+  { emoji: "🚌", name: "Transport" },
+  { emoji: "💡", name: "Bills" },
+  { emoji: "🏠", name: "Home" },
+  { emoji: "💊", name: "Health" },
+  { emoji: "🛍️", name: "Shopping" },
+  { emoji: "🎉", name: "Fun" },
+  { emoji: "☕", name: "Coffee" },
+  { emoji: "📱", name: "Load / Data" },
+  { emoji: "🎁", name: "Gifts" },
+  { emoji: "✈️", name: "Travel" },
+];
+
+/** A household from before the fixed categories: its own old ones (plus `extra`), not switched yet. */
+export async function seedLegacyHousehold(opts: { createdAt?: number; extra?: string[] } = {}) {
+  const createdAt = opts.createdAt ?? Date.now();
+  const { hash, salt } = await hashPin(env.PIN_PEPPER, "482913");
+  const [h] = await db()
+    .insert(households)
+    .values({ username: `old${++counter}`, pinHash: hash, pinSalt: salt, createdAt, categoriesSet: 1 })
+    .returning();
+  const profileIds: number[] = [];
+  for (const name of ["Jon", "Partner"]) profileIds.push((await db().insert(profiles).values({ householdId: h.id, name, createdAt }).returning())[0].id);
+  const cats = [...LEGACY_STARTERS, ...(opts.extra ?? []).map((name) => ({ emoji: "🏷️", name }))];
+  await db()
+    .insert(categories)
+    .values(cats.map((c, i) => ({ householdId: h.id, name: c.name, emoji: c.emoji, sortOrder: i, createdAt })));
+  const categoryIds: Record<string, number> = {};
+  for (const c of await db().select().from(categories).where(eq(categories.householdId, h.id))) categoryIds[c.name] = c.id;
+  return { householdId: h.id, profileIds, categoryIds };
+}
+
 type Seeded = Awaited<ReturnType<typeof seedHousehold>>;
 
 /** Inserts an expense directly. `category` is a starter name or null; `profile` an index into profileIds. */

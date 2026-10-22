@@ -1,5 +1,5 @@
 import { getTableColumns, getTableName, type Table } from "drizzle-orm";
-import { categories, deletedEntries, entries, households, profiles } from "./db/schema";
+import { categories, dayMissions, deletedEntries, entries, gardenDays, households, profiles } from "./db/schema";
 import type { Env } from "./env";
 import { toDateInput } from "./lib/time";
 
@@ -12,6 +12,10 @@ const TABLES: Array<[Table, string]> = [
   [households, "id"],
   [profiles, "id"],
   [categories, "id"],
+  // Days from before the fixed categories are kept for good (final), and each day's missions are fixed: neither can be
+  // worked out again, so they're backed up like the expenses.
+  [gardenDays, "household_id, day"],
+  [dayMissions, "household_id, day"],
   [entries, "created_at, id"],
   [deletedEntries, "deleted_at, id"],
 ];
