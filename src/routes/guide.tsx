@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { AppEnv } from "../env";
 import { MIN_SPENDING_DAYS, type Ctx } from "../lib/aligned";
 import { GENTLE, GENTLE_BY_TYPE, starters } from "../lib/gentle";
+import { Back, TitleCard } from "../views/components";
 import { Plant, Sky, type Weather } from "../views/garden";
 import { Layout } from "../views/layout";
 
@@ -41,11 +42,9 @@ guide.get("/guide", (c) => {
   const missions = missionExamples();
   const starters = starterExamples();
   return c.html(
-    <Layout title="Guide">
-      <p>
-        <a href="/">‹ Back to kop.it</a>
-      </p>
-      <h1>The kop.it guide</h1>
+    <Layout title="Guide" roof="day">
+      <Back href="/">Back to kop.it</Back>
+      <TitleCard kicker="kop.it" place="How it works" title="The guide" />
       <nav class="chips toc" aria-label="On this page">
         <a class="chip" href="#plant">The plant</a>
         <a class="chip" href="#sky">The sky</a>

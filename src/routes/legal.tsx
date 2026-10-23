@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Child } from "hono/jsx";
 import type { AppEnv } from "../env";
+import { Back, TitleCard } from "../views/components";
 import { Layout } from "../views/layout";
 import { REPO_URL } from "./guide";
 
@@ -10,15 +11,15 @@ const UPDATED = "October 23, 2026";
 
 function LegalPage(props: { title: string; heading: string; children?: Child }) {
   return (
-    <Layout title={props.title}>
-      <p>
-        <a href="/guide#legal">‹ Guide</a>
-      </p>
+    <Layout title={props.title} roof="day">
+      <Back href="/guide#legal">Guide</Back>
       <article class="legal">
-        <h1>{props.heading}</h1>
-        <p class="muted">
-          Last updated {UPDATED}. Written in plain language; it hasn't been reviewed by a lawyer yet.
-        </p>
+        <TitleCard
+          kicker="kop.it"
+          place="Legal"
+          title={props.heading}
+          sub={`Last updated ${UPDATED}. Written in plain language; it hasn't been reviewed by a lawyer yet.`}
+        />
         {props.children}
         <h2>Questions</h2>
         <p>
@@ -32,7 +33,7 @@ function LegalPage(props: { title: string; heading: string; children?: Child }) 
 
 legal.get("/privacy", (c) =>
   c.html(
-    <LegalPage title="Privacy" heading="Privacy policy">
+    <LegalPage title="Privacy" heading="Privacy">
       <h2>Who runs kop.it</h2>
       <p>
         kop.it is an open-source project, maintained on <a href={REPO_URL}>GitHub</a>. Anyone can run their own copy. If
@@ -110,7 +111,7 @@ legal.get("/privacy", (c) =>
 
 legal.get("/terms", (c) =>
   c.html(
-    <LegalPage title="Terms" heading="Terms and conditions">
+    <LegalPage title="Terms" heading="Terms">
       <p>By creating or using a household on kop.it, you agree to these terms.</p>
 
       <h2>What kop.it is</h2>

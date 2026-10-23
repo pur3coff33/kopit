@@ -34,8 +34,8 @@ describe("guide", () => {
 describe("legal pages", () => {
   it("open without logging in, dated, with GitHub as the contact", async () => {
     for (const [path, title] of [
-      ["/privacy", "Privacy policy"],
-      ["/terms", "Terms and conditions"],
+      ["/privacy", "Privacy"],
+      ["/terms", "Terms"],
     ]) {
       const res = await req(path);
       expect(res.status, path).toBe(200);

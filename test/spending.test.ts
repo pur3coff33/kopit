@@ -183,7 +183,9 @@ describe("category detail", () => {
     await addEntry(h, { amount: 3000, at: monthStart(now) + 60_000, category: "Eating out" });
     await addEntry(h, { amount: 1000, at: monthStart(now) + 120_000, category: "Bills" });
     const body = await page(`/spending/category/${h.categoryIds["Eating out"]}`, h);
-    expect(body).toContain("‹ Garden");
+    expect(body).toMatch(/<a class="back" href="\/spending\?[^"]*">Garden<\/a>/);
+    expect(body).toMatch(/<h1>Eating out<\/h1>/);
+    expect(body).toContain("1 expense<");
     expect(body).toContain("75% of everything");
     expect(body).toContain("↑ ₱20 vs");
 

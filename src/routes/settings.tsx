@@ -12,7 +12,7 @@ import { PROFILE_COOKIE, SESSION_COOKIE, clearCookie, deleteOtherSessions } from
 import { hashPin, isValidPin } from "../lib/pin";
 import { clockTime } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
-import { PinInput } from "../views/components";
+import { Back, PinInput, TitleCard } from "../views/components";
 import { Avatar, Welcome } from "../views/garden";
 import { InlineScript, Layout } from "../views/layout";
 import { Tour } from "../views/tour";
@@ -30,7 +30,28 @@ const OK: Record<string, string> = {
   pin: "PIN changed. Other phones will need to log in again with the new PIN.",
 };
 
-async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: string }) {
+/** Which part of the shed starts open: a person's name box (by id), the new person's, or Change PIN. */
+type Open = number | "add" | "pin";
+
+/** A row of the help list: an icon, a name with a line under it, and a chevron. */
+function Link({ icon, href, name, sub }: { icon: string; href: string; name: string; sub?: string }) {
+  return (
+    <a class="link" href={href}>
+      <span class="ic" aria-hidden="true">
+        {icon}
+      </span>
+      <span class="t">
+        {name}
+        {sub && <small>{sub}</small>}
+      </span>
+      <span class="chev" aria-hidden="true">
+        ›
+      </span>
+    </a>
+  );
+}
+
+async function SettingsPage({ c, message, open }: { c: Context<AppEnv>; message?: string; open?: Open }) {
   const householdId = c.get("householdId");
   const [people, home] = await Promise.all([
     householdProfiles(c.env, householdId),
@@ -38,12 +59,15 @@ async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: stri
   ]);
   const ok = OK[c.req.query("ok") ?? ""];
   return (
-    <Layout title="Garden shed" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/tour-page.js"]}>
-      <p>
-        <a href="/">‹ Back</a>
-      </p>
-      <h1>Garden shed</h1>
-      <p class="muted">Settings for the {home?.username} household</p>
+    <Layout
+      title="Garden shed"
+      profileName={c.get("profileName")}
+      profileIndex={c.get("profileIndex")}
+      scripts={["/js/tour-page.js", "/js/shed.js"]}
+      roof="day"
+    >
+      <Back href="/">Back</Back>
+      <TitleCard kicker="Settings" place={home?.username} title="Garden shed" />
       {(message ?? ok) && <p class="msg">{message ?? ok}</p>}
 
       <div class="card gardener" data-spot="household">
@@ -57,56 +81,90 @@ async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: stri
         </a>
       </div>
 
-
+      {/* Each person is a row; their ✎ turns it into a name box with Save (/js/shed.js). */}
       <section class="card" data-spot="household">
         <h2>People</h2>
-        {people.map((p) => (
-          <form class="form inline" method="post" action={`/settings/profiles/${p.id}`}>
-            <label>
-              <input name="name" value={p.name} maxlength={24} required aria-label="Name" />
-            </label>
-            <button class="save" type="submit">Rename</button>
-          </form>
-        ))}
-        <form class="form inline" method="post" action="/settings/profiles">
-          <label>
-            <input name="name" maxlength={24} required placeholder="Add a person" aria-label="New person" />
-          </label>
-          <button class="save" type="submit">Add</button>
-        </form>
-
+        <ul class="people">
+          {people.map((p, i) => (
+            <li class={open === p.id ? "editing" : undefined}>
+              <Avatar index={i} name={p.name} size={38} />
+              <span class="n">
+                {p.name}
+                {p.id === c.get("profileId") && <small>This phone</small>}
+              </span>
+              <button class="edit" type="button" data-edit="" aria-label={`Rename ${p.name}`}>
+                ✎
+              </button>
+              <form class="rename" method="post" action={`/settings/profiles/${p.id}`}>
+                <input name="name" value={p.name} maxlength={24} required aria-label={`New name for ${p.name}`} />
+                <button class="ok" type="submit">
+                  Save
+                </button>
+              </form>
+            </li>
+          ))}
+          <li class={open === "add" ? "add editing" : "add"}>
+            <button class="new" type="button" data-edit="">
+              <span class="plus" aria-hidden="true">
+                +
+              </span>
+              <span class="n">Add a person</span>
+            </button>
+            <form class="rename" method="post" action="/settings/profiles">
+              <input name="name" maxlength={24} required placeholder="Their name" aria-label="New person" />
+              <button class="ok" type="submit">
+                Add
+              </button>
+            </form>
+          </li>
+        </ul>
       </section>
 
-      <section class="card" data-spot="pin">
-        <h2>Change PIN</h2>
-        <form class="form" method="post" action="/settings/pin">
-          <label>
-            Current PIN
-            <PinInput name="current" />
-          </label>
-          <label>
-            New PIN
-            <PinInput name="next" />
-          </label>
-          <label>
-            New PIN again
-            <PinInput name="nextConfirm" />
-          </label>
-          <button class="save" type="submit">Change PIN</button>
-        </form>
-
+      <section class="card fold" data-spot="pin">
+        <details open={open === "pin"}>
+          <summary>
+            <h2>
+              Change PIN
+              <small>The 6 digits everyone logs in with</small>
+            </h2>
+            <span class="dots" aria-hidden="true">
+              <i></i>
+              <i></i>
+              <i></i>
+              <i></i>
+              <i></i>
+              <i></i>
+            </span>
+            <span class="chev" aria-hidden="true">
+              ›
+            </span>
+          </summary>
+          <form class="form" method="post" action="/settings/pin">
+            <label>
+              Current PIN
+              <PinInput name="current" />
+            </label>
+            <label>
+              New PIN
+              <PinInput name="next" />
+            </label>
+            <label>
+              New PIN again
+              <PinInput name="nextConfirm" />
+            </label>
+            <button class="save" type="submit">Change PIN</button>
+          </form>
+        </details>
       </section>
 
       <section class="card">
         <h2>Help and info</h2>
-        <div class="chips">
-          <a class="chip" href="/guide">📖 Guide</a>
-          <a class="chip" href="/privacy">Privacy</a>
-          <a class="chip" href="/terms">Terms</a>
+        <div class="links">
+          <Link icon="📖" href="/guide" name="Guide" sub="How the garden grows" />
+          <Link icon="🌿" href="/privacy" name="Privacy" sub="What kop.it keeps, in plain words" />
+          <Link icon="📜" href="/terms" name="Terms" />
+          <Link icon="🛠️" href={REPO_URL} name="kop.it on GitHub" sub="Help out, or tell us what broke" />
         </div>
-        <p class="muted">
-          Want to help, or found a problem? <a href={REPO_URL}>kop.it is on GitHub</a>.
-        </p>
       </section>
 
       <form method="post" action="/logout" style="margin-top:22px">
@@ -121,13 +179,14 @@ async function SettingsPage({ c, message }: { c: Context<AppEnv>; message?: stri
   );
 }
 
-const page = (c: Context<AppEnv>, message?: string, status: 200 | 400 = 200) => c.html(<SettingsPage c={c} message={message} />, status);
+const page = (c: Context<AppEnv>, message?: string, status: 200 | 400 = 200, open?: Open) =>
+  c.html(<SettingsPage c={c} message={message} open={open} />, status);
 
 settings.get("/settings", (c) => page(c));
 
 settings.post("/settings/profiles", async (c) => {
   const name = cleanName(String((await c.req.parseBody()).name ?? ""));
-  if (!name) return page(c, "Names can be 1–24 characters.", 400);
+  if (!name) return page(c, "Names can be 1–24 characters.", 400, "add");
   await getDb(c.env).insert(profiles).values({ householdId: c.get("householdId"), name, createdAt: Date.now() });
   return c.redirect("/settings?ok=people");
 });
@@ -137,7 +196,7 @@ settings.post("/settings/profiles/:id", async (c) => {
   const name = cleanName(String((await c.req.parseBody()).name ?? ""));
   const where = and(eq(profiles.id, id), eq(profiles.householdId, c.get("householdId")));
   if (!Number.isInteger(id) || !(await getDb(c.env).query.profiles.findFirst({ where }))) return c.notFound();
-  if (!name) return page(c, "Names can be 1–24 characters.", 400);
+  if (!name) return page(c, "Names can be 1–24 characters.", 400, id);
   await getDb(c.env).update(profiles).set({ name }).where(where);
   return c.redirect("/settings?ok=people");
 });
@@ -159,9 +218,9 @@ settings.post("/settings/pin", async (c) => {
   const h = (await getDb(c.env).query.households.findFirst({ where: eq(households.id, householdId) }))!;
   const now = Date.now();
   const a = await attemptPin(c.env, h, current, now);
-  if (!a.ok) return page(c, a.lockedUntil ? `Too many tries. Try again at ${clockTime(a.lockedUntil)}.` : "Current PIN didn't match.", 400);
-  if (!isValidPin(next)) return page(c, "PIN must be 6 digits.", 400);
-  if (next !== confirm) return page(c, "PINs don't match. Try again?", 400);
+  if (!a.ok) return page(c, a.lockedUntil ? `Too many tries. Try again at ${clockTime(a.lockedUntil)}.` : "Current PIN didn't match.", 400, "pin");
+  if (!isValidPin(next)) return page(c, "PIN must be 6 digits.", 400, "pin");
+  if (next !== confirm) return page(c, "PINs don't match. Try again?", 400, "pin");
   const { hash, salt } = await hashPin(c.env.PIN_PEPPER, next);
   await getDb(c.env).update(households).set({ pinHash: hash, pinSalt: salt }).where(eq(households.id, householdId));
   await deleteOtherSessions(c.env, householdId, getCookie(c, SESSION_COOKIE) ?? "");
@@ -180,11 +239,9 @@ async function DeletePage({ c, message }: { c: Context<AppEnv>; message?: string
   ]);
   const n = spent?.n ?? 0;
   return (
-    <Layout title="Delete household" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")}>
-      <p>
-        <a href="/settings">‹ Garden shed</a>
-      </p>
-      <h1>Delete the {home?.username} household?</h1>
+    <Layout title="Delete household" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} roof="dusk">
+      <Back href="/settings">Garden shed</Back>
+      <TitleCard kicker="Garden shed" place="Delete" title={`Delete ${home?.username}?`} sub="Read this first. There's no undo." />
       <section class="card danger-card">
         <p>This erases everything, for everyone in the household:</p>
         <ul>

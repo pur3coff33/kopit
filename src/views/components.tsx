@@ -1,3 +1,4 @@
+import type { Child } from "hono/jsx";
 import { FIXED, type Cat } from "../lib/categories";
 import { categoryColor } from "../lib/colors";
 import { formatPeso, maskPeso } from "../lib/money";
@@ -199,3 +200,39 @@ export const herePath = (url: string) => {
   const u = new URL(url);
   return u.pathname + u.search;
 };
+
+/** Back to the screen this one came from: a small glass button at the top. */
+export function Back({ href, children }: { href: string; children: Child }) {
+  return (
+    <a class="back" href={href}>
+      {children}
+    </a>
+  );
+}
+
+/**
+ * A page's title card, like the month signs in History: a line in spaced capitals (`kicker`, then `place` after a
+ * rule) over a thin, wide title, with an optional line under it and an emoji badge on top.
+ */
+export function TitleCard(props: { kicker: string; place?: string; title: Child; sub?: Child; badge?: string; tint?: string }) {
+  return (
+    <div class="title-card" style={props.tint ? `--tint:${props.tint}` : undefined}>
+      {props.badge && (
+        <span class="badge" aria-hidden="true">
+          {props.badge}
+        </span>
+      )}
+      <p class="kicker">
+        <span>{props.kicker}</span>
+        {props.place && (
+          <>
+            <i aria-hidden="true"></i>
+            <span>{props.place}</span>
+          </>
+        )}
+      </p>
+      <h1>{props.title}</h1>
+      {props.sub && <p class="sub">{props.sub}</p>}
+    </div>
+  );
+}

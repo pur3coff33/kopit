@@ -147,7 +147,7 @@ if (typeof document !== "undefined" && typeof history.pushState === "function") 
     markTab(url);
   }
 
-  /** Puts `doc`'s version of a top-level part of the app (header, main, nav) in place of ours. */
+  /** Puts `doc`'s version of a top-level part of the app (roof, header, main, nav) in place of ours. */
   function put(sel, doc, before) {
     const app = document.querySelector(".app");
     const mine = app.querySelector(`:scope > ${sel}`);
@@ -205,6 +205,7 @@ if (typeof document !== "undefined" && typeof history.pushState === "function") 
     }
     const swap = () => {
       leave();
+      put(".roof", doc, ".install");
       put(".top", doc, "main");
       put("main", doc, ".nav");
       put(".nav", doc);

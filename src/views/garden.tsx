@@ -115,15 +115,35 @@ export function Plant(props: { leaves: number; perfect?: number; bud?: boolean; 
 }
 
 /** The log-in frame: big wordmark, tagline and the sprout under its glass dome. Log in and set up share it. */
-export function Welcome() {
+/** The big wordmark over the plant under glass. `small`: a smaller dome, when there's more to say under it. */
+export function Welcome({ small }: { small?: boolean }) {
   return (
-    <div class="welcome">
+    <div class={small ? "welcome small" : "welcome"}>
       <Wordmark big />
       <p>your household's money garden</p>
       <div class="cloche">
         <Plant leaves={3} width={120} />
       </div>
     </div>
+  );
+}
+
+/** The greenhouse's glass roof: its sun and light, the frame, and motes in the air. `children` hang under the frame. */
+export function RoofGlass({ children }: { children?: Child }) {
+  return (
+    <>
+      <span class="sun"></span>
+      <span class="g-rays"></span>
+      {children}
+      <svg class="frame" viewBox="0 0 390 150" preserveAspectRatio="none">
+        <path d="M0 120 Q 195 0 390 120" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.9)" stroke-width="5" />
+        <path d="M97 66 V150 M195 50 V150 M293 66 V150" stroke="rgba(255,255,255,.8)" stroke-width="3" />
+        <path d="M30 104 L70 140 M130 60 L180 110 M230 60 L280 110" stroke="rgba(255,255,255,.3)" stroke-width="6" stroke-linecap="round" />
+      </svg>
+      {[12, 30, 47, 63, 81, 92].map((x, k) => (
+        <i class="g-mote" style={`left:${x}%;top:${40 + ((k * 17) % 50)}%;--dx:${(k % 2 ? 1 : -1) * (10 + k * 4)}px;animation-delay:-${k * 1.6}s`}></i>
+      ))}
+    </>
   );
 }
 

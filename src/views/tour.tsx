@@ -90,11 +90,11 @@ export function tourSteps(screen: TourScreen, profileName: string): TourStep[] {
           title: "Your household",
           text: (
             <>
-              Add or rename people. <b>Switch</b> if this phone belongs to someone else now.
+              Tap <b>✎</b> by a name to rename someone, or <b>Add a person</b>. <b>Switch</b> if this phone belongs to someone else now.
             </>
           ),
         },
-        { spot: "pin", title: "Change the PIN", text: "Everyone logs in with the same 6-digit PIN. Changing it logs out the other phones." },
+        { spot: "pin", title: "Change the PIN", text: "Tap to open it. Everyone logs in with the same 6-digit PIN; changing it logs out the other phones." },
       ];
   }
 }

@@ -3,44 +3,47 @@ import type { AppEnv } from "../env";
 import { gardenMonths, monthName } from "../lib/garden";
 import { monthStart, toDateInput } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
+import { Back, TitleCard } from "../views/components";
 import { Plant } from "../views/garden";
 import { Layout } from "../views/layout";
 
 export const gallery = new Hono<AppEnv>();
 gallery.use("/gallery", requireSession, requireProfile);
 
-/** Every month's plant since the household began, newest first. Each opens that month's garden. */
+/** Every month's plant since the household began, newest first, three to a greenhouse shelf. Each opens that month's garden. */
 gallery.get("/gallery", async (c) => {
   const now = Date.now();
   const months = (await gardenMonths(c.env, c.get("householdId"), c.get("householdCreatedAt"), now)).reverse();
   const current = monthStart(now);
   return c.html(
-    <Layout title="Gallery" tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")}>
-      <p>
-        <a href="/spending">‹ Garden</a>
-      </p>
-      <h1>Gallery</h1>
-      <p class="muted">Every month's plant: a leaf for each good day, a small flower for each perfect one.</p>
-      <div class="gallery">
-        {months.map((m) => {
-          const growing = m.start === current;
-          const year = toDateInput(m.start).slice(0, 4);
-          const href = growing ? "/spending" : `/spending?range=custom&from=${toDateInput(m.start)}&to=${toDateInput(m.end - 1)}&who=all`;
-          return (
-            <a class={growing ? "month-card growing" : "month-card"} href={href}>
-              <Plant leaves={m.goodDays} perfect={m.perfectDays} bloom={m.bloomed} width={84} />
-              <b>
-                {monthName(m.start)} {year}
-                {growing ? " (growing)" : ""}
-              </b>
-              <span>
-                {m.goodDays} good day{m.goodDays === 1 ? "" : "s"}
-                {m.bloomed ? " · 🌸" : ""}
-              </span>
-            </a>
-          );
-        })}
-      </div>
+    <Layout title="Gallery" tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} roof="day">
+      <Back href="/spending">Garden</Back>
+      <TitleCard kicker="Garden" place="Every month" title="Gallery" sub="A leaf for each good day, a small flower for each perfect one." />
+      {Array.from({ length: Math.ceil(months.length / 3) }, (_, r) => (
+        <div class="month-shelf">
+          <div class="plants">
+            {months.slice(r * 3, r * 3 + 3).map((m, i) => {
+              const growing = m.start === current;
+              const year = toDateInput(m.start).slice(0, 4);
+              const href = growing ? "/spending" : `/spending?range=custom&from=${toDateInput(m.start)}&to=${toDateInput(m.end - 1)}&who=all`;
+              const days = `${m.goodDays} good day${m.goodDays === 1 ? "" : "s"}`;
+              return (
+                <a class={growing ? "month-card growing" : "month-card"} href={href} style={`--i:${r * 3 + i}`}>
+                  <Plant leaves={m.goodDays} perfect={m.perfectDays} bloom={m.bloomed} width={84} />
+                  <span class="tag">
+                    <b>{monthName(m.start)}</b>
+                    <span>
+                      {growing ? `${m.goodDays} so far` : `${year} · ${days}`}
+                      {m.bloomed ? " · 🌸" : ""}
+                    </span>
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+          <div class="g-plank"></div>
+        </div>
+      ))}
     </Layout>,
   );
 });

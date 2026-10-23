@@ -7,7 +7,7 @@ import { createHousehold, isFull } from "../lib/households";
 import { PROFILE_COOKIE, SESSION_COOKIE, createSession, setLongCookie } from "../lib/session";
 import { requireSession } from "../middleware/auth";
 import { Avatar, Welcome } from "../views/garden";
-import { PinInput } from "../views/components";
+import { PinInput, TitleCard } from "../views/components";
 import { Layout } from "../views/layout";
 
 export const setup = new Hono<AppEnv>();
@@ -38,10 +38,14 @@ function Full() {
 
 function SetupPage(props: { username?: string; message?: string }) {
   return (
-    <Layout title="Set up" bare>
-      <Welcome />
-      <h1>Start a household</h1>
-      <p class="muted">You'll both log in with this username and PIN.</p>
+    <Layout title="Set up" bare roof="day">
+      <Welcome small />
+      <TitleCard
+        kicker="Step 1 of 2"
+        place="The household"
+        title="Start a garden"
+        sub="Pick a username and a 6-digit PIN. Everyone in the household logs in with the same two."
+      />
       {props.message && <p class="msg">{props.message}</p>}
       <form class="form" method="post" action="/setup">
         <label>
@@ -86,9 +90,8 @@ setup.post("/setup", async (c) => {
 
 function ProfilesPage(props: { names: string[]; message?: string }) {
   return (
-    <Layout title="People">
-      <h1>Who's in the household?</h1>
-      <p class="muted">Add one name per person. Each phone picks one.</p>
+    <Layout title="People" roof="day">
+      <TitleCard kicker="Step 2 of 2" place="The people" title="Who's in it?" sub="Add one name per person. Each phone picks one." />
       {props.names.length > 0 && (
         <ul class="rows">
           {props.names.map((n, i) => (
@@ -136,24 +139,36 @@ setup.post("/setup/profiles", requireSession, async (c) => {
 setup.get("/profile", requireSession, async (c) => {
   const ps = await householdProfiles(c.env, c.get("householdId"));
   if (ps.length === 0) return c.redirect("/setup/profiles");
+  // Everyone's flower in a pot, three to a shelf, and an empty pot at the end for someone new.
+  const pots = [
+    ...ps.map((p, i) => (
+      <form method="post" action="/profile">
+        <input type="hidden" name="profileId" value={String(p.id)} />
+        <button class="who-card" type="submit" style={`--i:${i}`}>
+          <Avatar index={i} name={p.name} size={64} />
+          <span class="stem"></span>
+          <span class="pot"></span>
+          <span class="tag">{p.name}</span>
+        </button>
+      </form>
+    )),
+    <a class="who-card add" href="/setup/profiles" style={`--i:${ps.length}`}>
+      <span class="plus" aria-hidden="true">
+        +
+      </span>
+      <span class="pot"></span>
+      <span class="tag">Add a person</span>
+    </a>,
+  ];
   return c.html(
-    <Layout title="Who are you?">
-      <h1>Who's using this phone?</h1>
-      <p class="muted">Each phone remembers its gardener.</p>
-      <div class="pick">
-        {ps.map((p, i) => (
-          <form method="post" action="/profile">
-            <input type="hidden" name="profileId" value={String(p.id)} />
-            <button class="who-card" type="submit">
-              <Avatar index={i} name={p.name} size={64} />
-              <span>{p.name}</span>
-            </button>
-          </form>
-        ))}
-      </div>
-      <p class="muted" style="margin-top:18px">
-        Someone missing? <a href="/setup/profiles">Add a person</a>
-      </p>
+    <Layout title="Who are you?" roof="day">
+      <TitleCard kicker="This phone" title="Who's gardening?" sub="Tap your flower. Each phone remembers its gardener." />
+      {Array.from({ length: Math.ceil(pots.length / 3) }, (_, r) => (
+        <div class="flower-shelf">
+          <div class="pick">{pots.slice(r * 3, r * 3 + 3)}</div>
+          <div class="g-plank"></div>
+        </div>
+      ))}
     </Layout>,
   );
 });

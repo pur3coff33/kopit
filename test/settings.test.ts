@@ -21,6 +21,27 @@ describe("settings page", () => {
   });
 });
 
+describe("the shed's parts", () => {
+  it("lists everyone with their own rename form, marks this phone's, and keeps Change PIN folded", async () => {
+    const { h, cookie } = await setup();
+    const body = await html(await req("/settings", { cookie }));
+    for (const id of h.profileIds) expect(body).toContain(`action="/settings/profiles/${id}"`);
+    expect(body.match(/<small>This phone<\/small>/g)).toHaveLength(1);
+    expect(body).toMatch(/<section class="card fold" data-spot="pin"><details>/);
+    for (const href of ['href="/guide"', 'href="/privacy"', 'href="/terms"']) expect(body).toMatch(new RegExp(`class="link" ${href}`));
+  });
+
+  it("opens the part that went wrong: Change PIN after a wrong PIN, a person's name box after a bad name", async () => {
+    const { h, cookie } = await setup();
+    const pin = await html(await req("/settings/pin", { ...form({ current: "000000", next: "123456", nextConfirm: "123456" }), cookie }));
+    expect(pin).toContain("Current PIN didn't match.");
+    expect(pin).toMatch(/data-spot="pin"><details open="">/);
+    const name = await html(await req(`/settings/profiles/${h.profileIds[1]}`, { ...form({ name: "   " }), cookie }));
+    expect(name).toMatch(new RegExp(`<li class="editing">(?:(?!</li>)[\\s\\S])*action="/settings/profiles/${h.profileIds[1]}"`));
+    expect(name.match(/class="editing"/g)).toHaveLength(1);
+  });
+});
+
 describe("people", () => {
   it("renames a profile and shows it in the header", async () => {
     const { h, cookie } = await setup();

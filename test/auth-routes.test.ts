@@ -17,6 +17,14 @@ describe("login page", () => {
     expect(body).toContain('href="/setup"');
   });
 
+  it("leads with starting a garden, and keeps logging in folded under it until it's wanted", async () => {
+    const body = await html(await req("/login"));
+    expect(body.indexOf("Start your garden")).toBeGreaterThan(-1);
+    expect(body.indexOf("Start your garden")).toBeLessThan(body.indexOf('action="/login"'));
+    expect(body).toMatch(/<a class="save" href="\/setup">\s*Start your garden/);
+    expect(body).toMatch(/<details class="login"><summary>Log in<\/summary>/); // closed
+  });
+
   it("logs in and sets a long-lived secure cookie", async () => {
     await seedHousehold({ username: "jon", pin: "482913" });
     const res = await req("/login", form({ username: "Jon", pin: "482913" }));
@@ -31,7 +39,10 @@ describe("login page", () => {
     await seedHousehold({ username: "jon", pin: "482913" });
     const res = await req("/login", form({ username: "jon", pin: "111111" }));
     expect(res.status).toBe(200);
-    expect(await html(res)).toContain("That PIN didn't match. Try again?");
+    const body = await html(res);
+    expect(body).toContain("That PIN didn't match. Try again?");
+    expect(body).toMatch(/<details class="login" open="">/); // open, with the username still in
+    expect(body).toMatch(/name="username"[^>]*value="jon"/);
   });
 
   it("says when to try again while locked", async () => {

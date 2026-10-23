@@ -13,6 +13,7 @@ import { WEEK_MS } from "../lib/week";
 import { weekLabel } from "../views/week";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Hideable } from "../views/components";
+import { RoofGlass } from "../views/garden";
 import { Layout } from "../views/layout";
 import { Tour } from "../views/tour";
 import { householdProfiles } from "./setup";
@@ -365,18 +366,10 @@ function Greenhouse({ children, after }: { children: Child; after?: Child }) {
         ))}
       </div>
       <div class="g-roof" aria-hidden="true">
-        <span class="sun"></span>
-        <span class="g-rays"></span>
-        {VINE("left")}
-        {VINE("right")}
-        <svg class="frame" viewBox="0 0 390 150" preserveAspectRatio="none">
-          <path d="M0 120 Q 195 0 390 120" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.9)" stroke-width="5" />
-          <path d="M97 66 V150 M195 50 V150 M293 66 V150" stroke="rgba(255,255,255,.8)" stroke-width="3" />
-          <path d="M30 104 L70 140 M130 60 L180 110 M230 60 L280 110" stroke="rgba(255,255,255,.3)" stroke-width="6" stroke-linecap="round" />
-        </svg>
-        {[12, 30, 47, 63, 81, 92].map((x, k) => (
-          <i class="g-mote" style={`left:${x}%;top:${40 + ((k * 17) % 50)}%;--dx:${(k % 2 ? 1 : -1) * (10 + k * 4)}px;animation-delay:-${k * 1.6}s`}></i>
-        ))}
+        <RoofGlass>
+          {VINE("left")}
+          {VINE("right")}
+        </RoofGlass>
       </div>
       {children}
       {after}

@@ -10,7 +10,7 @@ import { formatPeso } from "../lib/money";
 import { breakdown, categoryPace, pace, paceText, rangeTotal, weeklyTotals, type BreakdownRow } from "../lib/stats";
 import { addMonths, dayStart, isNight, rangeLabel, resolveRange, toDateInput, type Range, type RangeKind } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
-import { AmountsEye, Hideable, herePath } from "../views/components";
+import { AmountsEye, Back, Hideable, TitleCard, herePath } from "../views/components";
 import { Plant, Sky } from "../views/garden";
 import { Layout } from "../views/layout";
 import { Tour } from "../views/tour";
@@ -325,29 +325,28 @@ spending.get("/spending/category/:id", async (c) => {
   const tallest = Math.max(1, ...weeks.map((w) => w.total));
   const thisWeek = weeks.at(-1)?.start;
   return c.html(
-    <Layout title={title} tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/eye.js"]}>
-      <p>
-        <a href={`/spending?${q}`}>‹ Garden</a>
-      </p>
-      <div class="cat-head" style={`--tint:${col.tint}`}>
-        <span class="badge" aria-hidden="true">{emoji}</span>
-        <div>
-          <h1>{name}</h1>
-          <p class="muted">
-            {rangeLabel(view.range.start, view.range.end, now)} · {whoName} · {rows.length} expense{rows.length === 1 ? "" : "s"}
-          </p>
+    <Layout title={title} tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/eye.js"]} roof="day">
+      <Back href={`/spending?${q}`}>Garden</Back>
+      <TitleCard
+        badge={emoji}
+        tint={col.tint}
+        kicker={rangeLabel(view.range.start, view.range.end, now)}
+        place={whoName}
+        title={name}
+        sub={key !== null ? FIXED.find((f) => f.key === key)!.description : undefined}
+      />
+      <div class="cat-total">
+        <div class="total">
+          <Hideable centavos={total} hidden={hidden} />
+          <AmountsEye hidden={hidden} back={herePath(c.req.url)} />
         </div>
+        {total > 0 && (
+          <span class="pill neutral">
+            {share}% of everything{change}
+          </span>
+        )}
       </div>
-      {key !== null && <p class="cat-desc">{FIXED.find((f) => f.key === key)!.description}</p>}
-      <div class="total" style="margin-top:6px">
-        <Hideable centavos={total} hidden={hidden} />
-        <AmountsEye hidden={hidden} back={herePath(c.req.url)} />
-      </div>
-      {total > 0 && (
-        <span class="pill neutral">
-          {share}% of everything{change}
-        </span>
-      )}
+      {weeks.length >= 2 && <p class="section-label">By week</p>}
       {weeks.length >= 2 && (
         <div class="weeks" aria-hidden="true">
           {weeks.map((w) => (
@@ -361,6 +360,11 @@ spending.get("/spending/category/:id", async (c) => {
       {rows.length === 0 ? (
         <p class="muted">Nothing here for this range.</p>
       ) : (
+        <p class="section-label">
+          {rows.length} expense{rows.length === 1 ? "" : "s"}
+        </p>
+      )}
+      {rows.length > 0 && (
         <ul class="rows">
           {rows.map((r) => (
             <li>

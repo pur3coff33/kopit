@@ -10,25 +10,48 @@ import { InlineScript, Layout } from "../views/layout";
 
 export const auth = new Hono<AppEnv>();
 
+/**
+ * The way in leads with starting a garden, for whoever lands here new; logging in waits under "Already growing?",
+ * and opens on its own when it has something to say (a wrong PIN) or a username to keep.
+ */
 function LoginPage(props: { username?: string; message?: string; bye?: boolean }) {
+  const back = Boolean(props.message || props.username);
   return (
-    <Layout title="Log in" bare>
-      <Welcome />
-      {props.message && <p class="msg">{props.message}</p>}
-      <form class="form" method="post" action="/login">
-        <label>
-          Username
-          <input name="username" autocomplete="username" autocapitalize="none" spellcheck={false} required value={props.username ?? ""} />
-        </label>
-        <label>
-          PIN
-          <PinInput name="pin" />
-        </label>
-        <button class="save" type="submit">Open the garden</button>
-      </form>
-      <p class="muted">
-        New here? <a href="/setup">Start a household</a>
+    <Layout title="Log in" bare roof="day">
+      <Welcome small />
+      <p class="pitch">Log what you spend in a few seconds. Spend a little less, and a plant grows for the whole household.</p>
+      <ul class="perks">
+        <li>
+          <b>Quick</b>a few taps, even offline
+        </li>
+        <li>
+          <b>Shared</b>everyone, their own phone
+        </li>
+        <li>
+          <b>Kind</b>it rewards, never scolds
+        </li>
+      </ul>
+      <a class="save" href="/setup">
+        Start your garden
+      </a>
+      <p class="or">
+        <i></i>Already growing?<i></i>
       </p>
+      <details class="login" open={back}>
+        <summary>Log in</summary>
+        {props.message && <p class="msg">{props.message}</p>}
+        <form class="form" method="post" action="/login">
+          <label>
+            Username
+            <input name="username" autocomplete="username" autocapitalize="none" spellcheck={false} required value={props.username ?? ""} />
+          </label>
+          <label>
+            PIN
+            <PinInput name="pin" />
+          </label>
+          <button class="save" type="submit">Open the garden</button>
+        </form>
+      </details>
       <p class="fine">
         <a href="/guide">Guide</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a>
       </p>

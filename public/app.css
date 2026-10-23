@@ -116,6 +116,56 @@ p { margin: 6px 0; }
 .pill { display: inline-block; align-self: flex-start; font-size: 12px; font-weight: 800; border-radius: 12px; padding: 3px 10px; background: rgba(217, 236, 217, 0.9); color: #2f6b3c; }
 .pill.neutral { background: rgba(255, 255, 255, 0.75); color: var(--ink); }
 
+/* ---------- every inner page: the greenhouse roof, a glass back button, a title card ---------- */
+/* The roof sits behind the top of the page (Layout's `roof`), above the blurred garden and under everything else,
+   fading into the garden below. */
+.app { position: relative; }
+.g-roof.roof {
+  position: absolute; top: 0; left: 0; right: 0; z-index: -1; height: 230px; margin: 0; pointer-events: none;
+  -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent);
+}
+.g-roof.roof .sun { top: 74px; left: auto; right: 40px; }
+.g-roof.roof .frame { top: 30px; height: 200px; opacity: 0.85; }
+/* Deleting the household: a dusk-pink sky and a low sun, so it feels different before a word is read. */
+.g-roof.roof.dusk { background: linear-gradient(#f3c3ae, #f8dccd 55%, rgba(238, 246, 236, 0)); }
+.g-roof.roof.dusk .sun { background: radial-gradient(circle, #fff1d6 0 35%, #ffb27a 62%, #f08d5c); box-shadow: 0 0 30px 12px rgba(255, 160, 110, 0.45); }
+/* Bare pages (log in, setup) have no header beside the sun: it sits by the wordmark instead. */
+.app:not(:has(> .top)) > .g-roof.roof .sun { top: 60px; left: 34px; right: auto; }
+
+.back {
+  display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; margin: 4px 0 0; padding: 5px 12px 5px 9px; min-height: 30px;
+  font-size: 12px; font-weight: 800; text-decoration: none; border-radius: 15px;
+  background: var(--glass); border: 1px solid var(--edge); box-shadow: var(--lift);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+}
+.back::before { content: "‹"; font-size: 15px; line-height: 1; margin-top: -2px; }
+/* Still a 44px tap target. */
+.back { position: relative; }
+.back::after { content: ""; position: absolute; inset: -8px -4px; }
+
+/* Like the month signs in History: spaced capitals over a thin, wide title. */
+.title-card { text-align: center; margin: 22px 0 16px; }
+.title-card .kicker {
+  display: flex; align-items: center; justify-content: center; margin: 0; color: #2f5640;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.34em; text-transform: uppercase;
+}
+.title-card .kicker span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.title-card .kicker i { flex: none; width: 22px; height: 1px; margin: 0 0.6em 0 0.3em; background: currentColor; opacity: 0.55; }
+.title-card h1 {
+  margin: 8px 0 4px 0.2em; font-size: 25px; font-weight: 300; letter-spacing: 0.2em; text-transform: uppercase; line-height: 1.2;
+  overflow-wrap: anywhere; text-shadow: 0 1px 14px rgba(255, 255, 255, 0.8);
+}
+.title-card .sub { margin: 0 auto; max-width: 310px; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.title-card .badge {
+  display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; margin: 0 auto 10px; font-size: 26px;
+  border-radius: 50% 50% 50% 16px; background: var(--tint, var(--glass)); border: 1px solid var(--edge); box-shadow: var(--lift);
+}
+/* Names of parts of a page, the same spaced capitals: inside cards, and over a chart or a list. */
+section.card > h2, .section-label {
+  margin: 2px 0 10px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: #2f5640;
+}
+.section-label { margin: 18px 4px -2px; }
+
 /* ---------- amount + keypad ---------- */
 .amount {
   text-align: center; margin: 14px 0 2px;
@@ -305,6 +355,7 @@ p { margin: 6px 0; }
 .rows li + li { border-top: 1px solid var(--line); }
 /* The garden's Needs / Wants headings, each with its subtotal. */
 .rows li.group { display: flex; justify-content: space-between; padding: 14px 0 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.rows li.group span:first-child { font-size: 10.5px; letter-spacing: 0.3em; color: #2f5640; }
 .rows li.group, .rows li.group + li { border-top: 0; }
 .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; text-decoration: none; }
 .row .ic {
@@ -459,8 +510,8 @@ p { margin: 6px 0; }
 .plant .bob { transform-box: fill-box; transform-origin: center; animation: bob 2.2s ease-in-out infinite alternate; }
 .plant .petals { transform-box: fill-box; transform-origin: center; animation: spin 9s linear infinite, breathe 2.6s ease-in-out infinite alternate; }
 .plant .bud { animation: circle 4s linear infinite; }
-.gallery .month-card:nth-child(3n + 2) .sway { animation-delay: -2.3s; }
-.gallery .month-card:nth-child(3n + 3) .sway { animation-delay: -4.6s; }
+.month-shelf .month-card:nth-child(2) .sway { animation-delay: -2.3s; }
+.month-shelf .month-card:nth-child(3) .sway { animation-delay: -4.6s; }
 @keyframes sway { 0%, 100% { rotate: 0deg; } 15% { rotate: 3deg; } 30% { rotate: -1.5deg; } 50% { rotate: 5deg; } 68% { rotate: -3deg; } 84% { rotate: 1.5deg; } }
 @keyframes flutter { 0%, 100% { rotate: 0deg; } 30% { rotate: 8deg; } 62% { rotate: -5deg; } }
 @keyframes bob { from { scale: 0.85; } to { scale: 1.2; } }
@@ -682,14 +733,8 @@ p { margin: 6px 0; }
 .terra-text .tally { margin-top: 6px; font-size: 12px; }
 
 /* ---------- one category ---------- */
-.cat-head { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
-.cat-head h1 { margin: 0; }
-.cat-head p { margin: 0; }
-.cat-desc { margin: 8px 0 2px; font-size: 14px; line-height: 1.4; color: var(--muted); }
-.cat-head .badge {
-  width: 50px; height: 50px; flex: none; display: flex; align-items: center; justify-content: center; font-size: 24px;
-  border-radius: 50% 50% 50% 16px; background: var(--tint);
-}
+.cat-total { display: flex; flex-direction: column; align-items: center; }
+.cat-total .total { justify-content: center; }
 .weeks {
   display: flex; align-items: flex-end; gap: 10px; height: 96px; margin: 12px 0 2px; padding: 12px 14px 8px; border-radius: 22px;
   background: var(--glass); border: 1px solid var(--edge); box-shadow: var(--lift);
@@ -869,8 +914,53 @@ p { margin: 6px 0; }
 .gardener > div { flex: 1; display: flex; flex-direction: column; }
 .gardener b { font-size: 16px; font-weight: 900; }
 section.card { margin: 14px 0; }
-section.card h2 { margin-top: 2px; }
 section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.85); }
+/* People: a row each, with their flower; ✎ turns the row into a name box with Save (/js/shed.js). */
+.people { list-style: none; margin: 0; padding: 0; }
+.people li { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 0; }
+.people li + li { border-top: 1px solid var(--line); }
+.people .avatar { width: 38px; height: 38px; }
+.people .n { flex: 1; min-width: 0; font-size: 16px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; }
+.people .n small { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: #2f6b3c; }
+.people .edit {
+  flex: none; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; cursor: pointer;
+  border-radius: 50%; border: 1px solid var(--edge); background: rgba(255, 255, 255, 0.7); color: var(--muted); font-size: 15px;
+}
+.people .new { flex: 1; display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; text-align: left; }
+.people .plus {
+  flex: none; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+  border-radius: 50%; border: 1.5px dashed rgba(31, 51, 38, 0.3); color: var(--muted); font-size: 20px; font-weight: 400;
+}
+.people .add .n { color: var(--muted); font-size: 15px; font-weight: 800; }
+.people .rename { display: none; flex: 1; min-width: 0; gap: 8px; margin: 0; }
+.people .rename input {
+  flex: 1; min-width: 0; min-height: 44px; padding: 0 14px; border: 0; border-radius: 14px; background: #fff;
+  outline: 2px solid var(--deep); font-size: 16px; font-weight: 800;
+}
+.people .rename .ok { flex: none; min-height: 44px; padding: 0 16px; border: 0; border-radius: 22px; background: var(--btn); color: #fff; font-weight: 900; cursor: pointer; }
+.people li.editing .rename { display: flex; }
+.people li.editing .n, .people li.editing .edit, .people li.editing .new { display: none; }
+.people li.editing .plus { display: none; }
+/* Change PIN, folded into one line until it's wanted. */
+section.card.fold { padding: 0; }
+.fold summary { list-style: none; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 14px; cursor: pointer; }
+.fold summary::-webkit-details-marker { display: none; }
+.fold summary h2 { flex: 1; min-width: 0; margin: 0; font-size: 10.5px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: #2f5640; }
+.fold summary small { display: block; margin-top: 3px; font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.fold .dots { display: flex; gap: 5px; }
+.fold .dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(31, 51, 38, 0.28); }
+.fold .chev, .links .chev { flex: none; color: var(--muted); font-size: 20px; transition: rotate 0.3s; }
+.fold details[open] .chev { rotate: 90deg; }
+.fold details > .form { margin: 0; padding: 0 14px 14px; }
+/* Help and info: a list, each row a link with a line under its name. */
+.links { margin: 0 -14px -12px; }
+.link { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 14px; text-decoration: none; border-top: 1px solid var(--line); }
+.link .ic {
+  flex: none; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+  border-radius: 50% 50% 50% 10px; background: rgba(127, 176, 140, 0.18); font-size: 16px;
+}
+.link .t { flex: 1; min-width: 0; font-size: 15px; font-weight: 800; }
+.link .t small { display: block; font-size: 12px; font-weight: 700; color: var(--muted); }
 
 /* ---------- log in, setup, who's this phone ---------- */
 .welcome { text-align: center; margin: 28px 0 10px; }
@@ -879,15 +969,53 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
   width: 170px; height: 160px; margin: 18px auto 4px; display: flex; align-items: flex-end; justify-content: center;
   border-radius: 85px 85px 26px 26px; background: var(--glass); border: 1px solid var(--edge); box-shadow: var(--lift);
 }
-.pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
-.pick form { margin: 0; }
-.who-card {
-  width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 8px 14px; cursor: pointer;
-  border-radius: 24px; background: var(--solid); border: 1px solid var(--edge); box-shadow: var(--lift);
-  font-size: 16px; font-weight: 900;
+.welcome.small { margin-top: 18px; }
+.welcome.small .cloche { scale: 0.82; margin: -10px auto -18px; }
+/* The log-in page starts a garden first; logging in opens under "Already growing?". */
+.pitch { text-align: center; font-size: 15px; line-height: 1.45; margin: 4px 8px 14px; }
+.perks { list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 16px; padding: 0; }
+.perks li {
+  text-align: center; padding: 10px 4px 9px; border-radius: 18px; font-size: 11.5px; line-height: 1.3; color: var(--muted);
+  background: var(--glass); border: 1px solid var(--edge); box-shadow: var(--lift);
 }
-.who-card:active { transform: translateY(1px); }
-.who-card span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.perks b { display: block; margin-bottom: 3px; font-size: 9.5px; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: #2f5640; }
+a.save { display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.or { display: flex; align-items: center; gap: 10px; margin: 22px 0 10px; font-size: 10px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); }
+.or i { flex: 1; height: 1px; background: rgba(31, 51, 38, 0.15); }
+.login summary {
+  list-style: none; display: flex; align-items: center; justify-content: center; min-height: 50px; cursor: pointer; border-radius: 25px;
+  font-size: 16px; font-weight: 900; background: var(--glass); border: 1px solid var(--edge); box-shadow: var(--lift);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+}
+.login summary::-webkit-details-marker { display: none; }
+.login[open] summary { display: none; }
+/* Who's gardening: everyone's flower in a pot, three to a greenhouse shelf, with their name on a tag under it. */
+.flower-shelf { margin: 26px 4px 68px; }
+.flower-shelf .pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: end; padding: 0 6px; }
+.flower-shelf form { margin: 0; }
+.who-card {
+  position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; padding: 0; cursor: pointer;
+  border: 0; background: none; text-decoration: none; transform-origin: 50% 100%;
+}
+.who-card .avatar { position: relative; z-index: 1; width: 64px; height: 64px; }
+.who-card .stem { position: relative; display: block; width: 3px; height: 30px; margin: -8px auto 0; border-radius: 2px; background: #6aa279; }
+.who-card .stem::before, .who-card .stem::after { content: ""; position: absolute; width: 14px; height: 8px; border-radius: 0 80% 0 80%; background: #7fb08c; }
+.who-card .stem::before { top: 9px; right: 2px; transform: rotate(-20deg) scaleX(-1); }
+.who-card .stem::after { top: 15px; left: 2px; transform: rotate(-20deg); }
+.who-card .pot { display: block; width: 46px; height: 32px; clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%); border-radius: 4px; background: linear-gradient(#cf8a62, #b56f4b); }
+.who-card .pot::before { content: ""; display: block; height: 8px; background: #d99a72; }
+.who-card.add .pot { background: linear-gradient(#e6d2c0, #d8bea8); }
+.who-card.add .pot::before { background: #ecdccd; }
+.who-card .plus {
+  display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin-bottom: 8px; border-radius: 50%;
+  border: 1.5px dashed rgba(31, 51, 38, 0.3); color: var(--muted); font-size: 24px; font-weight: 400;
+}
+.who-card .tag {
+  position: absolute; left: -4px; right: -4px; top: calc(100% + 34px); text-align: center;
+  font-size: 14px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.who-card.add .tag { font-size: 12px; font-weight: 800; color: var(--muted); }
+.who-card:active .avatar { translate: 0 1px; }
 
 /* Very short screens (an installed app on a small phone, after the status and navigation bars): squeeze the add screen a bit more. */
 @media (max-height: 700px) {
@@ -908,8 +1036,9 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
   margin: 10px 0 2px; padding: 10px 14px 6px; border-radius: 22px;
   background: var(--solid); border: 1px solid var(--edge); box-shadow: var(--lift);
 }
-.missions-head { display: flex; justify-content: space-between; font-size: 14px; font-weight: 900; margin-bottom: 4px; }
-.missions-head span:last-child { color: #2f6b3c; font-size: 13px; }
+.missions-head { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 0 4px; }
+.missions-head span:first-child { font-size: 10.5px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: #2f5640; }
+.missions-head span:last-child { color: #2f6b3c; font-size: 12px; font-weight: 800; }
 .missions ul { list-style: none; margin: 0; padding: 0; }
 .missions .m { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; }
 .missions .m + .m { border-top: 1px solid var(--line); }
@@ -932,15 +1061,16 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 /* Words for screen readers only (the dashed circle / dash say the same to sighted people). */
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* ---------- gallery: every month's plant ---------- */
-.gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
-.month-card {
-  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 8px 10px; text-decoration: none;
-  border-radius: 22px; background: var(--solid); border: 1px solid var(--edge); box-shadow: var(--lift);
-}
-.month-card b { font-size: 14px; font-weight: 900; text-align: center; }
-.month-card span { font-size: 12px; color: var(--muted); }
-.month-card.growing { background: var(--glass); }
+/* ---------- gallery: every month's plant, three to a greenhouse shelf, its month on a tag under it ---------- */
+.month-shelf { margin: 18px 0 76px; }
+.month-shelf .plants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; padding: 0 8px; }
+.month-card { position: relative; display: block; text-decoration: none; transform-origin: 50% 100%; }
+.month-card svg { display: block; width: 100%; max-width: 92px; height: auto; margin: 0 auto -2px; }
+.month-card.growing svg { filter: drop-shadow(0 0 14px rgba(255, 230, 140, 0.9)); }
+.month-card .tag { position: absolute; left: -2px; right: -2px; top: calc(100% + 34px); text-align: center; }
+.month-card .tag b { display: block; font-size: 10px; font-weight: 800; letter-spacing: 0.26em; text-transform: uppercase; }
+.month-card .tag span { display: block; font-size: 11px; color: var(--muted); }
+.month-card.growing .tag b { color: #2f6b3c; }
 
 /* ---------- Wrapped: a month's recap, as full-screen story slides ---------- */
 .wrapped {
@@ -1005,9 +1135,17 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 .delete-form:invalid .save.danger { opacity: 0.4; box-shadow: none; }
 
 /* ---------- guide ---------- */
-.toc { margin: 4px 0 6px; }
+.toc { justify-content: center; margin: 4px 0 6px; }
 .guide-sec { scroll-margin-top: 12px; }
-.guide-sec h2 { margin-top: 4px; }
+/* Each section a numbered chapter: 01 WHAT KOP.IT IS ———— */
+main:has(.guide-sec), .legal { counter-reset: chapter; }
+.guide-sec h2, .legal h2 {
+  counter-increment: chapter; display: flex; align-items: center;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.28em; text-transform: uppercase; color: #2f5640;
+}
+.guide-sec h2::before, .legal h2::before { content: counter(chapter, decimal-leading-zero); margin-right: 0.4em; opacity: 0.6; }
+.guide-sec h2::after, .legal h2::after { content: ""; flex: 1; height: 1px; margin-left: 10px; background: currentColor; opacity: 0.18; }
+.guide-sec h2 { margin: 4px 0 8px; }
 .guide-sec h3 { font-size: 14px; font-weight: 900; margin: 14px 0 6px; }
 .guide-sec p { line-height: 1.5; }
 .stages, .skies, .missions-list, .plain-links { list-style: none; margin: 8px 0; padding: 0; }
@@ -1024,7 +1162,7 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 
 /* ---------- privacy and terms ---------- */
 .legal { line-height: 1.55; max-width: 62ch; }
-.legal h2 { margin-top: 20px; }
+.legal h2 { margin: 24px 0 8px; }
 .legal ul { padding-left: 20px; }
 .legal li { margin: 4px 0; }
 
@@ -1069,6 +1207,25 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 }
 .tour-next:focus-visible, .tour-skip:focus-visible, .tour-back:focus-visible { outline: 2px solid var(--deep); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .tour-spot, .tour-note { transition: none; } }
+
+/* Inner pages build in as they open, like History's shelves: the title card's line tightens in, cards rise one after
+   another, flowers and month plants grow up out of their pots. Still for anyone who asks for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .title-card > * { animation: page-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .title-card > :nth-child(2) { animation-delay: 0.12s; }
+  .title-card > :nth-child(3) { animation-delay: 0.24s; }
+  .title-card > :nth-child(4) { animation-delay: 0.36s; }
+  .title-card .kicker { animation-name: page-track; }
+  .title-card ~ :is(.card, section, .perks, .cat-total, .weeks, .rows, .month-shelf, .flower-shelf, .msg) { animation: page-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s both; }
+  .title-card ~ section:nth-of-type(2) { animation-delay: 0.4s; }
+  .title-card ~ section:nth-of-type(3) { animation-delay: 0.5s; }
+  .title-card ~ section:nth-of-type(n + 4) { animation-delay: 0.6s; }
+  .who-card, .month-card { animation: page-grow 0.9s cubic-bezier(0.3, 1.4, 0.5, 1) both; animation-delay: calc(0.45s + var(--i, 0) * 0.11s); }
+}
+@keyframes page-in { from { opacity: 0; translate: 0 8px; filter: blur(4px); } }
+@keyframes page-track { from { opacity: 0; letter-spacing: 0.7em; filter: blur(3px); } }
+@keyframes page-rise { from { opacity: 0; translate: 0 14px; } }
+@keyframes page-grow { from { opacity: 0; scale: 0.6; } }
 
 /* PIN boxes are text fields (see PinInput), dotted out like a password. */
 .pin { -webkit-text-security: disc; letter-spacing: 0.15em; }

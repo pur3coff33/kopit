@@ -1,11 +1,14 @@
 import { raw } from "hono/html";
 import type { Child } from "hono/jsx";
 import { version } from "../lib/version";
-import { Avatar, Wordmark } from "./garden";
+import { Avatar, RoofGlass, Wordmark } from "./garden";
 
 type Tab = "add" | "spending" | "history";
 
-/** `bare`: no header — for the log-in page, where the big wordmark stands in for it. */
+/**
+ * `bare`: no header — for the log-in page, where the big wordmark stands in for it.
+ * `roof`: the greenhouse roof over the top of the page (dusk-pink on the one that deletes the household).
+ */
 export function Layout(props: {
   title: string;
   tab?: Tab;
@@ -13,6 +16,7 @@ export function Layout(props: {
   profileIndex?: number;
   scripts?: string[];
   bare?: boolean;
+  roof?: "day" | "dusk";
   children?: Child;
 }) {
   return (
@@ -46,6 +50,11 @@ export function Layout(props: {
         </head>
         <body>
           <div class="app">
+            {props.roof && (
+              <div class={props.roof === "dusk" ? "g-roof roof dusk" : "g-roof roof"} aria-hidden="true">
+                <RoofGlass />
+              </div>
+            )}
             <InstallBadge />
             {!props.bare && (
               <header class="top">

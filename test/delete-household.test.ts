@@ -32,7 +32,8 @@ describe("delete household", () => {
     const { h, cookie } = await setup();
     await addEntry(h, { amount: 1000, at: Date.now() - 60_000, category: "Eating out" });
     const body = await html(await req("/settings/delete", { cookie }));
-    expect(body).toContain("Delete the jon household?");
+    expect(body).toContain("<h1>Delete jon?</h1>");
+    expect(body).toContain('class="g-roof roof dusk"'); // a different sky before a word is read
     expect(body).toContain("2 people: Jon, Partner");
     expect(body).toContain("1 expense, with its note");
     expect(body).toContain("This can't be undone in the app.");
