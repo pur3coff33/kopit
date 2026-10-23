@@ -6,11 +6,11 @@ import type { AppEnv } from "../env";
 import { FIXED, getCategory, type CategoryKey } from "../lib/categories";
 import { categoryColor } from "../lib/colors";
 import { monthGarden, monthName, rangeDays, todayMissions, wholePastMonth } from "../lib/garden";
-import { formatPeso, maskPeso } from "../lib/money";
+import { formatPeso } from "../lib/money";
 import { breakdown, categoryPace, pace, paceText, rangeTotal, weeklyTotals, type BreakdownRow } from "../lib/stats";
 import { addMonths, dayStart, isNight, rangeLabel, resolveRange, toDateInput, type Range, type RangeKind } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
-import { AmountsEye, herePath } from "../views/components";
+import { AmountsEye, Hideable, herePath } from "../views/components";
 import { Plant, Sky } from "../views/garden";
 import { Layout } from "../views/layout";
 import { Tour } from "../views/tour";
@@ -103,7 +103,7 @@ spending.get("/spending", async (c) => {
   // The garden (leaves, bud, bloom) is always the whole household's, whoever is picked; the pace pill follows the pick.
   const thisMonth = view.range.kind === "this";
   const hidden = c.get("hideAmounts");
-  const totalPeso = (centavos: number) => (hidden ? maskPeso(centavos) : formatPeso(centavos));
+  const totalPeso = (centavos: number) => <Hideable centavos={centavos} hidden={hidden} />;
   const eye = <AmountsEye hidden={hidden} back={herePath(c.req.url)} />;
   const [b, p, householdPace, days, g, missions] = await Promise.all([
     breakdown(c.env, filter),
@@ -126,7 +126,7 @@ spending.get("/spending", async (c) => {
   const tally = `${plural(leafCount, "good day", "good days")} · ${perfectCount} perfect · ${plural(b.count, "expense", "expenses")}`;
   const sample = thisMonth && b.count === 0;
   return c.html(
-    <Layout title="Garden" tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/sky.js", "/js/tour-page.js"]}>
+    <Layout title="Garden" tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/sky.js", "/js/tour-page.js", "/js/eye.js"]}>
       <Filters view={view} />
       <section class="terrarium" data-spot="garden">
         <div class="terra-plant">
@@ -166,7 +166,7 @@ spending.get("/spending", async (c) => {
               <p class="muted">Spent {label}</p>
               <div class="total">
                 {/* Nothing logged yet this month: the tour shows a made-up total instead, labelled Example. */}
-                {sample ? <span data-tour-text="₱1,250">{totalPeso(b.total)}</span> : totalPeso(b.total)}
+                <Hideable centavos={b.total} hidden={hidden} tourText={sample ? "₱1,250" : undefined} />
                 {eye}
               </div>
               {sample && (
@@ -320,7 +320,7 @@ spending.get("/spending/category/:id", async (c) => {
   const tallest = Math.max(1, ...weeks.map((w) => w.total));
   const thisWeek = weeks.at(-1)?.start;
   return c.html(
-    <Layout title={title} tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")}>
+    <Layout title={title} tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/eye.js"]}>
       <p>
         <a href={`/spending?${q}`}>‹ Garden</a>
       </p>
@@ -333,8 +333,9 @@ spending.get("/spending/category/:id", async (c) => {
           </p>
         </div>
       </div>
+      {key !== null && <p class="cat-desc">{FIXED.find((f) => f.key === key)!.description}</p>}
       <div class="total" style="margin-top:6px">
-        {hidden ? maskPeso(total) : formatPeso(total)}
+        <Hideable centavos={total} hidden={hidden} />
         <AmountsEye hidden={hidden} back={herePath(c.req.url)} />
       </div>
       {total > 0 && (

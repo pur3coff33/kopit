@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { profiles } from "../src/db/schema";
-import { maskPeso } from "../src/lib/money";
+import { formatPeso, maskPeso } from "../src/lib/money";
 import { addEntry, authCookie, db, form, html, req, seedHousehold } from "./helpers";
 
 async function setup() {
@@ -18,7 +18,7 @@ const hide = (cookie: string, hidden: boolean, back = "/spending") =>
   req("/settings/amounts", { ...form({ hide: hidden ? "1" : "0", back }), cookie });
 
 /** The big total's text, without the eye beside it. */
-const total = (body: string) => body.match(/<div class="total"[^>]*>([^<]*)</)?.[1];
+const total = (body: string) => body.match(/<div class="total"[^>]*>(?:<span[^>]*>)?([^<]*)</)?.[1];
 
 describe("a hidden total", () => {
   it("keeps the first digit and the shape, and drops the centavos", () => {
@@ -82,5 +82,27 @@ describe("the eye by the total", () => {
     const { jon } = await setup();
     const res = await hide(jon, true, "//evil.example/");
     expect(res.headers.get("Location")).toBe("/spending");
+  });
+});
+
+describe("flipping the eye on the phone", () => {
+  it("carries each hideable total's amount, so the phone can hide or show it at once", async () => {
+    const { h, jon } = await setup();
+    await hide(jon, true);
+    const garden = await html(await req("/spending", { cookie: jon }));
+    expect(garden).toContain('<span data-amount="1225000">₱1•,•••</span>');
+    expect(garden).toMatch(/<form class="eye"[^>]*data-hidden="1"/);
+    const food = await html(await req(`/spending/category/${h.categoryIds["Eating out"]}`, { cookie: jon }));
+    expect(food).toContain('<span data-amount="435000">₱4,•••</span>');
+    for (const body of [garden, food]) expect(body).toContain("/js/eye.js");
+  });
+
+  it("writes and hides amounts exactly as the server does", async () => {
+    // @ts-ignore plain browser module
+    const eye = await import("../public/js/eye.js");
+    for (const c of [0, 500, 99_000, 435_000, 1_225_050, 123_456_700, 12_345]) {
+      expect(eye.maskPeso(c), String(c)).toBe(maskPeso(c));
+      expect(eye.formatPeso(c), String(c)).toBe(formatPeso(c));
+    }
   });
 });

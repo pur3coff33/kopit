@@ -81,3 +81,13 @@ describe("POST /api/categories", () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe("a category's page", () => {
+  it("says what goes in it", async () => {
+    const h = await seedHousehold();
+    const cookie = await authCookie(h.householdId, h.profileIds[0]);
+    const meals = FIXED.find((c) => c.key === "meals")!;
+    const body = await (await req(`/spending/category/${h.categoryIds.Meals}`, { cookie })).text();
+    expect(body.replace(/&#39;|&#x27;/g, "'")).toContain(meals.description);
+  });
+});

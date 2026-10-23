@@ -6,6 +6,9 @@ import { addEntry, authCookie, db, html, req, seedHousehold } from "./helpers";
 
 const DAY = 86_400_000;
 
+/** The page with the eye's hideable totals unwrapped, to read sentences that have one in them. */
+const text = (body: string) => body.replace(/<span data-amount="\d+">([^<]*)<\/span>/g, "$1");
+
 async function page(path: string, h: Awaited<ReturnType<typeof seedHousehold>>) {
   return html(await req(path, { cookie: await authCookie(h.householdId, h.profileIds[0]) }));
 }
@@ -91,7 +94,7 @@ describe("spending screen", () => {
     const body = await page("/spending?range=last", h);
     expect(body).toContain("bloomed 🌸");
     expect(body).toContain('class="flower"');
-    expect(body).toContain("₱400 spent, ₱100 less than");
+    expect(text(body)).toContain("₱400 spent, ₱100 less than");
     expect(body).not.toContain("Replay Wrapped"); // recaps are replayed from History now
     expect(body).not.toContain("Today's missions"); // only this month has missions
     expect(body).not.toContain("data-sky"); // the weather is today's: a finished month has none
@@ -125,7 +128,7 @@ describe("spending screen", () => {
     await addEntry(h, { amount: 50000, at: addMonths(now, -2) + DAY, category: "Bills" });
     await addEntry(h, { amount: 40000, at: addMonths(now, -1) + DAY, category: "Bills" });
     const body = await page(`/spending?range=last&who=${h.profileIds[1]}`, h);
-    expect(body).toContain("The household spent ₱400, ₱100 less than");
+    expect(text(body)).toContain("The household spent ₱400, ₱100 less than");
   });
 
   it("doesn't grade a month from before the household began", async () => {

@@ -1,5 +1,6 @@
 import { FIXED, type Cat } from "../lib/categories";
 import { categoryColor } from "../lib/colors";
+import { formatPeso, maskPeso } from "../lib/money";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back"];
 
@@ -164,17 +165,29 @@ export function PinInput({ name }: { name: string }) {
   );
 }
 
+/**
+ * A total the eye can hide. It carries the amount, so /js/eye.js can hide or show it on the spot, before the server has
+ * heard; without the script, the eye's form reloads the page with it hidden or shown.
+ */
+export function Hideable({ centavos, hidden, tourText }: { centavos: number; hidden: boolean; tourText?: string }) {
+  return (
+    <span data-amount={String(centavos)} data-tour-text={tourText}>
+      {hidden ? maskPeso(centavos) : formatPeso(centavos)}
+    </span>
+  );
+}
+
 /** The eye by a total: hides the totals for this phone's person (or shows them again), then comes back to `back`. */
 export function AmountsEye({ hidden, back }: { hidden: boolean; back: string }) {
   return (
-    <form class="eye" method="post" action="/settings/amounts" data-spot="eye">
+    <form class="eye" method="post" action="/settings/amounts" data-spot="eye" data-hidden={hidden ? "1" : "0"}>
       <input type="hidden" name="hide" value={hidden ? "0" : "1"} />
       <input type="hidden" name="back" value={back} />
       <button type="submit" aria-label={hidden ? "Show total" : "Hide total"} title={hidden ? "Show total" : "Hide total"}>
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
           <circle cx="12" cy="12" r="3" />
-          {hidden && <path d="M4 4l16 16" />}
+          {hidden && <path class="slash" d="M4 4l16 16" />}
         </svg>
       </button>
     </form>
