@@ -1225,14 +1225,30 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
 
 /* ---------- one sky over add, the garden and history ---------- */
 /* The garden's card and History's greenhouse open up to the top of the screen: their sky carries on, in its own top
-   colour, behind the header and the buttons (which float on it), and is cut off at the screen's edge. */
+   colour, behind the header and the buttons (which float on it), and is cut off at the screen's edge. That strip of
+   top colour follows --sky-top, which already eases between looks (see .sky), with no transition of its own: it
+   would trail behind the sky. It reaches 1px into the sky, as at a fractional pixel ratio the two meet on a hairline. */
 .terrarium > .sky::before, .roof-sky::before {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 100vh; background: var(--sky-top); transition: background-color 1.2s;
+  content: ""; position: absolute; left: 0; right: 0; bottom: calc(100% - 1px); height: 100vh; background: var(--sky-top);
 }
 .app:has(:is(.terrarium > .sky, .roof-sky)) :is(.install, .top, main > .seg, main > .chips) { position: relative; z-index: 2; }
-/* History's roof is that same live sky behind the glass, fading into the greenhouse. */
-.roof-sky { position: absolute; inset: 0; display: block; padding: 0; }
-.roof-sky > .sky-back, .roof-sky > .sky-front { -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); border-radius: 0; }
+/* The sky's layers carry on above its own top edge instead of being cut off there (the sun's and the moon's glow), up to
+   the top of the screen. --above is how far down the page the sky starts (/js/sky.js measures it); without it, 0. */
+.terrarium > .sky { --lip: 0 0 26px 26px; }
+:is(.terrarium > .sky, .roof-sky) > :is(.sky-back, .sky-front) { overflow: visible; clip-path: inset(calc(-1 * var(--above, 0px)) -1px 0 -1px round var(--lip, 0)); }
+/* The stars carry on up behind the header too, once --above is known. */
+.sky .stars i.up { visibility: hidden; }
+.sky[data-lift] .stars i.up { visibility: visible; }
+/* History's roof is that same live sky behind the glass, fading into the greenhouse. It reaches up to the top of the
+   screen (its own sky stays where the roof is), and the fade goes over all of it. */
+.roof-sky {
+  --lip: 0; position: absolute; inset: calc(-1 * var(--above, 0px)) 0 0 0; display: block; padding: 0; border-radius: 0;
+  background: linear-gradient(var(--sky-top) var(--above, 0px), transparent var(--above, 0px));
+  -webkit-mask-image: linear-gradient(#000 calc(var(--above, 0px) + (100% - var(--above, 0px)) * 0.62), transparent);
+  mask-image: linear-gradient(#000 calc(var(--above, 0px) + (100% - var(--above, 0px)) * 0.62), transparent);
+}
+.roof-sky > .sky-back, .roof-sky > .sky-front { inset: var(--above, 0px) 0 0 0; border-radius: 0; }
+.roof-sky > .sky-label { top: calc(var(--above, 0px) + 13px); }
 .roof-sky .sun { top: 18px; right: 22px; }
 .roof-sky .moon { top: 18px; right: 24px; }
 .greenhouse:has(.roof-sky[data-phase="night"]) {
@@ -1242,7 +1258,7 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
 }
 /* Add: a band of it behind the header and the amount, fading out before the category button. */
 .add-sky {
-  position: absolute; top: 0; left: 0; right: 0; z-index: -1; height: 190px; min-height: 0; padding: 0; display: block; overflow-x: clip; pointer-events: none;
+  position: absolute; top: 0; left: 0; right: 0; z-index: -1; height: 190px; min-height: 0; padding: 0; display: block; overflow-x: clip; pointer-events: none; border-radius: 0;
   -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent);
 }
 .add-sky .sun, .add-sky .moon { top: 54px; right: 22px; }

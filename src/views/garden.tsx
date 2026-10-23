@@ -215,6 +215,8 @@ function Critters() {
 const STARS = [[6, 10], [14, 34], [22, 8], [31, 22], [40, 6], [47, 30], [58, 12], [66, 26], [73, 6], [82, 18], [90, 34], [52, 44]];
 const DROPS = Array.from({ length: 24 }, (_, i) => [(i * 41 + 7) % 104 - 4, 9 + ((i * 7) % 8)]);
 const FLIES = [[18, 52], [72, 34], [64, 70], [34, 76], [88, 58]];
+// The stars that carry on above a sky that reaches up behind the header: [left %, how far up, as a share of the way to the top of the screen].
+const UP_STARS = [[10, 0.9], [20, 0.5], [35, 0.75], [44, 0.2], [57, 0.88], [64, 0.4], [78, 0.65], [87, 0.3], [95, 0.82]];
 
 /** A soft cloud; `kind` says from which weather it shows (app.css). `x`, `top`, `width`: where it rests (with less motion) and how big, in % of the sky. */
 function Cloud(props: { kind: "clear" | "cloudy" | "wet"; x: number; top: number; width: number; drift: number; delay: number }) {
@@ -242,8 +244,10 @@ function Cloud(props: { kind: "clear" | "cloudy" | "wet"; x: number; top: number
  * `ask`: the one screen that may ask for the location (the garden). Elsewhere /js/sky.js keeps the sky up to date
  * from what the garden already knows.
  * `band`: just the sky, for a strip across the top of a screen: no hills, nothing living in it.
+ * `lift`: a sky that doesn't start at the top of the screen but reaches up behind the header (the garden's, history's):
+ * its stars carry on up there once /js/sky.js has measured how far.
  */
-export function Sky(props: { night: boolean; weather?: Weather; still?: boolean; ask?: boolean; band?: boolean; label?: boolean; class?: string; children?: Child }) {
+export function Sky(props: { night: boolean; weather?: Weather; still?: boolean; ask?: boolean; band?: boolean; lift?: boolean; label?: boolean; class?: string; children?: Child }) {
   return (
     <div
       class={props.class ? `sky ${props.class}` : "sky"}
@@ -258,6 +262,10 @@ export function Sky(props: { night: boolean; weather?: Weather; still?: boolean;
           {STARS.map(([x, y], i) => (
             <i class={i % 4 === 0 ? "big" : undefined} style={`left:${x}%;top:${y}%;animation-delay:-${(i * 0.7) % 3}s`}></i>
           ))}
+          {props.lift &&
+            UP_STARS.map(([x, up], i) => (
+              <i class={i % 3 === 0 ? "up big" : "up"} style={`left:${x}%;top:calc(var(--above, 0px) * -${up});animation-delay:-${(i * 0.9) % 3}s`}></i>
+            ))}
         </span>
         <Cloud kind="clear" x={58} top={8} width={16} drift={70} delay={20} />
         <Cloud kind="cloudy" x={6} top={24} width={11} drift={95} delay={60} />

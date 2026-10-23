@@ -19,4 +19,13 @@ describe("one sky over add, the garden and history", () => {
     // The bands are just sky: no hills or creatures sent to be hidden.
     for (const body of [add, history]) expect(body).not.toMatch(/class="hills"|class="critter/);
   });
+
+  it("lets the garden's and history's sky reach up behind the header with their stars; add's starts at the top", async () => {
+    const h = await seedHousehold();
+    await addEntry(h, { amount: 1000, at: Date.now() - 60_000, category: "Groceries" });
+    const cookie = await authCookie(h.householdId, h.profileIds[0]);
+    const [add, garden, history] = await Promise.all(["/", "/spending", "/history"].map(async (p) => html(await req(p, { cookie }))));
+    for (const body of [garden, history]) expect(body).toContain('<i class="up');
+    expect(add).not.toContain('<i class="up');
+  });
 });

@@ -198,7 +198,7 @@ spending.get("/spending", async (c) => {
       <section class="terrarium" data-spot="garden">
         {/* Only this month's card is today's sky; past months are records. */}
         {thisMonth ? (
-          <Sky night={isNight(now)} ask label>
+          <Sky night={isNight(now)} ask label lift>
             {card}
           </Sky>
         ) : (

@@ -368,7 +368,7 @@ function Greenhouse({ children, night }: { children: Child; night: boolean }) {
         ))}
       </div>
       <div class="g-roof" aria-hidden="true">
-        <Sky night={night} band label class="roof-sky" />
+        <Sky night={night} band lift label class="roof-sky" />
         <RoofGlass sun={false}>
           {VINE("left")}
           {VINE("right")}

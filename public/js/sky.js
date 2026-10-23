@@ -219,6 +219,25 @@ export function mount() {
     }
   }
 
+  // How far down the page the sky starts (the garden's card, History's roof): its layers and its stars reach up that
+  // far behind the header, so the sky has no edge where the header ends (app.css, "one sky"). Only skies with the
+  // stars for it (`lift`) need this; Add's starts at the top.
+  const anchor = sky.closest(".g-roof") ?? sky;
+  let above = -1;
+  const reach = () => {
+    const now = Math.max(0, Math.round(anchor.getBoundingClientRect().top + scrollY));
+    if (now === above) return;
+    above = now;
+    sky.style.setProperty("--above", `${now}px`);
+    sky.toggleAttribute("data-lift", now > 0);
+  };
+  // The header, the buttons and the install note change height (fonts loading, a wrapped row): follow the page's size.
+  const lifted = !!sky.querySelector(".stars .up");
+  const resized = lifted && typeof ResizeObserver === "function" ? new ResizeObserver(reach) : null;
+  const app = document.querySelector(".app");
+  if (resized && app) resized.observe(app);
+  else if (lifted) reach();
+
   paint();
   refresh();
   const timer = setInterval(() => {
@@ -228,5 +247,6 @@ export function mount() {
   return () => {
     stopped = true;
     clearInterval(timer);
+    resized?.disconnect();
   };
 }
