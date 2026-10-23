@@ -1,4 +1,4 @@
-import { attachKeypad, display, toCentavos } from "./keypad.js";
+import { attachKeypad, display, keypadKeyFor, press, toCentavos } from "./keypad.js";
 import { isStale, recapToPlay, shouldCelebrate } from "./leaf.js";
 import { sheetNotes, suggest, withPresets } from "./notes.js";
 import { count, enqueue, flush, remove } from "./queue.js";
@@ -43,6 +43,24 @@ let typed = "0";
 let categoryId = null;
 let toastTimer;
 let undoAction = null;
+
+/** Typing the amount on a keyboard: digits, the point and Backspace press the keypad; Enter saves. */
+function onKey(ev) {
+  if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.defaultPrevented) return;
+  if (document.querySelector("dialog[open]") || ev.target.closest?.("input, textarea, select, button, a, [contenteditable]")) return;
+  if (ev.key === "Enter") {
+    if (!save.disabled) {
+      ev.preventDefault();
+      onSave();
+    }
+    return;
+  }
+  const key = keypadKeyFor(ev.key);
+  if (key === null) return;
+  ev.preventDefault();
+  typed = press(typed, key);
+  render();
+}
 
 function render() {
   amt.textContent = display(typed);
@@ -444,6 +462,7 @@ export function mount() {
   noteInput.addEventListener("focus", renderSuggestions);
   noteInput.addEventListener("keydown", onNoteKey);
   save.addEventListener("click", onSave);
+  if (matchMedia("(hover: hover) and (pointer: fine)").matches) document.addEventListener("keydown", onKey);
   window.addEventListener("online", sync);
   window.addEventListener("kopit:update", keepDraft);
   document.addEventListener("visibilitychange", onVisible);
@@ -456,6 +475,7 @@ export function mount() {
     window.removeEventListener("online", sync);
     window.removeEventListener("kopit:update", keepDraft);
     document.removeEventListener("visibilitychange", onVisible);
+    document.removeEventListener("keydown", onKey);
     clearTimeout(toastTimer);
   };
 }

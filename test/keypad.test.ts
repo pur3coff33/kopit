@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 // @ts-ignore plain browser module shared with the add and edit pages
-import { press, toCentavos } from "../public/js/keypad.js";
+import { keypadKeyFor, press, toCentavos } from "../public/js/keypad.js";
 
 describe("keypad press", () => {
   it("replaces the leading zero", () => {
@@ -37,5 +37,17 @@ describe("toCentavos", () => {
     expect(toCentavos("0.")).toBe(0);
     expect(toCentavos("350")).toBe(35000);
     expect(toCentavos("0.05")).toBe(5);
+  });
+});
+
+describe("keypadKeyFor", () => {
+  it("maps the digits, the point and Backspace to the keypad's keys", () => {
+    expect(keypadKeyFor("7")).toBe("7");
+    expect(keypadKeyFor("0")).toBe("0");
+    expect(keypadKeyFor(".")).toBe(".");
+    expect(keypadKeyFor("Backspace")).toBe("back");
+  });
+  it("leaves every other key alone", () => {
+    for (const k of ["a", "Enter", " ", "Tab", "-", "10", "Delete", ","]) expect(keypadKeyFor(k)).toBeNull();
   });
 });

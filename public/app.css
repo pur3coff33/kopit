@@ -54,7 +54,7 @@
 /* Size from the real visible area (100%), not 100dvh: installed Android apps can count the
    status bar in dvh, which pushed Save under the bottom bar. */
 html, body { margin: 0; height: 100%; }
-html { scrollbar-gutter: stable; }
+html { scrollbar-gutter: stable; overflow-x: clip; }
 
 body {
   background-color: var(--bg);
@@ -590,7 +590,7 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
 
 /* the sun with its slow rays, and the moon: a crescent cut out by the sky's own colour */
 .sky .sun {
-  top: 12px; right: 14px; width: clamp(12px, 7cqi, 28px); aspect-ratio: 1; border-radius: 50%; opacity: var(--sun);
+  top: 12px; right: calc(var(--sky-right, 0px) + 14px); width: clamp(12px, 7cqi, 28px); aspect-ratio: 1; border-radius: 50%; opacity: var(--sun);
   background: radial-gradient(circle, #fff6c9 0 35%, #ffd65a 62%, #ffbf3c); box-shadow: 0 0 18px 6px rgba(255, 214, 90, 0.55), 0 0 50px 18px rgba(255, 214, 90, 0.25);
 }
 .sky .sun::before {
@@ -599,7 +599,7 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
   -webkit-mask-image: radial-gradient(circle, #000 25%, transparent 70%); mask-image: radial-gradient(circle, #000 25%, transparent 70%); transition: opacity 1.2s;
 }
 .sky:not([data-weather="clear"]) .sun::before { opacity: 0; }
-.sky .moon { top: 12px; right: 16px; width: clamp(10px, 6cqi, 22px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fffbe8, #efe6c2); box-shadow: 0 0 16px 4px rgba(255, 248, 215, 0.35); }
+.sky .moon { top: 12px; right: calc(var(--sky-right, 0px) + 16px); width: clamp(10px, 6cqi, 22px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fffbe8, #efe6c2); box-shadow: 0 0 16px 4px rgba(255, 248, 215, 0.35); }
 .sky .moon::after { content: ""; position: absolute; top: -14%; left: 32%; width: 100%; height: 100%; border-radius: 50%; background: var(--sky-top); }
 .sky .stars { inset: 0; }
 .sky .stars i { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff; box-shadow: 0 0 3px #fff; }
@@ -634,7 +634,7 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
 
 /* The line across the top: the town and the weather, like the opening shot of a film (/js/sky.js fills it in). */
 .sky > .sky-label {
-  position: absolute; z-index: 2; top: 13px; left: 16px; right: 52px; margin: 0; display: flex; align-items: center;
+  position: absolute; z-index: 2; top: 13px; left: calc(var(--sky-left, 0px) + 16px); right: calc(var(--sky-right, 0px) + 52px); margin: 0; display: flex; align-items: center;
   font-size: 11px; font-weight: 300; text-transform: uppercase; white-space: nowrap; color: var(--on-sky); text-shadow: 0 1px 10px var(--on-sky-glow); pointer-events: none;
 }
 .sky > .sky-label[hidden] { display: none; }
@@ -739,6 +739,8 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
   background: rgba(255, 255, 255, 0.82); border: 1px solid rgba(255, 255, 255, 0.8);
 }
 .terrarium > .sky .caption { color: var(--on-sky); text-shadow: 0 1px 6px var(--on-sky-glow); }
+/* The plant is the point of the card: it stands bigger than its drawn size (the svg keeps its shape). */
+.terrarium > .sky .plant { width: 168px; height: auto; margin-inline: -34px; } /* the drawing has empty sides: let them overlap what is beside it */
 .terra-text { flex: 1; min-width: 0; padding-bottom: 6px; }
 .terra-text p { margin: 2px 0; }
 .terra-text .total { font-size: 32px; margin: 0 0 4px; line-height: 1.05; }
@@ -766,9 +768,10 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
   position: relative; display: flex; flex-direction: column; min-width: 0; min-height: calc(100dvh - 240px); margin: 6px -16px 8px; padding: 0 10px;
   /* Open at the top for the sky (see "one sky" below), rounded at the bottom. */
   overflow-x: clip; clip-path: inset(-100vh 0 0 0 round 0 0 26px 26px);
-  background:
+  --house-bg:
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.7) 0 3px, transparent 3px 25%),
     linear-gradient(#eef6ec, #e2efdf 40%, #e9e6cf 85%, #ece0c2);
+  background: var(--house-bg);
   border-radius: 0 0 26px 26px;
 }
 /* the garden bed the glass house stands on, at its very bottom */
@@ -1279,10 +1282,10 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
 }
 .roof-sky > .sky-back, .roof-sky > .sky-front { inset: var(--above, 0px) 0 0 0; border-radius: 0; }
 .roof-sky > .sky-label { top: calc(var(--above, 0px) + 13px); }
-.roof-sky .sun { top: 18px; right: 22px; }
-.roof-sky .moon { top: 18px; right: 24px; }
+.roof-sky .sun { top: 18px; right: calc(var(--sky-right, 0px) + 22px); }
+.roof-sky .moon { top: 18px; right: calc(var(--sky-right, 0px) + 24px); }
 .greenhouse:has(.roof-sky[data-phase="night"]) {
-  background:
+  --house-bg:
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.45) 0 3px, transparent 3px 25%),
     linear-gradient(#c9d3d6, #d6e0d6 40%, #e2e0cc 85%, #e6dcc0);
 }
@@ -1291,8 +1294,8 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
   position: absolute; top: 0; left: 0; right: 0; z-index: -1; height: 190px; min-height: 0; padding: 0; display: block; overflow-x: clip; pointer-events: none; border-radius: 0;
   -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent);
 }
-.add-sky .sun, .add-sky .moon { top: 54px; right: 22px; }
-.sky.add-sky > .sky-label { top: 50px; right: 60px; }
+.add-sky .sun, .add-sky .moon { top: 54px; right: calc(var(--sky-right, 0px) + 22px); }
+.sky.add-sky > .sky-label { top: 50px; right: calc(var(--sky-right, 0px) + 60px); }
 /* After dark the words on the sky turn light: the wordmark, Add's amount; the buttons on it get more glass. */
 .app:has([data-sky][data-phase="night"]) .top .wm { color: #f4f1e6; }
 .app:has([data-sky][data-phase="night"]) .top .wm i { background: #9fd0aa; }
@@ -1306,3 +1309,217 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
 /* PIN boxes are text fields (see PinInput), dotted out like a password. */
 .pin { -webkit-text-security: disc; letter-spacing: 0.15em; }
 
+/* ---------- wider screens ----------
+   The phone layout above is the default and stays as it is. A tablet (720px wide and 600px tall or more) gets a wider
+   column; a desktop (1100 and 600) turns the bottom bar into a rail on the left. A phone turned sideways is wide but
+   short, so the height rule keeps it on the phone layout; only Add changes there, since beside the categories is
+   where its keypad fits. Each screen's width is --w on .app, so these rules only say how wide, not how. */
+#add { display: flex; flex-direction: column; flex: 1; }
+.pad-pane { display: contents; }
+.key-hint { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .key-hint { display: block; margin: 8px 0 0; text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .key-hint kbd { font: inherit; padding: 1px 7px; border-radius: 8px; background: #fff; border: 1px solid rgba(31, 51, 38, 0.2); border-bottom-width: 2px; }
+}
+@media (min-width: 720px) and (min-height: 600px) {
+  .app { max-width: var(--w, 440px); }
+  .app:has(> main > .terrarium) { --w: 720px; }
+  .app:has(> main > .greenhouse) { --w: 720px; }
+  .app:has(#add) { --w: 520px; }
+  .nav { align-self: center; width: min(420px, 100%); }
+  /* History: two shelves a row. The month's sign and the garden's first day span both. */
+  #history { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; align-items: start; }
+  #history > .g-chapter, #history > .g-start { grid-column: 1 / -1; }
+  /* Garden: the summary across the top, then today's missions and the categories side by side. */
+  .app > main:has(> .terrarium) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; align-content: start; grid-auto-flow: row dense; }
+  main > .terrarium ~ .rows, main > .terrarium ~ .muted { grid-column: 1 / -1; }
+  main > .seg, main > .range-form, main > .chips, main > .terrarium, main > .missions { grid-column: 1 / -1; }
+  /* The categories under it, Needs and Wants side by side. */
+  main > .terrarium ~ .rows { column-count: 2; column-gap: 32px; padding-inline: 20px; }
+  main > .terrarium ~ .rows li { break-inside: avoid; }
+  main > .terrarium ~ .rows li.group ~ li.group { break-before: column; }
+}
+@media (orientation: landscape) and (min-width: 700px) {
+  .app:has(#add) { --w: 900px; max-width: var(--w); }
+  /* Add, two-pane: the amount, the category and the note on the left; the keypad and Save on the right. */
+  #add { display: grid; flex: none; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto auto 1fr; column-gap: 28px; align-content: start; }
+  #add > .amount { grid-column: 1; grid-row: 1; text-align: left; margin-left: 4px; }
+  #add > .underline { grid-column: 1; grid-row: 2; margin-left: 4px; }
+  #add > .picker { grid-column: 1; grid-row: 3; }
+  #add > .note-row { grid-column: 1; grid-row: 4; align-self: start; }
+  #add > .pad-pane { grid-column: 2; grid-row: 1 / span 4; display: flex; flex-direction: column; }
+  #add .keys { margin-top: 0; }
+  .nav { align-self: center; width: min(420px, 100%); }
+}
+/* A phone on its side is only about 390px tall: everything on Add tightens so Save and the bar still fit. */
+@media (orientation: landscape) and (min-width: 700px) and (max-height: 520px) {
+  #add > .amount { font-size: 40px; margin-top: 2px; }
+  #add > .amount .cur { font-size: 22px; }
+  #add > .picker { margin: 2px 0; }
+  #add > .picker .cat-pick { min-height: 48px; }
+  #add .keys { gap: 5px; padding: 6px; }
+  #add .keys button { min-height: 38px; padding: 4px 0; font-size: 19px; }
+  #add .save { margin-top: 6px; padding: 9px; font-size: 16px; }
+  #add .sync { min-height: 0; margin-top: 2px; }
+  .nav { margin-top: 6px; padding: 3px 10px; }
+  .nav .tab { min-height: 38px; }
+  .nav .add { width: 44px; height: 44px; margin-top: -18px; font-size: 26px; }
+}
+@media (min-width: 1100px) and (min-height: 600px) {
+  .app:has(> main > .terrarium) { --w: 1040px; }
+  .app:has(> main > .greenhouse) { --w: 1040px; }
+  .app:has(#add) { --w: 1000px; }
+  /* Leaves room for the rail: the column sits in the middle of the rest of the screen. */
+  .app { margin-left: max(124px, calc((100% - var(--w, 440px)) / 2)); margin-right: auto; }
+  .app .terrarium > .sky .plant { width: 340px; margin-inline: -68px; }
+  /* Garden: today's three missions side by side in one strip. */
+  .missions ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 28px; }
+  .missions .m + .m { border-top: 0; }
+  .missions .m:not(:first-child) { padding-left: 24px; border-left: 1px solid var(--line); }
+  /* Add: the sky band reaches the screen's edges, and the keypad starts below the amount instead of over the sky. */
+  .add-sky { position: fixed; left: 0; right: 0; --sky-left: var(--left); --sky-right: var(--right); }
+  #add > .pad-pane { grid-row: 2 / span 3; }
+  #add .keys button { min-height: 52px; font-size: 24px; }
+  /* History: the shelves stand on the left, and the open day's receipt in the glass beside its shelf, so opening a day
+     never moves the page. The month's sign stays in the middle of the whole house. */
+  #history { display: block; }
+  #history > .g-shelf { max-width: 660px; }
+  .g-drawer { position: absolute; top: 0; left: calc(100% + 24px); width: 330px; display: block; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .g-drawer.open { opacity: 1; pointer-events: auto; }
+  .g-drawer > div { overflow: visible; margin: 0; padding: 0; }
+  .g-receipt { margin: 0; }
+  .g-receipt::before { display: none; }
+  .g-drawer.open .g-receipt:not([hidden]) { animation: g-side 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  /* The oldest shelf's receipt can be taller than its shelf: room under it, inside the glass. */
+  .g-start { margin-bottom: 240px; }
+  /* Sheets float in the middle of the screen instead of rising from its bottom edge. */
+  .sheet.bottom { margin: auto; border-radius: 28px; border-bottom: 1px solid var(--edge); padding-bottom: 18px; }
+  /* The bottom bar stands up as a rail: garden, history, then the round Add button. */
+  .app:has(> .nav) { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  .nav {
+    position: fixed; left: 20px; top: 50%; bottom: auto; transform: translateY(-50%); width: 88px; margin: 0;
+    flex-direction: column; justify-content: center; gap: 4px; padding: 14px 0; border-radius: 30px;
+  }
+  .nav .tab { width: 72px; }
+  .nav .add { order: 3; margin: 10px 0 0; }
+}
+@keyframes g-side { from { opacity: 0; translate: -10px 0; } }
+
+/* ---------- wider screens: the inner pages ----------
+   Every page has its own width (--w, as above) and, where it helps, its own columns: Settings and a category go
+   two-up, the Guide gets a contents list that stays beside it, Edit gets Add's keypad-beside-the-fields. The glass roof
+   behind each page's title reaches the screen's edges; its sun stays above the page. */
+@media (min-width: 720px) and (min-height: 600px) {
+  .app { --left: max(0px, calc((100vw - var(--w, 440px)) / 2)); }
+  .g-roof.roof { left: calc(-1 * var(--left)); right: auto; width: 100vw; }
+  .g-roof.roof .g-sun { right: calc(var(--left) + 40px); }
+  .app.bare > .g-roof.roof .g-sun { right: auto; left: calc(var(--left) + 34px); }
+  .app:has(> main > .title-card) { --w: 560px; }
+  .app:has(> main > .welcome) { --w: 520px; }
+  .app:has(> main > .gardener) { --w: 720px; }
+  .app:has(> main > .cat-total) { --w: 720px; }
+  .app:has(> main > .toc) { --w: 680px; }
+  .app:has(> main > .legal) { --w: 640px; }
+  .app:has(> main > .pot-shelf) { --w: 640px; }
+  .app:has(> main > .danger-card) { --w: 520px; }
+  .app:has(#edit) { --w: 560px; }
+  .legal { font-size: 16px; }
+  /* The skies run off the edges of the screen, as they do on a phone, so they never end in a hard side. What is
+     anchored to a sky's edge (sun, moon, the weather line, the text) is moved in over the page's column. */
+  .app { --bleed: 24px; --right: max(0px, calc(100vw - var(--left) - var(--w, 440px))); }
+  .terrarium:has(> .sky) { margin-left: calc(-1 * (var(--left) + 16px + var(--bleed))); margin-right: calc(-1 * (var(--right) + 16px + var(--bleed))); }
+  .terrarium > .sky, .roof-sky, .add-sky { --sky-left: calc(var(--left) + var(--bleed)); --sky-right: calc(var(--right) + var(--bleed)); }
+  .terrarium > .sky { padding-left: calc(var(--sky-left) + 12px); padding-right: calc(var(--sky-right) + 12px); }
+  .terrarium > .sky .plant { width: 270px; margin-inline: -54px; }
+  /* The summary stays a card, not a stretched bar: the rest is sky. */
+  .terrarium > .sky .terra-text { flex: 0 1 560px; }
+  .roof-sky { left: calc(-1 * var(--sky-left)); right: calc(-1 * var(--sky-right)); }
+  .add-sky { left: calc(-1 * var(--sky-left)); right: calc(-1 * var(--sky-right)); }
+  /* History's glass house keeps its walls and bed; only its sky is let out of it. */
+  .greenhouse { overflow-x: visible; clip-path: none; background: none; isolation: isolate; }
+  /* Its glass walls fade into the page at the sides and under the roof instead of ending in hard edges. */
+  .greenhouse::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: var(--house-bg);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 64px, #000 calc(100% - 64px), transparent), linear-gradient(transparent, #000 240px);
+    -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent, #000 64px, #000 calc(100% - 64px), transparent), linear-gradient(transparent, #000 240px); mask-composite: intersect;
+  }
+  .g-bed { -webkit-mask-image: linear-gradient(90deg, transparent, #000 64px, #000 calc(100% - 64px), transparent); mask-image: linear-gradient(90deg, transparent, #000 64px, #000 calc(100% - 64px), transparent); }
+  /* The roof's arch fades out at its ends too (and its two vines, which hung there, go). */
+  .g-roof .frame { -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); }
+  .g-roof .g-vine { display: none; }
+  /* Settings: the gardener and the people on the left, the PIN and help on the right. */
+  main:has(> .gardener) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; align-content: start; }
+  main:has(> .gardener) > :not(.gardener, section.card) { grid-column: 1 / -1; }
+  main:has(> .gardener) > .gardener { grid-column: 1; grid-row: 3; }
+  main:has(> .gardener) > section.card:nth-of-type(1) { grid-column: 1; grid-row: 4; }
+  main:has(> .gardener) > section.card:nth-of-type(2) { grid-column: 2; grid-row: 3; }
+  main:has(> .gardener) > section.card:nth-of-type(3) { grid-column: 2; grid-row: 4; }
+  main:has(> .gardener) > dialog { grid-column: auto; }
+  /* A category: its total and weeks on the left, its expenses on the right. */
+  main:has(> .cat-total) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; align-content: start; }
+  main:has(> .cat-total) > .back, main:has(> .cat-total) > .title-card { grid-column: 1 / -1; }
+  main:has(> .cat-total) > .cat-total { grid-column: 1; grid-row: 3; }
+  main:has(> .cat-total) > .section-label:nth-of-type(1) { grid-column: 1; grid-row: 4; }
+  main:has(> .cat-total) > .week { grid-column: 1; grid-row: 5; align-self: start; }
+  main:has(> .cat-total) > .section-label:nth-of-type(2) { grid-column: 2; grid-row: 3; align-self: end; }
+  main:has(> .cat-total) > .rows { grid-column: 2; grid-row: 4 / span 3; align-self: start; }
+  main > .back { justify-self: start; }
+  main:has(> .cat-total) > .cat-total { align-items: flex-start; }
+  main:has(> .cat-total) .cat-total .total { justify-content: flex-start; }
+  /* The title cards breathe a little more. */
+  .title-card { margin: 34px 0 22px; }
+  .title-card h1 { font-size: 30px; }
+  .title-card .sub { max-width: 420px; font-size: 14px; }
+}
+@media (min-width: 1100px) and (min-height: 600px) {
+  .app { --left: max(124px, calc((100vw - var(--w, 440px)) / 2)); }
+  .app:has(> main > .title-card) { --w: 640px; }
+  .app:has(> main > .welcome) { --w: 560px; }
+  .app:has(> main > .gardener) { --w: 880px; }
+  .app:has(> main > .cat-total) { --w: 960px; }
+  .app:has(> main > .toc) { --w: 1040px; }
+  .app:has(> main > .legal) { --w: 720px; }
+  .app:has(> main > .pot-shelf) { --w: 880px; }
+  .app:has(> main > .danger-card) { --w: 560px; }
+  .app:has(#edit) { --w: 560px; }
+  /* Garden shed and Gallery/Who's gardening: the shelves two to a row. */
+  main:has(> .pot-shelf) { flex-direction: row; flex-wrap: wrap; justify-content: center; align-content: flex-start; column-gap: 40px; }
+  main:has(> .pot-shelf) > :not(.pot-shelf) { flex: 0 0 100%; }
+  main:has(> .pot-shelf) > .pot-shelf { flex: 0 0 min(100%, 400px); }
+  /* The Guide: its contents stay in view on the left while you read. */
+  main:has(> .toc) { display: grid; grid-template-columns: 200px minmax(0, 1fr); column-gap: 28px; align-content: start; }
+  main:has(> .toc) > .back, main:has(> .toc) > .title-card { grid-column: 1 / -1; }
+  main:has(> .toc) > .toc { grid-column: 1; grid-row: 3 / span 8; position: sticky; top: 24px; align-self: start; flex-direction: column; flex-wrap: nowrap; gap: 6px; }
+  main:has(> .toc) > .toc .chip { justify-content: flex-start; }
+  main:has(> .toc) > section.card { grid-column: 2; }
+}
+/* Edit expense: the fields on the left and the keypad on the right, where there is room for both (a tablet turned
+   sideways, a laptop). */
+@media (orientation: landscape) and (min-width: 900px) and (min-height: 600px) {
+  .app:has(#edit) { --w: 880px; }
+  #edit { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto auto; column-gap: 28px; align-content: start; }
+  #edit > .field-label, #edit > .cat-chips, #edit > .pair { grid-column: 1; }
+  #edit > .field-label { grid-row: 1; } #edit > .cat-chips { grid-row: 2; } #edit > .pair { grid-row: 3; }
+  #edit > .keys { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; align-self: start; }
+  #edit > .save { grid-column: 2; grid-row: 3; align-self: start; }
+  #edit > .cat-chips { flex-wrap: wrap; overflow: visible; }
+}
+
+/* Wrapped: the story is a full-screen green, with its slides in a stage of phone width in the middle. */
+@media (min-width: 720px) {
+  .wrapped > * { align-self: center; width: min(100%, 520px); }
+  .wrapped h1 { font-size: 36px; }
+}
+
+/* Add on a tablet held upright: everything a size up, so the keypad isn't a small island at the bottom of a tall screen. */
+@media (min-width: 720px) and (min-height: 600px) and (orientation: portrait) {
+  .app:has(#add) { --w: 600px; }
+  #add > .amount { font-size: 76px; margin: 44px 0 8px; }
+  #add > .amount .cur { font-size: 40px; }
+  #add > .underline { width: 180px; height: 16px; }
+  #add .cat-pick { min-height: 76px; font-size: 18px; }
+  #add .usual .cat { min-height: 52px; font-size: 15px; }
+  #add .keys { gap: 10px; padding: 12px; }
+  #add .keys button { min-height: 72px; font-size: 28px; }
+  #add .save { padding: 18px; font-size: 20px; margin-top: 14px; }
+}

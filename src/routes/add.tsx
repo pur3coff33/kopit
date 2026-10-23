@@ -43,7 +43,6 @@ add.get("/", requireSession, requireProfile, async (c) => {
         data-leaf={garden.leafDay ?? undefined}
         data-wrapped={garden.wrappedMonth ?? undefined}
         data-week={garden.weekRecap ?? undefined}
-        style="display:flex;flex-direction:column;flex:1"
       >
         <Amount />
         <CategoryPicker usual={usual} />
@@ -56,11 +55,18 @@ add.get("/", requireSession, requireProfile, async (c) => {
             <div class="suggest" id="suggest"></div>
           </div>
         </div>
-        <Keypad />
-        <button class="save" id="save" type="button" data-spot="save" disabled>
-          Save it ✓
-        </button>
-        <div class="sync" id="sync"></div>
+        {/* One piece to the stylesheet: it stands beside the categories on a wide screen, and does nothing on a phone. */}
+        <div class="pad-pane">
+          <Keypad />
+          <button class="save" id="save" type="button" data-spot="save" disabled>
+            Save it ✓
+          </button>
+          <div class="sync" id="sync"></div>
+          {/* Only where there is a keyboard (see .key-hint in app.css). */}
+          <p class="key-hint" aria-hidden="true">
+            Type the amount · <kbd>Enter</kbd> saves
+          </p>
+        </div>
       </section>
       {/* For a phone still running the add.js from before the fixed categories (loaded before an update): it looks these
           up when it starts and empties #more on every save. Never shown. Can go once phones have moved on. */}

@@ -16,6 +16,12 @@ export function press(current, key) {
   return toCentavos(next) > MAX_CENTAVOS ? current : next;
 }
 
+/** The keypad key a physical key stands for ("back" for Backspace), or null for any other. */
+export function keypadKeyFor(key) {
+  if (/^\d$/.test(key) || key === ".") return key;
+  return key === "Backspace" ? "back" : null;
+}
+
 /** "1234.5" → "1,234.5" for display, keeping what was typed. */
 export function display(s) {
   const [whole, frac] = s.split(".");

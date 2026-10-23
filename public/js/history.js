@@ -98,9 +98,14 @@ export function mount() {
     drawer.querySelectorAll(".g-receipt").forEach((r) => (r.hidden = Number(r.dataset.k) !== k));
     drawer.classList.add("open");
     const receipt = drawer.querySelector(`.g-receipt[data-k="${k}"]`);
+    // On a wide screen the receipt stands beside its shelf, so there is nothing to scroll to.
+    if (matchMedia("(min-width: 1100px) and (min-height: 600px)").matches) return;
     later(() => {
       const box = receipt?.getBoundingClientRect();
-      if (box && box.bottom > innerHeight - 90) scrollBy({ top: box.bottom - innerHeight + 110, behavior: still ? "auto" : "smooth" });
+      if (!box || box.bottom <= innerHeight - 90) return;
+      // Bring the receipt's end into view, but never past its top: a long day stays read from the start.
+      const top = Math.min(box.bottom - innerHeight + 110, box.top - 90);
+      if (top > 0) scrollBy({ top, behavior: still ? "auto" : "smooth" });
     }, 350);
   }
 
