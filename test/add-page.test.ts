@@ -72,8 +72,8 @@ describe("add screen", () => {
     const body = raw.replace(/&#39;|&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
     const tiles = body.slice(body.indexOf('id="tiles"'));
     expect(tiles.indexOf("Needs")).toBeLessThan(tiles.indexOf('data-name="Groceries"'));
-    expect(tiles.indexOf('data-name="Family & Others"')).toBeGreaterThan(0);
-    expect(tiles.indexOf('data-name="Family & Others"')).toBeLessThan(tiles.indexOf("Wants"));
+    expect(tiles.indexOf('data-name="Family & Relationships"')).toBeGreaterThan(0);
+    expect(tiles.indexOf('data-name="Family & Relationships"')).toBeLessThan(tiles.indexOf("Wants"));
     expect(tiles.indexOf("Wants")).toBeLessThan(tiles.indexOf('data-name="Eating out"'));
     const attr = /data-presets="([^"]*)"/.exec(raw)![1];
     const presets = JSON.parse(attr.replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&amp;/g, "&"));

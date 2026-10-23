@@ -12,9 +12,9 @@ describe("FIXED", () => {
       "🍱 Meals",
       "💡 Bills",
       "🚌 Transport",
-      "💊 Health",
+      "💊 Personal care & Health",
       "📚 Work & Education",
-      "🏠 Family & Others",
+      "👨‍👩‍👧 Family & Relationships",
       "🍜 Eating out",
       "🛍️ Shopping",
       "🎉 Fun & outings",
@@ -61,7 +61,7 @@ describe("usualCategories", () => {
     const h = await seedHousehold();
     for (let i = 0; i < 3; i++) await addEntry(h, { amount: 100, at: now - (i + 1) * DAY_MS, category: "Transport" });
     for (let i = 0; i < 2; i++) await addEntry(h, { amount: 100, at: now - (i + 1) * DAY_MS, category: "Eating out" });
-    await addEntry(h, { amount: 100, at: now - DAY_MS, category: "Health" });
+    await addEntry(h, { amount: 100, at: now - DAY_MS, category: "Personal care & Health" });
     for (let i = 0; i < 5; i++) await addEntry(h, { amount: 100, at: now - 61 * DAY_MS, category: "Shopping" }); // too long ago
     await addEntry(h, { amount: 100, at: now - DAY_MS, category: null });
     expect(await keys(h.householdId)).toEqual(["transport", "eating-out", "health", "groceries"]);

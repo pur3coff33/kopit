@@ -32,9 +32,12 @@ export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: strin
     key: "groceries",
     name: "Groceries",
     emoji: "🛒",
-    description: "Food and basics for home: market, supermarket, corner store, water refill",
+    description: "Food and basics for home: market, supermarket, water refill, cleaning supplies",
     group: "need",
-    presets: ["Wet market", "Supermarket", "Corner store", "Rice", "Water refill", "Meat", "Fish", "Vegetables", "Fruit", "Eggs", "Bread", "Milk", "Coffee & sugar", "7-Eleven", "Alfamart"],
+    presets: [
+      "Wet market", "Supermarket", "Corner store", "Rice", "Water refill", "Meat", "Fish", "Vegetables", "Fruit", "Eggs", "Bread", "Milk", "Coffee & sugar",
+      "Detergent", "Fabric conditioner", "Dishwashing liquid", "Cleaning supplies", "7-Eleven", "Alfamart",
+    ],
   },
   {
     // Food bought because there's no other way on a work or school day; Eating out is the treat.
@@ -49,9 +52,9 @@ export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: strin
     key: "bills",
     name: "Bills",
     emoji: "💡",
-    description: "Must-pays every month: power, water, internet, rent, loans, contributions",
+    description: "Must-pays every month: power, water, internet, cooking gas, rent, loans, contributions",
     group: "need",
-    presets: ["Electricity", "Water", "Internet", "Mobile load", "Rent", "Association dues", "Subscriptions", "Loan payment", "Installment", "Credit card", "SSS", "Pag-IBIG", "PhilHealth"],
+    presets: ["Electricity", "Water", "Internet", "Mobile load", "Cooking gas", "Rent", "Association dues", "Subscriptions", "Loan payment", "Installment", "Credit card", "SSS", "Pag-IBIG", "PhilHealth"],
   },
   {
     key: "transport",
@@ -63,11 +66,14 @@ export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: strin
   },
   {
     key: "health",
-    name: "Health",
+    name: "Personal care & Health",
     emoji: "💊",
-    description: "Medicine, checkups, dental, hospital, vitamins",
+    description: "Looking after yourself: haircuts, toiletries, medicine, checkups, dental, vitamins",
     group: "need",
-    presets: ["Medicine", "Mercury Drug", "Watsons", "Generika", "TGP", "Checkup", "Lab tests", "Dental", "Vitamins", "Hospital", "Eyeglasses", "HMO", "Therapy"],
+    presets: [
+      "Haircut", "Barber", "Salon", "Nails", "Spa", "Massage", "Toiletries", "Soap", "Shampoo", "Toothpaste",
+      "Medicine", "Mercury Drug", "Watsons", "Generika", "TGP", "Checkup", "Lab tests", "Dental", "Vitamins", "Hospital", "Eyeglasses", "HMO", "Therapy",
+    ],
   },
   {
     key: "school",
@@ -82,13 +88,13 @@ export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: strin
   },
   {
     key: "household",
-    name: "Family & Others",
-    emoji: "🏠",
-    description: "Money for family, and what keeps home running: toiletries, cleaning, gas, repairs",
+    name: "Family & Relationships",
+    emoji: "👨‍👩‍👧",
+    description: "Family, the people you love and the home you share: padala, kids, dates, pets, repairs",
     group: "need",
     presets: [
-      "Money for family", "Toiletries", "Soap", "Shampoo", "Toothpaste", "Detergent", "Fabric conditioner", "Dishwashing liquid", "Cleaning supplies", "Cooking gas",
-      "Diapers", "Baby stuff", "Pet food", "Laundry service", "Repairs", "Plumber", "Kitchen stuff", "Ace Hardware", "Wilcon", "Mr. DIY", "Daiso",
+      "Money for family", "Padala", "Allowance for kids", "Diapers", "Baby stuff", "Date", "Pet food", "Vet",
+      "Laundry service", "Repairs", "Plumber", "Kitchen stuff", "Ace Hardware", "Wilcon", "Mr. DIY", "Daiso",
     ],
   },
   {
