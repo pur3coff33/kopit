@@ -77,14 +77,32 @@ export function skyState(cache, nowMs) {
   };
 }
 
+const GOLDEN_MS = 75 * 60_000; // the last stretch of daylight before sunset
+
+/**
+ * "morning", "afternoon", "golden" (the hour or so before sunset) or "night". With sun times, from them; without,
+ * from the Manila clock (golden from 5 PM).
+ */
+export function partOfDay(nowMs, sun) {
+  if (phaseAt(nowMs, sun) === "night") return "night";
+  const h = new Date(nowMs + MANILA_OFFSET_MS).getUTCHours();
+  const left = sun ? sun.set - sun.rise - ((((nowMs - sun.rise) % DAY_MS) + DAY_MS) % DAY_MS) : null;
+  if (left !== null ? left <= GOLDEN_MS : h >= 17) return "golden";
+  return h < 11 ? "morning" : "afternoon";
+}
+
+/** The weather in words, warmer for the time of day. */
 const WORDS = {
-  day: { clear: "Clear skies", cloudy: "Overcast", drizzle: "Drizzle", rain: "Rain", storm: "Thunderstorm" },
-  night: { clear: "Clear night", cloudy: "Cloudy night", drizzle: "Drizzle", rain: "Rain", storm: "Thunderstorm" },
+  clear: { morning: "Sunny morning", afternoon: "Clear afternoon", golden: "Golden hour", night: "Starry night" },
+  cloudy: { morning: "Grey morning", afternoon: "Grey skies", golden: "Cloudy evening", night: "Cloudy night" },
+  drizzle: { morning: "Light drizzle", afternoon: "Light drizzle", golden: "Light drizzle", night: "Drizzly night" },
+  rain: { morning: "Steady rain", afternoon: "Steady rain", golden: "Steady rain", night: "Rainy night" },
+  storm: { morning: "Thunderstorm", afternoon: "Thunderstorm", golden: "Thunderstorm", night: "Thunderstorm" },
 };
 
 /** The line across the sky: the town and the weather in words, or null unless both are known. */
-export function skyLabel(state, place) {
-  return state.known && place?.name ? { place: place.name, weather: WORDS[state.phase][state.weather] } : null;
+export function skyLabel(state, place, part) {
+  return state.known && place?.name ? { place: place.name, weather: WORDS[state.weather][part] } : null;
 }
 
 /** Look the town up again when there's none yet, or the phone is now somewhere else. */
@@ -148,11 +166,12 @@ export function mount() {
 
   const line = sky.querySelector("[data-sky-label]");
   const paint = () => {
-    const state = skyState(load(CACHE_KEY), Date.now());
+    const cache = load(CACHE_KEY);
+    const state = skyState(cache, Date.now());
     sky.dataset.phase = state.phase;
     sky.dataset.weather = state.weather;
     if (!line) return;
-    const label = skyLabel(state, load(PLACE_KEY));
+    const label = skyLabel(state, load(PLACE_KEY), partOfDay(Date.now(), cache && { rise: cache.rise, set: cache.set }));
     const text = label ? `${label.place} — ${label.weather}` : "";
     if (line.dataset.text === text) return;
     line.dataset.text = text;

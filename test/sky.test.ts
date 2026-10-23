@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 // @ts-ignore plain browser module
-import { forecastUrl, needsFetch, needsPlace, phaseAt, placeUrl, readForecast, readPlace, shouldLocate, skyLabel, skyState, weatherKind } from "../public/js/sky.js";
+import { forecastUrl, needsFetch, needsPlace, partOfDay, phaseAt, placeUrl, readForecast, readPlace, shouldLocate, skyLabel, skyState, weatherKind } from "../public/js/sky.js";
 
 const MIN = 60_000;
 const HOUR = 3_600_000;
@@ -70,10 +70,19 @@ describe("sky helpers (garden screen)", () => {
 
   it("names the town and the weather only when both are known", () => {
     const place = { lat: 13.62, lon: 123.17, name: "Camaligan" };
-    expect(skyLabel({ phase: "day", weather: "drizzle", known: true }, place)).toEqual({ place: "Camaligan", weather: "Drizzle" });
-    expect(skyLabel({ phase: "night", weather: "clear", known: true }, place)).toEqual({ place: "Camaligan", weather: "Clear night" });
-    expect(skyLabel({ phase: "day", weather: "clear", known: false }, place)).toBeNull(); // an old reading: no "Clear skies"
-    expect(skyLabel({ phase: "day", weather: "rain", known: true }, null)).toBeNull();
+    expect(skyLabel({ phase: "day", weather: "drizzle", known: true }, place, "afternoon")).toEqual({ place: "Camaligan", weather: "Light drizzle" });
+    expect(skyLabel({ phase: "day", weather: "rain", known: true }, place, "morning")).toEqual({ place: "Camaligan", weather: "Steady rain" });
+    expect(skyLabel({ phase: "night", weather: "clear", known: true }, place, "night")).toEqual({ place: "Camaligan", weather: "Starry night" });
+    expect(skyLabel({ phase: "day", weather: "clear", known: false }, place, "morning")).toBeNull(); // an old reading: no "Sunny morning"
+    expect(skyLabel({ phase: "day", weather: "rain", known: true }, null, "morning")).toBeNull();
+  });
+
+  it("knows the morning, the afternoon, the golden hour before sunset and the night", () => {
+    expect(partOfDay(Date.UTC(2026, 9, 20, 23, 30), { rise, set })).toBe("morning"); // 7:30 AM
+    expect(partOfDay(noon, { rise, set })).toBe("afternoon");
+    expect(partOfDay(set - 30 * MIN, { rise, set })).toBe("golden");
+    expect(partOfDay(set + MIN, { rise, set })).toBe("night");
+    expect(partOfDay(Date.UTC(2026, 9, 21, 9, 15), null)).toBe("golden"); // 5:15 PM, no sun times
   });
 
   it("looks the town up once per place", () => {
