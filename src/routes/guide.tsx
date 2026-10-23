@@ -58,25 +58,13 @@ guide.get("/guide", (c) => {
         <h2>What kop.it is</h2>
         <p>
           A small expense tracker for a household. Everyone logs what they spend from their own phone in a few seconds, even
-          without signal, and the garden screen shows where the money went.
+          without signal. A category and a note are optional.
         </p>
         <p>
-          Every household has the same categories: seven needs (groceries, meals, bills, transport, health, work and
-          education, family and others) and five wants (eating out, shopping, fun and outings, gifts and occasions, vices).
-          A lunch you have to buy at work goes under meals, a treat under eating out; loan payments under bills; drinking,
-          smoking and gambling under vices. Tap <b>What was it for?</b> to see them all, or one of your usual ones below it.
-          Its notes slide up, like Jollibee or Electricity: pick one, type your own and tap <b>Use</b>, or skip. Picking a
-          category is optional too.
+          Spending less grows a plant: a few small missions each day, leaves for good days, flowers for perfect ones. It only
+          ever rewards, never scolds.
         </p>
-        <p>
-          Spending less grows a plant. Every day brings a few small missions, checked automatically from what you log. Good
-          days grow leaves, perfect days grow flowers, and a cheaper month blooms. It only ever rewards, never scolds.
-        </p>
-        <p>
-          Every Monday, last week's recap plays once: what the household spent, needs against wants, where it went, and the
-          garden's days. When a month ends, its Wrapped plays too (on a day both are due, as one story). Both stay in
-          History, where each week and month ended, to replay any time. The weekly one is never shared.
-        </p>
+        <p>Every week and month ends with a short recap. Replay any of them from History.</p>
         <p>
           <a href="/?tour">Take the tour again</a>
         </p>
