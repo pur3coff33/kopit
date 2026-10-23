@@ -3,9 +3,9 @@ import type { Context } from "hono";
 import type { AppEnv } from "../env";
 import { getCategory, listCategories } from "../lib/categories";
 import { deleteEntry, getEntry, updateEntry } from "../lib/entries";
-import { parseAmount } from "../lib/money";
+import { formatPeso, parseAmount } from "../lib/money";
 import { MAX_NOTE, cleanNote } from "../lib/notes";
-import { fromDateInput, toDateInput } from "../lib/time";
+import { fromDateInput, toDateInput, weekdayDate } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Amount, Keypad } from "../views/components";
 import { categoryColor } from "../lib/colors";
@@ -39,9 +39,12 @@ async function EditPage(props: {
   date: string;
   note: string;
   back: string | null;
+  /** The expense as stored, for the delete sheet: a form that failed to save still deletes what's on record. */
+  saved: { amountCentavos: number; categoryId: number | null; note: string | null; spentAt: number };
   message?: string;
 }) {
   const cats = await listCategories(props.c.env, props.c.get("householdId"));
+  const savedCat = cats.find((cat) => cat.id === props.saved.categoryId);
   return (
     <Layout title="Edit" tab="spending" profileName={props.c.get("profileName")} profileIndex={props.c.get("profileIndex")} scripts={["/js/edit.js"]}>
       <p>
@@ -80,10 +83,30 @@ async function EditPage(props: {
         <Keypad />
         <button class="save" type="submit">Save changes</button>
       </form>
-      <form method="post" action={`/entries/${props.id}/delete`} onsubmit="return confirm('Delete this expense?')">
-        {props.back && <input type="hidden" name="back" value={props.back} />}
-        <button class="save plain" type="submit" style="margin-top:14px">Delete</button>
-      </form>
+      <button class="save plain" type="button" id="delete-open" aria-haspopup="dialog" style="margin-top:14px">
+        Delete
+      </button>
+      <dialog class="sheet bottom delete-sheet" id="delete-sheet" aria-labelledby="delete-title" aria-describedby="delete-desc">
+        <h2 id="delete-title" style="margin:0">Delete this expense?</h2>
+        <p class="sheet-desc" id="delete-desc">This can't be brought back.</p>
+        <div class="delete-recap">
+          <span class="e">{savedCat?.emoji ?? "🧾"}</span>
+          <span class="what">
+            <b>{savedCat?.name ?? "No category"}</b>
+            <span>{[props.saved.note, weekdayDate(props.saved.spentAt)].filter(Boolean).join(" · ")}</span>
+          </span>
+          <span class="amt">{formatPeso(props.saved.amountCentavos)}</span>
+        </div>
+        <form method="post" action={`/entries/${props.id}/delete`}>
+          {props.back && <input type="hidden" name="back" value={props.back} />}
+          <button class="save danger" type="submit">
+            Delete
+          </button>
+        </form>
+        <button class="skip" type="button" id="delete-keep">
+          Keep it
+        </button>
+      </dialog>
     </Layout>
   );
 }
@@ -100,6 +123,7 @@ entriesRoutes.get("/entries/:id/edit", async (c) => {
       date={toDateInput(e.spentAt)}
       note={e.note ?? ""}
       back={safeBack(c.req.query("back"))}
+      saved={e}
     />,
   );
 });
@@ -127,7 +151,7 @@ entriesRoutes.post("/entries/:id", async (c) => {
     const message =
       amount === null ? "Enter an amount between ₱0.01 and ₱1,000,000." : day === null ? "Pick a date." : `Notes can be up to ${MAX_NOTE} characters.`;
     return c.html(
-      <EditPage c={c} id={e.id} amount={amountRaw || "0"} categoryId={categoryId} date={date} note={noteRaw} back={back} message={message} />,
+      <EditPage c={c} id={e.id} amount={amountRaw || "0"} categoryId={categoryId} date={date} note={noteRaw} back={back} saved={e} message={message} />,
       400,
     );
   }

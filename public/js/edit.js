@@ -18,6 +18,10 @@ export function mount() {
   const row = chip?.parentElement;
   if (chip && row) row.scrollLeft = chip.offsetLeft - row.offsetLeft - (row.clientWidth - chip.offsetWidth) / 2;
 
+  const sheet = document.querySelector("#delete-sheet");
+  document.querySelector("#delete-open").addEventListener("click", () => sheet.showModal());
+  document.querySelector("#delete-keep").addEventListener("click", () => sheet.close());
+
   attachKeypad(document.querySelector("#keys"), () => typed, (v) => {
     typed = v;
     render();

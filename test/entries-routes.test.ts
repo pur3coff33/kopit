@@ -29,6 +29,15 @@ describe("edit expense", () => {
     expect(body.indexOf("🧴 Household")).toBeLessThan(body.indexOf("Wants"));
   });
 
+  it("asks before deleting in a sheet that recaps the stored expense, not the browser's alert", async () => {
+    const { cookie, id } = await setup();
+    const body = await html(await req(`/entries/${id}/edit`, { cookie }));
+    expect(body).not.toContain("confirm(");
+    expect(body).toContain('id="delete-sheet"');
+    expect(body).toMatch(/🍜<\/span>[\s\S]*Eating out[\s\S]*Thu, Oct 15[\s\S]*₱350/);
+    expect(body).toContain(`action="/entries/${id}/delete"`);
+  });
+
   it("changes the amount and category, keeping the time when the date is unchanged", async () => {
     const { h, cookie, id, spentAt } = await setup();
     const res = await req(`/entries/${id}`, { ...form({ amount: "99.5", categoryId: String(h.categoryIds.Bills), date: "2026-10-15" }), cookie });

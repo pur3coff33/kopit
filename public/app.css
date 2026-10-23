@@ -325,6 +325,15 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
 .sheet::backdrop { background: rgba(31, 51, 38, 0.35); }
 .sheet .cats { grid-template-columns: repeat(3, 1fr); }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; }
+.delete-recap {
+  display: flex; align-items: center; gap: 12px; margin: 14px 0; padding: 12px 14px; border-radius: 18px;
+  background: rgba(255, 255, 255, 0.85); border: 1px solid var(--edge);
+}
+.delete-recap .e { font-size: 26px; }
+.delete-recap .what { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.delete-recap .what b { font-weight: 900; }
+.delete-recap .what span { font-size: 12px; font-weight: 700; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.delete-recap .amt { font-size: 19px; font-weight: 900; }
 /* The update note (public/js/update.js): a sheet that can't be dismissed, only reloaded from. */
 .update { text-align: center; padding: 22px 18px 18px; }
 .update h2 { margin: 0 0 6px; font-size: 20px; font-weight: 900; }
