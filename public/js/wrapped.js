@@ -70,10 +70,10 @@ export function mount() {
   root.addEventListener("click", onTap);
   addEventListener("keydown", onKey);
 
-  // Draw the picture now, so a tap on Share can open the share sheet straight away.
+  // Draw the picture now, so a tap on Share can open the share sheet straight away. A week's recap has no Share.
   const month = root.dataset.month;
-  let picture = cardPicture(month).catch(() => null);
   const share = root.querySelector("#share");
+  let picture = share ? cardPicture(month).catch(() => null) : null;
   share?.addEventListener("click", async () => {
     share.disabled = true;
     share.textContent = "Getting it ready…";

@@ -18,6 +18,17 @@ export function shouldShowWrapped(month, seen) {
   return !!month && month !== seen;
 }
 
+/**
+ * Which recap to play, once per phone each: last month's Wrapped (with last week's in it, as one story, when both are
+ * due), else last week's, else none. `month` and `week` are what's due ("YYYY-MM", the Monday "YYYY-MM-DD", or null).
+ */
+export function recapToPlay(month, week, seenMonth, seenWeek) {
+  const playMonth = shouldShowWrapped(month, seenMonth);
+  const playWeek = !!week && week !== seenWeek;
+  if (playMonth) return playWeek ? `/wrapped/${month}?week=${week}` : `/wrapped/${month}`;
+  return playWeek ? `/week/${week}` : null;
+}
+
 /** Celebrate yesterday's leaf, once per phone. */
 export function shouldCelebrate(leafDay, nowMs, lastSeen) {
   return !!leafDay && leafDay === manilaDate(nowMs - DAY_MS) && leafDay !== lastSeen;

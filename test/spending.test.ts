@@ -92,7 +92,7 @@ describe("spending screen", () => {
     expect(body).toContain("bloomed 🌸");
     expect(body).toContain('class="flower"');
     expect(body).toContain("₱400 spent, ₱100 less than");
-    expect(body).toMatch(/href="\/wrapped\/\d{4}-\d{2}"[^>]*>[^<]*Replay Wrapped/);
+    expect(body).not.toContain("Replay Wrapped"); // recaps are replayed from History now
     expect(body).not.toContain("Today's missions"); // only this month has missions
     expect(body).not.toContain("data-sky"); // the weather is today's: a finished month has none
   });

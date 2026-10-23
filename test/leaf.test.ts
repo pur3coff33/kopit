@@ -21,3 +21,16 @@ describe("leaf helpers (add screen)", () => {
     expect(shouldCelebrate(null, noonOct21, null)).toBe(false);
   });
 });
+
+describe("which recap plays (add screen)", () => {
+  it("plays last month's and last week's once each, together as one story when both are due", async () => {
+    // @ts-ignore plain browser module
+    const { recapToPlay } = await import("../public/js/leaf.js");
+    expect(recapToPlay("2026-10", "2026-10-26", null, null)).toBe("/wrapped/2026-10?week=2026-10-26");
+    expect(recapToPlay("2026-10", "2026-10-26", "2026-10", null)).toBe("/week/2026-10-26");
+    expect(recapToPlay("2026-10", null, null, null)).toBe("/wrapped/2026-10");
+    expect(recapToPlay(null, "2026-10-26", null, "2026-10-19")).toBe("/week/2026-10-26");
+    expect(recapToPlay("2026-10", "2026-10-26", "2026-10", "2026-10-26")).toBeNull();
+    expect(recapToPlay(null, null, null, null)).toBeNull();
+  });
+});

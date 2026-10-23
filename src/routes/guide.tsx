@@ -73,6 +73,11 @@ guide.get("/guide", (c) => {
           days grow leaves, perfect days grow flowers, and a cheaper month blooms. It only ever rewards, never scolds.
         </p>
         <p>
+          Every Monday, last week's recap plays once: what the household spent, needs against wants, where it went, and the
+          garden's days. When a month ends, its Wrapped plays too (on a day both are due, as one story). Both stay in
+          History, where each week and month ended, to replay any time. The weekly one is never shared.
+        </p>
+        <p>
           <a href="/?tour">Take the tour again</a>
         </p>
       </section>

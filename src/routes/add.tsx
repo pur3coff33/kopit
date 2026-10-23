@@ -40,6 +40,7 @@ add.get("/", requireSession, requireProfile, async (c) => {
         data-day={garden.today}
         data-leaf={garden.leafDay ?? undefined}
         data-wrapped={garden.wrappedMonth ?? undefined}
+        data-week={garden.weekRecap ?? undefined}
         style="display:flex;flex-direction:column;flex:1"
       >
         <Amount />

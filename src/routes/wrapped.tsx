@@ -2,12 +2,15 @@ import { Hono } from "hono";
 import type { AppEnv } from "../env";
 import { affirmation, monthGarden, monthName, type MonthGarden } from "../lib/garden";
 import { addMonths, fromDateInput, monthStart } from "../lib/time";
+import { finishedWeek, weekRecap } from "../lib/week";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Plant } from "../views/garden";
 import { Layout } from "../views/layout";
+import { WeekSlides, weekLabel } from "../views/week";
 
 export const wrapped = new Hono<AppEnv>();
 wrapped.use("/wrapped/*", requireSession, requireProfile);
+wrapped.use("/week/*", requireSession, requireProfile);
 
 /** The start of the finished month "YYYY-MM" names, if it's a real month that ended after the household began. */
 function finishedMonth(raw: string, createdAt: number, now: number): number | null {
@@ -31,10 +34,15 @@ wrapped.get("/wrapped/:month", async (c) => {
   const month = c.req.param("month");
   const start = finishedMonth(month, c.get("householdCreatedAt"), now);
   if (start === null) return c.notFound();
-  const g = await monthGarden(c.env, c.get("householdId"), start, c.get("householdCreatedAt"), now);
+  // Last week's recap too, when it came due on the same day: one story, the month's slides then the week's.
+  const weekStart = finishedWeek(c.req.query("week") ?? "", c.get("householdCreatedAt"), now);
+  const [g, week] = await Promise.all([
+    monthGarden(c.env, c.get("householdId"), start, c.get("householdCreatedAt"), now),
+    weekStart === null ? null : weekRecap(c.env, c.get("householdId"), weekStart, c.get("householdCreatedAt"), now),
+  ]);
   const name = monthName(start);
   const pct = lowerBy(g);
-  const slides = 4 + (g.topTitle ? 1 : 0);
+  const slides = 4 + (g.topTitle ? 1 : 0) + (week ? 4 : 0);
   return c.html(
     <Layout title={`${name}, wrapped`} bare scripts={["/js/wrapped.js"]}>
       <div class="wrapped" data-month={month}>
@@ -77,15 +85,39 @@ wrapped.get("/wrapped/:month", async (c) => {
             </p>
           </section>
         )}
+        {week && <WeekSlides r={week} hidden={c.get("hideAmounts")} done={null} />}
         <section class="slide last">
           <img class="card" src={`/wrapped/${month}/card.svg`} width="216" height="384" alt={`${name}'s garden: ${g.goodDays} good days`} />
           <button class="save" type="button" id="share">
-            Share
+            Share {name}
           </button>
-          <a class="save plain" href="/">
+          <a class="save plain" href={doneHref(c.req.query("from"))}>
             Done
           </a>
         </section>
+      </div>
+    </Layout>,
+  );
+});
+
+/** Where a recap's Done goes: back to History when it was opened there, else the add screen. */
+const doneHref = (from: string | undefined) => (from === "history" ? "/history" : "/");
+
+/** A finished week's recap, by its Monday: story slides like Wrapped's, ending in Done. Never shared. */
+wrapped.get("/week/:date", async (c) => {
+  const now = Date.now();
+  const start = finishedWeek(c.req.param("date"), c.get("householdCreatedAt"), now);
+  if (start === null) return c.notFound();
+  const r = await weekRecap(c.env, c.get("householdId"), start, c.get("householdCreatedAt"), now);
+  return c.html(
+    <Layout title={`Your week, ${weekLabel(start)}`} bare scripts={["/js/wrapped.js"]}>
+      <div class="wrapped">
+        <div class="dots" aria-hidden="true">
+          {Array.from({ length: 4 }, () => (
+            <i></i>
+          ))}
+        </div>
+        <WeekSlides r={r} hidden={c.get("hideAmounts")} done={doneHref(c.req.query("from"))} />
       </div>
     </Layout>,
   );

@@ -729,6 +729,38 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 .wrapped .card { width: min(216px, 52vw); height: auto; border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35); margin-bottom: 10px; }
 .wrapped .save { max-width: 320px; }
 .wrapped .save.plain { color: #fff; border-color: rgba(255, 255, 255, 0.55); }
+/* A week's recap (views/week.tsx): the same story, with peso amounts and a plain Done at the end. */
+.wrapped .big.money { font-size: 64px; }
+.wrapped .week-pill { margin-top: 12px; padding: 8px 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.16); font-size: 16px; font-weight: 800; color: #fff; max-width: 320px; }
+.wrapped h2 { margin: 0 0 6px; font-size: 26px; font-weight: 900; }
+.wrapped .week-where { align-items: stretch; text-align: left; gap: 10px; }
+.wrapped .week-where h2 { text-align: center; }
+.week-split { display: flex; height: 16px; border-radius: 8px; overflow: hidden; background: rgba(255, 255, 255, 0.15); }
+.week-split .n { background: #d9ecd9; }
+.week-split .w { background: #f0a3b5; }
+.week-legend { display: flex; justify-content: space-between; font-size: 15px; color: #e6f2e6; }
+.week-legend b { color: #fff; }
+.week-top { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.week-top .row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 18px; background: rgba(255, 255, 255, 0.12); }
+.week-top .e { flex: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 22px; border-radius: 50% 50% 50% 14px; background: rgba(255, 255, 255, 0.9); }
+.week-top .n { flex: 1; min-width: 0; font-size: 17px; font-weight: 800; }
+.week-top .n small { display: block; font-size: 13px; font-weight: 700; color: #d9ecd9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.week-top b { font-size: 17px; font-weight: 900; }
+.week-days { display: flex; gap: 8px; margin: 16px 0 18px; }
+.week-days span { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: #d9ecd9; }
+.week-days i { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-style: normal; border-radius: 50%; background: rgba(255, 255, 255, 0.12); }
+.week-days .good i { background: #b9e3a5; }
+.week-days .perfect i { background: #f0a3b5; }
+
+/* History: a finished week's or month's recap, where it ended in the timeline. */
+.recap-row {
+  display: flex; align-items: center; gap: 12px; margin: 10px 0; padding: 10px 14px 10px 10px; text-decoration: none; color: #fff;
+  border-radius: 20px 20px 20px 8px; background: linear-gradient(160deg, #2f5a3a, #3e7a4a); box-shadow: 0 6px 16px rgba(31, 51, 38, 0.2);
+}
+.recap-row .ic { flex: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50% 50% 50% 14px; background: rgba(255, 255, 255, 0.16); font-size: 14px; }
+.recap-row .mid { display: flex; flex-direction: column; min-width: 0; }
+.recap-row b { font-size: 15px; font-weight: 900; }
+.recap-row .mid span { font-size: 13px; color: #d9ecd9; }
 
 /* ---------- small print: legal links on the login and setup pages ---------- */
 .fine { font-size: 12px; color: var(--muted); text-align: center; margin: 14px 0 4px; }

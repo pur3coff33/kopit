@@ -1,13 +1,15 @@
 import { Hono } from "hono";
-import { and, desc, eq, gte, lt, min, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lt, min, sql, sum } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { categories, entries, profiles } from "../db/schema";
 import type { AppEnv } from "../env";
 import type { CategoryKey } from "../lib/categories";
 import { categoryColor } from "../lib/colors";
-import { missionDays, type DayMissions } from "../lib/garden";
+import { missionDays, monthName, type DayMissions } from "../lib/garden";
 import { formatPeso } from "../lib/money";
-import { DAY_MS, MANILA_OFFSET_MS, clockTime, dayKey, fromDateInput, rangeLabel, toDateInput } from "../lib/time";
+import { DAY_MS, MANILA_OFFSET_MS, addMonths, clockTime, dayKey, fromDateInput, monthStart, rangeLabel, toDateInput, weekStart } from "../lib/time";
+import { WEEK_MS } from "../lib/week";
+import { weekLabel } from "../views/week";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Layout } from "../views/layout";
 import { Tour } from "../views/tour";
@@ -89,6 +91,67 @@ export function historyItems(days: number[], low: number, high: number): History
 
 const startOf = (day: number) => day * DAY_MS - MANILA_OFFSET_MS;
 
+type Recaps = { week?: number; month?: number };
+
+/**
+ * Which spending days (day keys, newest first) get a recap row above them: the newest day of each finished week and
+ * month that ended after the household began. A period whose newest day was on an earlier page (at or after `before`)
+ * already had its row there.
+ */
+export function recapRows(days: number[], before: number | null, createdAt: number, now: number): Map<number, Recaps> {
+  const out = new Map<number, Recaps>();
+  const weeks = new Set<number>();
+  const months = new Set<number>();
+  if (before !== null) {
+    weeks.add(weekStart(startOf(before)));
+    months.add(monthStart(startOf(before)));
+  }
+  for (const day of days) {
+    const w = weekStart(startOf(day));
+    const m = monthStart(startOf(day));
+    const r: Recaps = {};
+    if (!weeks.has(w) && w < weekStart(now) && w + WEEK_MS > createdAt) r.week = w;
+    if (!months.has(m) && m < monthStart(now) && addMonths(m, 1) > createdAt) r.month = m;
+    weeks.add(w);
+    months.add(m);
+    if (r.week !== undefined || r.month !== undefined) out.set(day, r);
+  }
+  return out;
+}
+
+export type Placed = HistoryItem | { kind: "week"; start: number } | { kind: "month"; start: number };
+
+/**
+ * The history items with the recap rows placed where their week or month ended (above its last day), splitting a
+ * quiet run that crosses that line. On the same line, the month's row goes first.
+ */
+export function placeRecaps(items: HistoryItem[], rows: Map<number, Recaps>): Placed[] {
+  const marks: Array<{ at: number; row: Placed }> = [];
+  for (const r of rows.values()) {
+    if (r.month !== undefined) marks.push({ at: dayKey(addMonths(r.month, 1)) - 1, row: { kind: "month", start: r.month } });
+    if (r.week !== undefined) marks.push({ at: dayKey(r.week) + 6, row: { kind: "week", start: r.week } });
+  }
+  marks.sort((a, b) => b.at - a.at || (a.row.kind === "month" ? -1 : 1));
+  const out: Placed[] = [];
+  let k = 0;
+  for (const item of items) {
+    let rest: HistoryItem | null = item;
+    while (rest) {
+      const top: number = rest.kind === "day" ? rest.day : rest.to;
+      while (k < marks.length && marks[k].at >= top) out.push(marks[k++].row);
+      if (rest.kind === "quiet" && k < marks.length && marks[k].at >= rest.from) {
+        out.push({ kind: "quiet", from: marks[k].at + 1, to: rest.to });
+        rest = { kind: "quiet", from: rest.from, to: marks[k].at };
+        continue;
+      }
+      out.push(rest);
+      rest = null;
+    }
+  }
+  for (; k < marks.length; k++) out.push(marks[k].row);
+  return out;
+}
+
 /** `before=2026-10-16`: show days before that date. */
 function parseBefore(raw: string | undefined): number | null {
   const ms = raw ? fromDateInput(raw) : null;
@@ -168,7 +231,22 @@ history.get("/history", async (c) => {
   const items = historyItems(days, low, high);
   const missions = who === "all" ? await missionDays(c.env, householdId, c.get("householdCreatedAt"), days, now) : null;
   const today = dayKey(now);
-  const first = items.findIndex((item) => item.kind === "day"); // the day the tour points at
+  // The household's recaps (Everyone only, like its missions): a row where each finished week and month ended.
+  const recaps = who === "all" ? recapRows(days, before, c.get("householdCreatedAt"), now) : new Map<number, Recaps>();
+  const placed = placeRecaps(items, recaps);
+  const first = placed.findIndex((item) => item.kind === "day"); // the day the tour points at
+  const weekStarts = [...recaps.values()].flatMap((r) => (r.week === undefined ? [] : [r.week]));
+  const weekTotals = new Map(
+    await Promise.all(
+      weekStarts.map(async (w) => {
+        const [row] = await db
+          .select({ total: sum(entries.amountCentavos) })
+          .from(entries)
+          .where(and(eq(entries.householdId, householdId), gte(entries.spentAt, w), lt(entries.spentAt, w + WEEK_MS)));
+        return [w, Number(row?.total ?? 0)] as const;
+      }),
+    ),
+  );
 
   const nextHref = more && oldest !== undefined ? `/history?who=${who}&before=${toDateInput(startOf(oldest))}` : null;
   const back = encodeURIComponent(`/history?who=${who}`);
@@ -186,7 +264,7 @@ history.get("/history", async (c) => {
         <p class="muted" style="margin-top:18px">Nothing logged yet.</p>
       ) : (
         <section class="history path" id="history">
-          {items.map((item, i) => {
+          {placed.map((item, i) => {
             if (item.kind === "quiet") {
               const n = item.to - item.from + 1;
               const label = n === 1 ? dayHeading(startOf(item.from), now) : rangeLabel(startOf(item.from), startOf(item.to + 1), now);
@@ -196,6 +274,32 @@ history.get("/history", async (c) => {
                   <b>{label}</b> · {nothing}
                   {n > 1 ? ` · ${n} days` : ""}
                 </p>
+              );
+            }
+            if (item.kind === "month") {
+              return (
+                <a class="recap-row" href={`/wrapped/${toDateInput(item.start).slice(0, 7)}?from=history`}>
+                  <span class="ic" aria-hidden="true">
+                    ▶
+                  </span>
+                  <span class="mid">
+                    <b>{monthName(item.start)}, wrapped</b>
+                    <span>The month's garden</span>
+                  </span>
+                </a>
+              );
+            }
+            if (item.kind === "week") {
+              return (
+                <a class="recap-row" href={`/week/${toDateInput(item.start)}?from=history`}>
+                  <span class="ic" aria-hidden="true">
+                    ▶
+                  </span>
+                  <span class="mid">
+                    <b>Week of {weekLabel(item.start)}</b>
+                    <span>{formatPeso(weekTotals.get(item.start) ?? 0)} · your week's recap</span>
+                  </span>
+                </a>
               );
             }
             const list = byDay.get(item.day) ?? [];

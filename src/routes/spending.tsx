@@ -177,11 +177,6 @@ spending.get("/spending", async (c) => {
             </>
           )}
           <div class="terra-links">
-            {g && !beforeGarden && (
-              <a class="chip" href={`/wrapped/${toDateInput(g.start).slice(0, 7)}`}>
-                ▶ Replay Wrapped
-              </a>
-            )}
             <a class="chip gallery-link" href="/gallery">
               🪴 Gallery
             </a>

@@ -1,5 +1,5 @@
 import { attachKeypad, display, toCentavos } from "./keypad.js";
-import { isStale, shouldCelebrate, shouldShowWrapped } from "./leaf.js";
+import { isStale, recapToPlay, shouldCelebrate } from "./leaf.js";
 import { sheetNotes, suggest, withPresets } from "./notes.js";
 import { count, enqueue, flush, remove } from "./queue.js";
 import { saveEntry } from "./save.js";
@@ -8,6 +8,7 @@ import { startTour } from "./tour.js";
 const $ = (sel) => document.querySelector(sel);
 const LEAF_SEEN = "kopit-leaf-seen";
 const WRAPPED_SEEN = "kopit-wrapped-seen";
+const WEEK_SEEN = "kopit-week-seen";
 const DRAFT = "kopit-draft"; // what was typed when an update reloaded the app (sessionStorage)
 
 /** The amount, category and note kept across an update's reload, or null when there's nothing worth bringing back. */
@@ -298,16 +299,20 @@ function showGarden(root) {
     refreshGarden(root); // rendered on an earlier day: fetch today's leaf in the background
     return;
   }
-  // A new month: last month's Wrapped plays first (once per phone, and only if this phone can remember it played).
+  // A new month or week: its recap plays first (last month's and last week's as one story when both are due), once
+  // per phone, and only if this phone can remember it played.
   const month = root.dataset.wrapped ?? null;
-  if (shouldShowWrapped(month, remember(WRAPPED_SEEN))) {
+  const week = root.dataset.week ?? null;
+  const recap = recapToPlay(month, week, remember(WRAPPED_SEEN), remember(WEEK_SEEN));
+  if (recap) {
     try {
-      localStorage.setItem(WRAPPED_SEEN, month);
+      if (month) localStorage.setItem(WRAPPED_SEEN, month);
+      if (week) localStorage.setItem(WEEK_SEEN, week);
       // The recap shows instead of yesterday's leaf card, not before it.
       if (root.dataset.leaf) localStorage.setItem(LEAF_SEEN, root.dataset.leaf);
     } catch {}
-    if (remember(WRAPPED_SEEN) === month) {
-      location.assign(`/wrapped/${month}`);
+    if ((!month || remember(WRAPPED_SEEN) === month) && (!week || remember(WEEK_SEEN) === week)) {
+      location.assign(recap);
       return;
     }
   }
@@ -340,6 +345,8 @@ async function refreshGarden(root) {
     else delete root.dataset.leaf;
     if (fresh.dataset.wrapped) root.dataset.wrapped = fresh.dataset.wrapped;
     else delete root.dataset.wrapped;
+    if (fresh.dataset.week) root.dataset.week = fresh.dataset.week;
+    else delete root.dataset.week;
     $("#leaf-sheet")?.remove();
     const sheet = doc.querySelector("#leaf-sheet");
     if (sheet) root.after(document.adoptNode(sheet));

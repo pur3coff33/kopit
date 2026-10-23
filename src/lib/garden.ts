@@ -13,7 +13,7 @@ import { categories, entries, gardenDays } from "../db/schema";
 import type { Env } from "../env";
 import { WANTS } from "./categories";
 import { ALIGNED_FROM, RULES, TYPE_NAMES, baseline, judgeDay, missionsFor, type Baseline, type CatInfo, type DayExpense, type DayFacts } from "./missions";
-import { DAY_MS, MANILA_OFFSET_MS, addMonths, dayKey, dayStart, monthStart, toDateInput, type Range } from "./time";
+import { DAY_MS, MANILA_OFFSET_MS, addMonths, dayKey, dayStart, monthStart, toDateInput, weekStart, type Range } from "./time";
 
 export const MONTH_NAMES: readonly string[] = [
   "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December",
@@ -377,20 +377,27 @@ export type TodayGarden = {
   leafMonthIsCurrent: boolean;
   /** "YYYY-MM" of last month when its Wrapped is due: it ended after the household began and had expenses. */
   wrappedMonth: string | null;
+  /** Last week's Monday, "YYYY-MM-DD", when its recap is due: it ended after the household began and had expenses. */
+  weekRecap: string | null;
 };
 
-/** What the add screen needs: yesterday's leaf, and whether last month's Wrapped is due. */
+/** What the add screen needs: yesterday's leaf, and whether last month's Wrapped or last week's recap is due. */
 export async function todayGarden(env: Env, householdId: number, createdAt: number, now: number): Promise<TodayGarden> {
   const today = dayKey(now);
   const yesterdayMs = dayStart(now) - DAY_MS;
   const monthOfYesterday = monthStart(yesterdayMs);
   const lastMonth = addMonths(now, -1);
-  const [days, lastMonthCount] = await Promise.all([
-    dayResults(env, householdId, createdAt, dayKey(monthOfYesterday), today, now),
+  const thisWeek = weekStart(now);
+  const lastWeek = thisWeek - 7 * DAY_MS;
+  const spentIn = (from: number, to: number) =>
     getDb(env)
       .select({ n: count() })
       .from(entries)
-      .where(and(eq(entries.householdId, householdId), gte(entries.spentAt, lastMonth), lt(entries.spentAt, monthStart(now)))),
+      .where(and(eq(entries.householdId, householdId), gte(entries.spentAt, from), lt(entries.spentAt, to)));
+  const [days, lastMonthCount, lastWeekCount] = await Promise.all([
+    dayResults(env, householdId, createdAt, dayKey(monthOfYesterday), today, now),
+    spentIn(lastMonth, monthStart(now)),
+    spentIn(lastWeek, thisWeek),
   ]);
   const y = days.get(today - 1);
   const good = !!y && isGood(y);
@@ -406,6 +413,7 @@ export async function todayGarden(env: Env, householdId: number, createdAt: numb
     leafMonth: monthName(yesterdayMs),
     leafMonthIsCurrent: monthOfYesterday === monthStart(now),
     wrappedMonth: monthStart(now) > createdAt && (lastMonthCount[0]?.n ?? 0) > 0 ? monthKey(lastMonth) : null,
+    weekRecap: thisWeek > createdAt && (lastWeekCount[0]?.n ?? 0) > 0 ? toDateInput(lastWeek) : null,
   };
 }
 
