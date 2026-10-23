@@ -1,8 +1,8 @@
-// Earthy colours for the ten categories (one each, in the fixed order) and flowers for people (by their place in the
+// Earthy colours for the fixed categories (one each, in the fixed order) and flowers for people (by their place in the
 // household). No data needed.
 import { FIXED, type CategoryKey } from "./categories";
 
-const FILLS = ["#7FB08C", "#E3A857", "#D98A7A", "#8AA6C9", "#B39BC8", "#C9B89A", "#E3A2B4", "#9DB36B", "#6FA8A8", "#D4A06A"];
+const FILLS = ["#7FB08C", "#E3A857", "#D98A7A", "#8AA6C9", "#B39BC8", "#C9B89A", "#E3A2B4", "#9DB36B", "#6FA8A8", "#D4A06A", "#A68F7B"];
 
 /** `tint` is the fill at low opacity, for the soft badge behind an emoji. */
 const COLORS = new Map(FIXED.map((c, i) => [c.key, { fill: FILLS[i], tint: `${FILLS[i]}38` }]));

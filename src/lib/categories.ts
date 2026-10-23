@@ -1,4 +1,4 @@
-// The fixed ten categories, the same for every household: six needs and four wants, each with ready-made notes.
+// The fixed categories, the same for every household: six needs and five wants, each with ready-made notes.
 // Built on research into how people sort their spending (see the design notes): a few broad groups, needs apart from
 // wants, and one-off occasions together. Brand names only where they're the same across the country; anything
 // regional (power and water companies, supermarkets) is generic, and a household types its own name once.
@@ -10,7 +10,18 @@ import { getDb } from "../db/client";
 import { categories } from "../db/schema";
 import type { Env } from "../env";
 
-export type CategoryKey = "groceries" | "bills" | "transport" | "health" | "school" | "household" | "eating-out" | "shopping" | "fun" | "gifts";
+export type CategoryKey =
+  | "groceries"
+  | "bills"
+  | "transport"
+  | "health"
+  | "school"
+  | "household"
+  | "eating-out"
+  | "shopping"
+  | "fun"
+  | "gifts"
+  | "vices";
 export type Group = "need" | "want";
 
 export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: string; group: Group; presets: readonly string[] }> = [
@@ -82,7 +93,7 @@ export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: strin
     emoji: "🎉",
     group: "want",
     presets: [
-      "Movies", "Mall trip", "Games", "Steam", "Mobile game", "Concert", "Karaoke", "Bar", "Drinks", "Resort",
+      "Movies", "Mall trip", "Games", "Steam", "Mobile game", "Concert", "Karaoke", "Resort",
       "Beach", "Swimming", "Hotel", "Flights", "Cebu Pacific", "PAL", "Gym", "Sports", "Hobbies", "Books",
     ],
   },
@@ -95,6 +106,14 @@ export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: strin
       "Birthday", "Christmas", "Wedding", "Baptism", "Debut", "Graduation", "Anniversary", "Valentine's", "Mother's Day",
       "Father's Day", "Fiesta", "Party", "Souvenirs", "Condolence money", "Church offering", "Donation", "Money for family",
     ],
+  },
+  {
+    // Drinking, smoking and gambling together: the spending a household most often wants to see plainly and cut.
+    key: "vices",
+    name: "Vices",
+    emoji: "🚬",
+    group: "want",
+    presets: ["Beer", "Liquor", "Wine", "Bar", "Drinks", "Cigarettes", "Vape", "Lotto", "Scratch cards", "E-sabong", "Online casino", "Cards", "Mahjong"],
   },
 ];
 
@@ -121,7 +140,7 @@ const toCat = (r: { id: number; key: string | null; name: string; emoji: string 
   group: GROUP.get(r.key as CategoryKey)!,
 });
 
-/** The household's ten, in the fixed order. */
+/** The household's categories, in the fixed order. */
 export async function listCategories(env: Env, householdId: number): Promise<Cat[]> {
   const rows = await getDb(env)
     .select(pick)
@@ -131,7 +150,7 @@ export async function listCategories(env: Env, householdId: number): Promise<Cat
   return rows.map(toCat).sort((a, b) => ORDER.get(a.key)! - ORDER.get(b.key)!);
 }
 
-/** One of the household's ten; undefined for another household's, or an old retired one. */
+/** One of the household's categories; undefined for another household's, or an old retired one. */
 export async function getCategory(env: Env, householdId: number, id: number): Promise<Cat | undefined> {
   const [row] = await getDb(env)
     .select(pick)
@@ -141,7 +160,7 @@ export async function getCategory(env: Env, householdId: number, id: number): Pr
 }
 
 /**
- * Where an expense with category `id` goes: one of the ten stays itself; an old retired one (still sent by a phone
+ * Where an expense with category `id` goes: one of the fixed ones stays itself; an old retired one (still sent by a phone
  * that saved it offline before the switch) goes where its expenses moved, with the note they got. Undefined when
  * `id` isn't this household's at all.
  */

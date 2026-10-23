@@ -8,7 +8,7 @@ export const households = sqliteTable("households", {
   failedAttempts: integer("failed_attempts").notNull().default(0),
   lockedUntil: integer("locked_until"),
   createdAt: integer("created_at").notNull(),
-  /** 2: on the fixed ten categories. 1: still on its own old categories, until its first visit switches it (switch.ts). */
+  /** 2: on the fixed categories. 1: still on its own old categories, until its first visit switches it (switch.ts). */
   categoriesSet: integer("categories_set").notNull().default(2),
 });
 
@@ -30,7 +30,7 @@ export const categories = sqliteTable(
     householdId: integer("household_id").notNull().references(() => households.id),
     name: text("name").notNull(),
     emoji: text("emoji").notNull(),
-    /** Which of the fixed ten (categories.ts) this row is. Null: an old category, retired by the switch. */
+    /** Which of the fixed categories (categories.ts) this row is. Null: an old category, retired by the switch. */
     key: text("key"),
     /** A retired row: the category its expenses moved to (null: none), and the note they got if they had none. */
     movedTo: integer("moved_to"),

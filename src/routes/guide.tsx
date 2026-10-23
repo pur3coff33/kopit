@@ -61,8 +61,9 @@ guide.get("/guide", (c) => {
           without signal, and the garden screen shows where the money went.
         </p>
         <p>
-          Every household has the same ten categories: six needs (groceries, bills, transport, health, school, household)
-          and four wants (eating out, shopping, fun and outings, gifts and occasions). Loan payments go under bills. Tap one
+          Every household has the same categories: six needs (groceries, bills, transport, health, school, household) and
+          five wants (eating out, shopping, fun and outings, gifts and occasions, vices). Loan payments go under bills;
+          drinking, smoking and gambling under vices. Tap one
           and its notes slide up, like Jollibee or Electricity; pick one, type your own, or skip. Picking a category is
           optional too.
         </p>
@@ -122,7 +123,7 @@ guide.get("/guide", (c) => {
         <p>
           Each one is tried on those days first. An <b>easy</b> mission is one you'd have met on about 9 of 10 of them, a{" "}
           <b>medium</b> one on about 6 of 10. So an ordinary day meets the easy ones, and only a heavier one than usual
-          misses them. A mission only ever names a want (eating out, shopping, fun, gifts), never a need, and a category is
+          misses them. A mission only ever names a want (eating out, shopping, fun, gifts, vices), never a need, and a category is
           only ever skipped if it's one you buy now and then anyway.
         </p>
         <ul class="missions-list">

@@ -4,8 +4,8 @@ import { FIXED, listCategories } from "../src/lib/categories";
 import { authCookie, req, seedHousehold } from "./helpers";
 
 describe("FIXED", () => {
-  it("has the ten in order, six needs then four wants", () => {
-    expect(FIXED.map((c) => c.key)).toEqual(["groceries", "bills", "transport", "health", "school", "household", "eating-out", "shopping", "fun", "gifts"]);
+  it("has the eleven in order, six needs then five wants", () => {
+    expect(FIXED.map((c) => c.key)).toEqual(["groceries", "bills", "transport", "health", "school", "household", "eating-out", "shopping", "fun", "gifts", "vices"]);
     expect(FIXED.map((c) => `${c.emoji} ${c.name}`)).toEqual([
       "🛒 Groceries",
       "💡 Bills",
@@ -17,8 +17,9 @@ describe("FIXED", () => {
       "🛍️ Shopping",
       "🎉 Fun & outings",
       "🎁 Gifts & occasions",
+      "🚬 Vices",
     ]);
-    expect(FIXED.map((c) => c.group)).toEqual([...Array(6).fill("need"), ...Array(4).fill("want")]);
+    expect(FIXED.map((c) => c.group)).toEqual([...Array(6).fill("need"), ...Array(5).fill("want")]);
   });
 
   it("gives every preset one home", () => {
@@ -28,6 +29,9 @@ describe("FIXED", () => {
     expect(all.every((p) => p.length <= 60)).toBe(true);
     expect(FIXED.find((c) => c.key === "eating-out")!.presets).toContain("Jollibee");
     expect(FIXED.find((c) => c.key === "bills")!.presets).toContain("Loan payment");
+    const vices = FIXED.find((c) => c.key === "vices")!.presets;
+    for (const p of ["Beer", "Bar", "Drinks", "Cigarettes", "Vape", "Lotto", "E-sabong"]) expect(vices).toContain(p);
+    expect(FIXED.find((c) => c.key === "fun")!.presets).not.toContain("Bar");
   });
 });
 

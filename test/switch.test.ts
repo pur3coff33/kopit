@@ -31,7 +31,7 @@ describe("planSwitch", () => {
       { id: 8, key: "fun" },
       { id: 11, key: "gifts" },
     ]);
-    expect(p.add).toEqual(["school"]);
+    expect(p.add).toEqual(["school", "vices"]);
     expect(p.retire).toEqual([
       { id: 9, to: "eating-out", note: "Coffee" },
       { id: 10, to: "bills", note: "Mobile load" },
@@ -146,7 +146,7 @@ describe("switchCategories", () => {
     expect(today).toHaveLength(0);
     const after = await snapshot(h.householdId);
     expect(after.entries).toHaveLength(entryCount);
-    expect(after.categories).toHaveLength(rowCount); // nothing deleted; School was already there as "school"
+    expect(after.categories).toHaveLength(rowCount + 1); // nothing deleted; School was already there as "school"; Vices added
   });
 
   it("does nothing the second time, or when two phones run it at once", async () => {
@@ -154,7 +154,7 @@ describe("switchCategories", () => {
     const before = (await snapshot(h.householdId)).categories.length;
     await Promise.all([switchCategories(env, h.householdId, created, now), switchCategories(env, h.householdId, created, now)]);
     const once = await snapshot(h.householdId);
-    expect(once.categories).toHaveLength(before);
+    expect(once.categories).toHaveLength(before + 1); // Vices added, once
     await switchCategories(env, h.householdId, created, now);
     expect(await snapshot(h.householdId)).toEqual(once);
   });
@@ -163,7 +163,7 @@ describe("switchCategories", () => {
     const h = await seedLegacyHousehold({ createdAt: created });
     await switchCategories(env, h.householdId, created, now);
     const rows = await db().select().from(categories).where(eq(categories.householdId, h.householdId));
-    expect(rows).toHaveLength(13); // the old twelve, plus School
+    expect(rows).toHaveLength(14); // the old twelve, plus School and Vices
     expect((await listCategories(env, h.householdId)).map((c) => `${c.emoji} ${c.name}`)).toEqual(FIXED.map((c) => `${c.emoji} ${c.name}`));
   });
 

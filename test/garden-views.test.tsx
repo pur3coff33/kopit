@@ -6,9 +6,10 @@ import { Avatar, Plant, Wordmark } from "../src/views/garden";
 const count = (s: string, needle: string) => s.split(needle).length - 1;
 
 describe("colours", () => {
-  it("gives each of the ten its own colour, and no category one of its own", () => {
+  it("gives each category its own colour, and no category one of its own", () => {
     const fills = FIXED.map((c) => categoryColor(c.key).fill);
-    expect(new Set(fills).size).toBe(10);
+    expect(fills.every((f) => /^#[0-9A-F]{6}$/i.test(f))).toBe(true);
+    expect(new Set(fills).size).toBe(FIXED.length);
     expect(fills).not.toContain(categoryColor(null).fill);
   });
 

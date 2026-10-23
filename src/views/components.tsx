@@ -29,7 +29,7 @@ const GROUPS = [
   { group: "want", label: "Wants" },
 ] as const;
 
-/** The ten tiles, always in the same places: needs on top, wants below. */
+/** The category tiles, always in the same places: needs on top, wants below. */
 export function CategoryTiles({ cats }: { cats: Cat[] }) {
   return (
     <div class="tiles" id="tiles" data-spot="categories">

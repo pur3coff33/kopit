@@ -57,6 +57,13 @@
       "when": 1792712768137,
       "tag": "0007_fixed_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1792717300231,
+      "tag": "0008_vices",
+      "breakpoints": true
     }
   ]
 }
