@@ -13,6 +13,13 @@ describe("colours", () => {
     expect(fills).not.toContain(categoryColor(null).fill);
   });
 
+  it("keeps each category's colour when another joins", () => {
+    expect(categoryColor("groceries").fill).toBe("#7FB08C");
+    expect(categoryColor("bills").fill).toBe("#E3A857");
+    expect(categoryColor("household").fill).toBe("#C9B89A");
+    expect(categoryColor("vices").fill).toBe("#A68F7B");
+  });
+
   it("gives each person a flower by their place in the household, cycling through eight", () => {
     expect(flowerFor(9)).toEqual(flowerFor(1));
     expect(flowerFor(0)).not.toEqual(flowerFor(1));

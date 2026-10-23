@@ -33,7 +33,8 @@ function remember(key) {
   }
 }
 // The screen's elements: looked up again each time the screen is mounted.
-let profileId, amt, save, tiles, noteSheet, noteChips, noteOther, toastEl, toastText, undoBtn, noteToggle, noteBox, noteInput, suggestEl;
+let profileId, amt, save, tiles, usual, pick, catSheet, noteSheet, noteChips, noteOther, noteUse, toastEl, toastText, undoBtn, noteToggle, noteBox, noteInput, suggestEl;
+let pickIcon = ""; // the picker button's icon while nothing is picked
 
 let notes = [];
 let presets = {}; // category id → its ready-made notes
@@ -70,9 +71,19 @@ async function onUndo() {
 
 function select(id) {
   categoryId = id;
-  for (const t of tiles.querySelectorAll(".cat")) t.classList.toggle("on", id !== null && t.dataset.id === String(id));
+  for (const t of document.querySelectorAll("#tiles .cat, #usual .cat")) t.classList.toggle("on", id !== null && t.dataset.id === String(id));
+  if (!pick) return; // an older offline copy of the screen, with the tiles on it
+  const tile = id === null ? null : tiles.querySelector(`.cat[data-id="${id}"]`);
+  pick.classList.toggle("on", !!tile);
+  const icon = $("#pick-e");
+  if (tile) icon.textContent = tile.dataset.emoji;
+  else icon.innerHTML = pickIcon;
+  icon.style.cssText = tile?.style.cssText ?? "";
+  $("#pick-name").textContent = tile ? tile.dataset.name : "What was it for?";
+  $("#pick-sub").textContent = tile ? "Tap to change" : "Optional · tap to pick a category";
 }
 
+/** A usual chip (or a tile, on an older copy of the screen): picks it and slides its notes up; tapped again, unpicks. */
 function onTile(ev) {
   const t = ev.target.closest(".cat");
   if (!t) return;
@@ -85,23 +96,39 @@ function onTile(ev) {
   openSheet(t);
 }
 
+/** A tile in the picker: picks it, and the picker gives way to its notes. */
+function onPickerTile(ev) {
+  const t = ev.target.closest(".cat");
+  if (!t) return;
+  select(Number(t.dataset.id));
+  catSheet.close();
+  openSheet(t);
+}
+
 // ---------- the category's notes, sliding up after a tile is tapped ----------
 
 function openSheet(tile) {
   if (!noteSheet) return; // an older offline copy of the screen, from before the sheet
   $("#note-sheet-title").textContent = `${tile.dataset.emoji} ${tile.dataset.name}: what was it?`;
   $("#note-skip").textContent = `Skip: just ${tile.dataset.name}`;
+  const desc = $("#note-sheet-desc");
+  if (desc) {
+    desc.textContent = tile.dataset.desc ?? "";
+    desc.hidden = !tile.dataset.desc;
+  }
   noteOther.value = "";
   renderSheet();
   noteSheet.showModal();
 }
 
 function renderSheet() {
+  if (noteUse) noteUse.disabled = !noteOther.value.trim();
+  const mine = new Set(notes.filter((n) => n.categoryId === categoryId).map((n) => n.note.toLowerCase()));
   noteChips.replaceChildren(
     ...sheetNotes(notes, categoryId, presets[categoryId], noteOther.value).map((text) => {
       const b = document.createElement("button");
       b.type = "button";
-      b.className = "chip";
+      b.className = mine.has(text.toLowerCase()) ? "chip mine" : "chip";
       b.textContent = text;
       b.addEventListener("click", () => useSheetNote(text));
       return b;
@@ -119,12 +146,17 @@ function useSheetNote(text) {
   noteSheet.close();
 }
 
-function onOtherKey(ev) {
-  if (ev.key !== "Enter") return;
-  ev.preventDefault();
+/** What's typed in "Something else…" becomes the note (Use, or Enter); nothing typed just closes. */
+function useOther() {
   const text = noteOther.value.trim().replace(/\s+/g, " ");
   if (text) useSheetNote(text);
   else noteSheet.close();
+}
+
+function onOtherKey(ev) {
+  if (ev.key !== "Enter") return;
+  ev.preventDefault();
+  useOther();
 }
 
 // ---------- note with autocomplete ----------
@@ -347,9 +379,14 @@ export function mount() {
   amt = $("#amt");
   save = $("#save");
   tiles = $("#tiles");
+  usual = $("#usual");
+  pick = $("#pick");
+  catSheet = $("#cat-sheet");
+  pickIcon = $("#pick-e")?.innerHTML ?? "";
   noteSheet = $("#note-sheet");
   noteChips = $("#note-chips");
   noteOther = $("#note-other");
+  noteUse = $("#note-use");
   toastEl = $("#toast");
   toastText = $("#toast-text");
   undoBtn = $("#toast-undo");
@@ -376,10 +413,22 @@ export function mount() {
     render();
   });
   undoBtn.addEventListener("click", onUndo);
-  tiles.addEventListener("click", onTile);
+  if (catSheet) {
+    tiles.addEventListener("click", onPickerTile);
+    usual.addEventListener("click", onTile);
+    pick.addEventListener("click", () => catSheet.showModal());
+    $("#cat-close").addEventListener("click", () => catSheet.close());
+    $("#cat-none").addEventListener("click", () => {
+      select(null);
+      catSheet.close();
+    });
+  } else {
+    tiles.addEventListener("click", onTile); // an older offline copy of the screen, with the tiles on it
+  }
   if (noteSheet) {
     noteOther.addEventListener("input", renderSheet);
     noteOther.addEventListener("keydown", onOtherKey);
+    noteUse?.addEventListener("click", useOther);
     $("#note-skip").addEventListener("click", () => noteSheet.close());
     $("#note-close").addEventListener("click", () => noteSheet.close());
   }

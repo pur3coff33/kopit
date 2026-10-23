@@ -1,4 +1,4 @@
-import type { Cat } from "../lib/categories";
+import { FIXED, type Cat } from "../lib/categories";
 import { categoryColor } from "../lib/colors";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back"];
@@ -15,12 +15,80 @@ export function Keypad() {
   );
 }
 
+const DESCRIPTION = new Map(FIXED.map((c) => [c.key, c.description]));
+
 export function Tile({ cat, id }: { cat: Cat; id?: string }) {
   return (
-    <button type="button" class="cat" id={id} data-id={String(cat.id)} data-key={cat.key} data-name={cat.name} data-emoji={cat.emoji} style={`--tint:${categoryColor(cat.key).tint}`}>
+    <button
+      type="button"
+      class="cat"
+      id={id}
+      data-id={String(cat.id)}
+      data-key={cat.key}
+      data-name={cat.name}
+      data-emoji={cat.emoji}
+      data-desc={DESCRIPTION.get(cat.key)}
+      style={`--tint:${categoryColor(cat.key).tint}`}
+    >
       <span class="e">{cat.emoji}</span>
       {cat.name}
     </button>
+  );
+}
+
+/**
+ * The add screen's category spot: one big button that opens the picker (CategorySheet), and the household's usual ones
+ * as chips to pick straight away. The button shows what's picked.
+ */
+export function CategoryPicker({ usual }: { usual: Cat[] }) {
+  return (
+    <div class="picker" data-spot="categories">
+      <button type="button" class="cat-pick" id="pick" aria-haspopup="dialog">
+        <span class="e" id="pick-e" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="2"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="2"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="2"></rect>
+            <rect x="14" y="14" width="7" height="7" rx="2"></rect>
+          </svg>
+        </span>
+        <span class="t">
+          <span id="pick-name">What was it for?</span>
+          <span class="s" id="pick-sub">
+            Optional · tap to pick a category
+          </span>
+        </span>
+        <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M9 6l6 6-6 6"></path>
+        </svg>
+      </button>
+      <div class="cat-label">Your usual</div>
+      <div class="usual" id="usual">
+        {usual.map((cat) => (
+          <Tile cat={cat} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Every category as a big tile, needs then wants, in a sheet that slides up from the picker button. */
+export function CategorySheet({ cats }: { cats: Cat[] }) {
+  return (
+    <dialog class="sheet bottom cat-sheet" id="cat-sheet" aria-labelledby="cat-sheet-title">
+      <div class="sheet-head">
+        <h2 id="cat-sheet-title" style="margin:0">
+          What was it for?
+        </h2>
+        <button class="x" type="button" id="cat-close" aria-label="Close">
+          ×
+        </button>
+      </div>
+      <CategoryTiles cats={cats} />
+      <button class="skip" type="button" id="cat-none">
+        No category
+      </button>
+    </dialog>
   );
 }
 
@@ -32,7 +100,7 @@ const GROUPS = [
 /** The category tiles, always in the same places: needs on top, wants below. */
 export function CategoryTiles({ cats }: { cats: Cat[] }) {
   return (
-    <div class="tiles" id="tiles" data-spot="categories">
+    <div class="tiles" id="tiles">
       {GROUPS.map((g) => (
         <div class="cat-group">
           <div class="cat-label">{g.label}</div>

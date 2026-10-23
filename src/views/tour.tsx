@@ -30,8 +30,8 @@ export function tourSteps(screen: TourScreen, profileName: string): TourStep[] {
           title: "Tap what it was for",
           text: (
             <>
-              Optional. Needs on top, wants below. Tap one and its notes slide up, like “Jollibee” or “Electricity”: pick one,
-              type your own, or skip.
+              Optional. Tap <b>What was it for?</b> to see every category, or one of your usual ones below it. Its notes slide
+              up, like “Jollibee” or “Electricity”: pick one, type your own and tap <b>Use</b>, or skip.
             </>
           ),
         },

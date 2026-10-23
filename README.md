@@ -6,7 +6,7 @@ Logging an expense takes a few seconds: type the amount, tap a category if you l
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="docs/screenshots/add.webp" alt="Add screen: ₱285 typed on the keypad, Food picked" width="240"><br><b>Log it in seconds</b><br>Keypad, category tiles, an optional note. Works offline.</td>
+    <td align="center" width="33%"><img src="docs/screenshots/add.webp" alt="Add screen: ₱285 typed on the keypad, Food picked" width="240"><br><b>Log it in seconds</b><br>Keypad, one tap to pick a category, an optional note. Works offline.</td>
     <td align="center" width="33%"><img src="docs/screenshots/garden.webp" alt="Garden screen: month total, on-track pill, plant and today's missions" width="240"><br><b>The garden</b><br>Where the money went, your pace against last month, and today's missions.</td>
     <td align="center" width="33%"><img src="docs/screenshots/perfect-day.webp" alt="A perfect day card with the household's plant" width="240"><br><b>A leaf for a good day</b><br>Yesterday's result greets you on the add screen.</td>
   </tr>
@@ -21,8 +21,8 @@ Logging an expense takes a few seconds: type the amount, tap a category if you l
 
 ## What's in it
 
-- Quick add screen with a number keypad, category tiles and an optional one-line note
-- The same categories for every household, based on research into how people sort their spending: six needs (Groceries, Bills, Transport, Health, School, Household) and five wants (Eating out, Shopping, Fun & outings, Gifts & occasions, Vices). Loan payments go under Bills; drinking, smoking and gambling under Vices. Tap one and its ready-made notes slide up (Jollibee, Electricity, Grab…), with your household's own notes first; type your own or skip. A category is optional
+- Quick add screen with a number keypad, a category picker with your usual ones one tap away, and an optional one-line note
+- The same categories for every household, based on research into how people sort their spending: seven needs (Groceries, Meals, Bills, Transport, Health, Work & Education, Family & Others) and five wants (Eating out, Shopping, Fun & outings, Gifts & occasions, Vices). A lunch you have to buy at work goes under Meals, a treat under Eating out; loan payments under Bills; drinking, smoking and gambling under Vices. Pick one and its notes slide up with a line on what goes in it: ready-made ones (Jollibee, Electricity, Grab…) after your household's own; type your own and tap Use, or skip. A category is optional
 - Garden screen with totals for needs and wants, per category, and your pace against last month
 - A money garden: every day the household gets 3 small "spend less" missions, two easy and one medium, checked automatically from what you log. They're only about how much you spend (never who buys, when to stop, or a day without spending), and a mission only ever names a want, never a need, and made from the household's own last 28 days: an easy one is something you'd have managed on about 9 of 10 of those days, a medium one on about 6. Meet at least half and the plant grows a leaf; meet them all and the leaf gets a small flower. A month that ends lower than the one before blooms. It only ever rewards, never scolds
 - A gallery of every month's plant, and a Wrapped recap when a month ends

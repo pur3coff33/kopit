@@ -61,11 +61,12 @@ guide.get("/guide", (c) => {
           without signal, and the garden screen shows where the money went.
         </p>
         <p>
-          Every household has the same categories: six needs (groceries, bills, transport, health, school, household) and
-          five wants (eating out, shopping, fun and outings, gifts and occasions, vices). Loan payments go under bills;
-          drinking, smoking and gambling under vices. Tap one
-          and its notes slide up, like Jollibee or Electricity; pick one, type your own, or skip. Picking a category is
-          optional too.
+          Every household has the same categories: seven needs (groceries, meals, bills, transport, health, work and
+          education, family and others) and five wants (eating out, shopping, fun and outings, gifts and occasions, vices).
+          A lunch you have to buy at work goes under meals, a treat under eating out; loan payments under bills; drinking,
+          smoking and gambling under vices. Tap <b>What was it for?</b> to see them all, or one of your usual ones below it.
+          Its notes slide up, like Jollibee or Electricity: pick one, type your own and tap <b>Use</b>, or skip. Picking a
+          category is optional too.
         </p>
         <p>
           Spending less grows a plant. Every day brings a few small missions, checked automatically from what you log. Good

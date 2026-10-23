@@ -1,11 +1,11 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../env";
-import { FIXED, listCategories } from "../lib/categories";
+import { FIXED, listCategories, usualCategories } from "../lib/categories";
 import { todayGarden } from "../lib/garden";
 import { DAY_MS, fromDateInput, weekdayDate } from "../lib/time";
 import { noteSuggestions } from "../lib/notes";
 import { requireProfile, requireSession } from "../middleware/auth";
-import { Amount, CategoryTiles, Keypad, Toast } from "../views/components";
+import { Amount, CategoryPicker, CategorySheet, Keypad, Toast } from "../views/components";
 import { Plant } from "../views/garden";
 import { Layout } from "../views/layout";
 import { Tour } from "../views/tour";
@@ -22,8 +22,9 @@ export function ordinal(n: number): string {
 add.get("/", requireSession, requireProfile, async (c) => {
   const householdId = c.get("householdId");
   const now = Date.now();
-  const [cats, notes, garden] = await Promise.all([
+  const [cats, usual, notes, garden] = await Promise.all([
     listCategories(c.env, householdId),
+    usualCategories(c.env, householdId, now),
     noteSuggestions(c.env, householdId),
     todayGarden(c.env, householdId, c.get("householdCreatedAt"), now),
   ]);
@@ -42,7 +43,7 @@ add.get("/", requireSession, requireProfile, async (c) => {
         style="display:flex;flex-direction:column;flex:1"
       >
         <Amount />
-        <CategoryTiles cats={cats} />
+        <CategoryPicker usual={usual} />
         <div class="note-row" data-spot="categories">
           <button type="button" class="note-toggle" id="note-toggle">
             ＋ note
@@ -66,16 +67,23 @@ add.get("/", requireSession, requireProfile, async (c) => {
         <button id="close" type="button"></button>
         <form id="newcat"></form>
       </dialog>
-      <dialog class="sheet note-sheet" id="note-sheet" aria-labelledby="note-sheet-title">
+      <CategorySheet cats={cats} />
+      <dialog class="sheet bottom note-sheet" id="note-sheet" aria-labelledby="note-sheet-title" aria-describedby="note-sheet-desc">
         <div class="sheet-head">
           <h2 id="note-sheet-title" style="margin:0"></h2>
           <button class="x" type="button" id="note-close" aria-label="Close">
             ×
           </button>
         </div>
+        <p class="sheet-desc" id="note-sheet-desc"></p>
         <div class="chips" id="note-chips"></div>
-        <input id="note-other" maxlength={60} placeholder="Something else…" autocomplete="off" enterkeyhint="done" aria-label="Something else" />
-        <button class="linkbtn" type="button" id="note-skip"></button>
+        <div class="other">
+          <input id="note-other" maxlength={60} placeholder="Something else…" autocomplete="off" enterkeyhint="done" aria-label="Something else" />
+          <button class="use" type="button" id="note-use" disabled>
+            Use
+          </button>
+        </div>
+        <button class="skip" type="button" id="note-skip"></button>
       </dialog>
       {garden.leafDay && leafAt !== null && (
         <dialog class="sheet leaf-sheet" id="leaf-sheet" aria-labelledby="leaf-title">

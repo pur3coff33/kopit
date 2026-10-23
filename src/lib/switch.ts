@@ -1,8 +1,8 @@
-// The one-time move of a household from its own old categories to the fixed ten (categories.ts). It runs on the
+// The one-time move of a household from its own old categories to the fixed twelve (categories.ts). It runs on the
 // household's first visit after the update (requireSession), once, in one database transaction:
 //
 //   1. every past day's missions and leaf are kept for good (final garden days), judged on the old categories;
-//   2. old rows become the fixed ten where they match (Food → Eating out, Home → Household, …), the missing ones are
+//   2. old rows become the fixed twelve where they match (Food → Eating out, Home → Household, …), the missing ones are
 //      added, and the rest retire: Coffee, Load / Data, Travel and a household's own categories;
 //   3. expenses in a retired row move to where it went, with its old name as the note if they had none;
 //   4. today's missions are drawn again, on the new categories.
@@ -20,7 +20,10 @@ import { dayKey } from "./time";
 
 export type OldRow = { id: number; name: string; emoji: string; sortOrder: number };
 
-/** What each old starter became. Anything else that isn't named like one of the ten retires to no category. */
+/**
+ * What each old starter became, and a household's own row named like a fixed one was at first. Anything else that isn't
+ * named like one of the fixed ones retires to no category.
+ */
 const LEGACY: Readonly<Record<string, CategoryKey>> = {
   groceries: "groceries",
   food: "eating-out",
@@ -29,6 +32,8 @@ const LEGACY: Readonly<Record<string, CategoryKey>> = {
   bills: "bills",
   "load / data": "bills",
   home: "household",
+  household: "household",
+  school: "school",
   health: "health",
   shopping: "shopping",
   fun: "fun",
@@ -61,7 +66,7 @@ export function planSwitch(rows: OldRow[]) {
   };
 }
 
-/** Moves the household to the fixed ten, keeping its past days as they were. Safe to run twice, or at once. */
+/** Moves the household to the fixed twelve, keeping its past days as they were. Safe to run twice, or at once. */
 export async function switchCategories(env: Env, householdId: number, createdAt: number, now: number): Promise<void> {
   const rows = await getDb(env)
     .select({ id: categories.id, name: categories.name, emoji: categories.emoji, sortOrder: categories.sortOrder, hidden: categories.hidden })

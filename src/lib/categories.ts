@@ -1,4 +1,4 @@
-// The fixed categories, the same for every household: six needs and five wants, each with ready-made notes.
+// The fixed categories, the same for every household: seven needs and five wants, each with ready-made notes.
 // Built on research into how people sort their spending (see the design notes): a few broad groups, needs apart from
 // wants, and one-off occasions together. Brand names only where they're the same across the country; anything
 // regional (power and water companies, supermarkets) is generic, and a household types its own name once.
@@ -9,9 +9,11 @@ import { and, asc, eq, isNotNull } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { categories } from "../db/schema";
 import type { Env } from "../env";
+import { DAY_MS } from "./time";
 
 export type CategoryKey =
   | "groceries"
+  | "meals"
   | "bills"
   | "transport"
   | "health"
@@ -24,18 +26,30 @@ export type CategoryKey =
   | "vices";
 export type Group = "need" | "want";
 
-export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: string; group: Group; presets: readonly string[] }> = [
+/** `description` says in a line what goes in it; it shows under the name when the category's notes slide up. */
+export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: string; group: Group; description: string; presets: readonly string[] }> = [
   {
     key: "groceries",
     name: "Groceries",
     emoji: "🛒",
+    description: "Food and basics for home: market, supermarket, corner store, water refill",
     group: "need",
     presets: ["Wet market", "Supermarket", "Corner store", "Rice", "Water refill", "Meat", "Fish", "Vegetables", "Fruit", "Eggs", "Bread", "Milk", "Coffee & sugar", "7-Eleven", "Alfamart"],
+  },
+  {
+    // Food bought because there's no other way on a work or school day; Eating out is the treat.
+    key: "meals",
+    name: "Meals",
+    emoji: "🍱",
+    description: "Food you have to buy when you're out: office lunch, canteen, carinderia, baon",
+    group: "need",
+    presets: ["Office lunch", "Lunch", "Breakfast", "Dinner", "Carinderia", "Turo-turo", "Canteen", "Food stall", "Rice meal", "Baon", "Merienda"],
   },
   {
     key: "bills",
     name: "Bills",
     emoji: "💡",
+    description: "Must-pays every month: power, water, internet, rent, loans, contributions",
     group: "need",
     presets: ["Electricity", "Water", "Internet", "Mobile load", "Rent", "Association dues", "Subscriptions", "Loan payment", "Installment", "Credit card", "SSS", "Pag-IBIG", "PhilHealth"],
   },
@@ -43,6 +57,7 @@ export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: strin
     key: "transport",
     name: "Transport",
     emoji: "🚌",
+    description: "Getting around: fares, rides, gas, parking, repairs",
     group: "need",
     presets: ["Jeepney", "Tricycle", "Bus", "Van", "Train", "Grab", "Motorcycle taxi", "Taxi", "Gas", "Parking", "Toll", "Car wash", "Car repair", "Motorcycle repair", "Ferry"],
   },
@@ -50,40 +65,48 @@ export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: strin
     key: "health",
     name: "Health",
     emoji: "💊",
+    description: "Medicine, checkups, dental, hospital, vitamins",
     group: "need",
     presets: ["Medicine", "Mercury Drug", "Watsons", "Generika", "TGP", "Checkup", "Lab tests", "Dental", "Vitamins", "Hospital", "Eyeglasses", "HMO", "Therapy"],
   },
   {
     key: "school",
-    name: "School",
+    name: "Work & Education",
     emoji: "📚",
+    description: "Studying and working: tuition, allowance, supplies, training, licenses",
     group: "need",
-    presets: ["Tuition", "School fees", "School allowance", "Supplies", "Projects", "Textbooks", "Uniform", "Printing", "Field trip", "School service", "National Book Store"],
+    presets: [
+      "Tuition", "School fees", "School allowance", "Supplies", "Projects", "Textbooks", "Uniform", "Printing", "Field trip", "School service",
+      "National Book Store", "Training", "Seminar", "Review center", "Board exam", "Licenses", "Work tools",
+    ],
   },
   {
     key: "household",
-    name: "Household",
-    emoji: "🧴",
+    name: "Family & Others",
+    emoji: "🏠",
+    description: "Money for family, and what keeps home running: toiletries, cleaning, gas, repairs",
     group: "need",
     presets: [
-      "Toiletries", "Soap", "Shampoo", "Toothpaste", "Detergent", "Fabric conditioner", "Dishwashing liquid", "Cleaning supplies", "Cooking gas", "Diapers",
-      "Baby stuff", "Pet food", "Laundry service", "Repairs", "Plumber", "Kitchen stuff", "Ace Hardware", "Wilcon", "Mr. DIY", "Daiso",
+      "Money for family", "Toiletries", "Soap", "Shampoo", "Toothpaste", "Detergent", "Fabric conditioner", "Dishwashing liquid", "Cleaning supplies", "Cooking gas",
+      "Diapers", "Baby stuff", "Pet food", "Laundry service", "Repairs", "Plumber", "Kitchen stuff", "Ace Hardware", "Wilcon", "Mr. DIY", "Daiso",
     ],
   },
   {
     key: "eating-out",
     name: "Eating out",
     emoji: "🍜",
+    description: "Treats: fast food, coffee, milk tea, restaurants, delivery",
     group: "want",
     presets: [
       "Jollibee", "McDonald's", "Chowking", "Mang Inasal", "Greenwich", "KFC", "Shakey's", "Max's", "Starbucks", "Coffee", "Milk tea",
-      "Bakery", "Red Ribbon", "Goldilocks", "Food stall", "Street food", "GrabFood", "foodpanda", "Snacks", "Lunch", "Dinner",
+      "Bakery", "Red Ribbon", "Goldilocks", "Street food", "GrabFood", "foodpanda", "Snacks",
     ],
   },
   {
     key: "shopping",
     name: "Shopping",
     emoji: "🛍️",
+    description: "Things you want: clothes, gadgets, online orders, beauty",
     group: "want",
     presets: ["Clothes", "Shoes", "Bags", "Gadgets", "Phone", "Accessories", "Makeup", "Skincare", "Shopee", "Lazada", "TikTok Shop", "SM Store", "Uniqlo", "Penshoppe", "Bench", "Thrift shop", "Appliances", "Home decor"],
   },
@@ -91,6 +114,7 @@ export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: strin
     key: "fun",
     name: "Fun & outings",
     emoji: "🎉",
+    description: "Going out and hobbies: movies, trips, games, resorts, gym",
     group: "want",
     presets: [
       "Movies", "Mall trip", "Games", "Steam", "Mobile game", "Concert", "Karaoke", "Resort",
@@ -101,10 +125,11 @@ export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: strin
     key: "gifts",
     name: "Gifts & occasions",
     emoji: "🎁",
+    description: "Birthdays, holidays, weddings, church, donations",
     group: "want",
     presets: [
       "Birthday", "Christmas", "Wedding", "Baptism", "Debut", "Graduation", "Anniversary", "Valentine's", "Mother's Day",
-      "Father's Day", "Fiesta", "Party", "Souvenirs", "Condolence money", "Church offering", "Donation", "Money for family",
+      "Father's Day", "Fiesta", "Party", "Souvenirs", "Condolence money", "Church offering", "Donation",
     ],
   },
   {
@@ -112,6 +137,7 @@ export const FIXED: ReadonlyArray<{ key: CategoryKey; name: string; emoji: strin
     key: "vices",
     name: "Vices",
     emoji: "🚬",
+    description: "Drinking, smoking and gambling",
     group: "want",
     presets: ["Beer", "Liquor", "Wine", "Bar", "Drinks", "Cigarettes", "Vape", "Lotto", "Scratch cards", "E-sabong", "Online casino", "Cards", "Mahjong"],
   },
@@ -148,6 +174,26 @@ export async function listCategories(env: Env, householdId: number): Promise<Cat
     .where(and(eq(categories.householdId, householdId), isNotNull(categories.key)))
     .orderBy(asc(categories.sortOrder));
   return rows.map(toCat).sort((a, b) => ORDER.get(a.key)! - ORDER.get(b.key)!);
+}
+
+const EVERYDAY: readonly CategoryKey[] = ["groceries", "meals", "transport", "bills"];
+
+/**
+ * The add screen's "Your usual": the household's four most used categories of the last 60 days (most first; a tie goes
+ * to the one used last), topped up from the everyday ones so a new household has some too.
+ */
+export async function usualCategories(env: Env, householdId: number, now: number, n = 4): Promise<Cat[]> {
+  const cats = await listCategories(env, householdId);
+  const { results } = await env.DB.prepare(
+    `SELECT c.id AS id FROM entries e JOIN categories c ON c.id = e.category_id
+     WHERE e.household_id = ? AND c.key IS NOT NULL AND e.spent_at >= ?
+     GROUP BY c.id ORDER BY COUNT(*) DESC, MAX(e.spent_at) DESC LIMIT ?`,
+  )
+    .bind(householdId, now - 60 * DAY_MS, n)
+    .all<{ id: number }>();
+  const used = results.map((r) => cats.find((c) => c.id === r.id)!).filter(Boolean);
+  const everyday = EVERYDAY.map((k) => cats.find((c) => c.key === k)!).filter((c) => c && !used.includes(c));
+  return [...used, ...everyday].slice(0, n);
 }
 
 /** One of the household's categories; undefined for another household's, or an old retired one. */

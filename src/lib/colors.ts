@@ -1,11 +1,24 @@
-// Earthy colours for the fixed categories (one each, in the fixed order) and flowers for people (by their place in the
-// household). No data needed.
+// Earthy colours for the fixed categories (one each, kept by key so a new category never repaints the others) and
+// flowers for people (by their place in the household). No data needed.
 import { FIXED, type CategoryKey } from "./categories";
 
-const FILLS = ["#7FB08C", "#E3A857", "#D98A7A", "#8AA6C9", "#B39BC8", "#C9B89A", "#E3A2B4", "#9DB36B", "#6FA8A8", "#D4A06A", "#A68F7B"];
+const FILLS: Record<CategoryKey, string> = {
+  groceries: "#7FB08C",
+  meals: "#E6C36A",
+  bills: "#E3A857",
+  transport: "#D98A7A",
+  health: "#8AA6C9",
+  school: "#B39BC8",
+  household: "#C9B89A",
+  "eating-out": "#E3A2B4",
+  shopping: "#9DB36B",
+  fun: "#6FA8A8",
+  gifts: "#D4A06A",
+  vices: "#A68F7B",
+};
 
 /** `tint` is the fill at low opacity, for the soft badge behind an emoji. */
-const COLORS = new Map(FIXED.map((c, i) => [c.key, { fill: FILLS[i], tint: `${FILLS[i]}38` }]));
+const COLORS = new Map(FIXED.map((c) => [c.key, { fill: FILLS[c.key], tint: `${FILLS[c.key]}38` }]));
 
 const NO_CATEGORY = { fill: "#A9B5AA", tint: "#A9B5AA38" };
 
