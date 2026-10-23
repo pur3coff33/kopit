@@ -84,21 +84,86 @@ export function InlineScript({ code }: { code: string }) {
   return <script dangerouslySetInnerHTML={{ __html: code }}></script>;
 }
 
-/** Revealed by /js/install.js on phones where kopit isn't installed yet. */
+const SHARE_ICON = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 15V3M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" />
+  </svg>
+);
+const ADD_ICON = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="3.5" y="3.5" width="17" height="17" rx="4" />
+    <path d="M12 8v8M8 12h8" />
+  </svg>
+);
+
+/**
+ * Revealed by /js/install.js on phones where kopit isn't installed yet: a small badge on every screen, and a full-screen
+ * page with the steps that opens by itself the first time (and from the badge's button on an iPhone).
+ */
 function InstallBadge() {
   return (
-    <div class="install" id="install" hidden>
-      <span class="if-prompt">📲 Install kop.it on this phone</span>
-      <span class="if-ios">
-        📲 Install kop.it: tap <b>Share</b>, then <b>Add to Home Screen</b>
-      </span>
-      <button type="button" class="install-btn if-prompt" data-install>
-        Install
-      </button>
-      <button type="button" class="x" data-dismiss aria-label="Hide">
-        ×
-      </button>
-    </div>
+    <>
+      <div class="install" id="install" hidden>
+        <span class="if-prompt">📲 Install kop.it on this phone</span>
+        <span class="if-ios">📲 Add kop.it to your home screen</span>
+        <span class="if-chrome">📲 To install kop.it, use Chrome</span>
+        <button type="button" class="install-btn if-prompt" data-install>
+          Install
+        </button>
+        <button type="button" class="install-btn if-ios" data-howto>
+          Show me
+        </button>
+        <button type="button" class="install-btn if-chrome" data-howto>
+          Show me
+        </button>
+        <button type="button" class="x" data-dismiss aria-label="Hide">
+          ×
+        </button>
+      </div>
+      <dialog class="install-modal" id="install-modal" aria-labelledby="install-title">
+        <div class="im-body">
+          <img class="im-icon" src="/icons/icon-192.png" alt="" width="84" height="84" />
+          <h2 id="install-title">Keep kop.it on your home screen</h2>
+          <p class="im-lead">It opens like an app, full screen, and the add screen still works when there's no signal.</p>
+          <div class="if-prompt">
+            <button class="save" type="button" data-install>
+              Install kop.it
+            </button>
+          </div>
+          <div class="if-chrome">
+            <p class="im-lead">This browser can't install apps. Chrome can: open kop.it there and it offers to install it.</p>
+            <a class="save" href="#" data-chrome>
+              Open in Chrome
+            </a>
+            <p class="im-tip">Nothing happens? Open Chrome yourself and type this page's address.</p>
+          </div>
+          <ol class="im-steps if-ios">
+            <li>
+              <span class="n">1</span>
+              <span class="t">
+                Tap the <b>Share</b> button <span class="im-key">{SHARE_ICON}</span> in Safari's toolbar.
+              </span>
+            </li>
+            <li>
+              <span class="n">2</span>
+              <span class="t">
+                Scroll down and tap <b>Add to Home Screen</b> <span class="im-key">{ADD_ICON}</span>.
+              </span>
+            </li>
+            <li>
+              <span class="n">3</span>
+              <span class="t">
+                Tap <b>Add</b> in the corner. kop.it is now on your home screen, ready to open.
+              </span>
+            </li>
+          </ol>
+          <p class="im-tip if-ios">Not in Safari? Open this page in Safari first: other apps' browsers can't add it.</p>
+          <button class="skip" type="button" data-later>
+            Not now
+          </button>
+        </div>
+      </dialog>
+    </>
   );
 }
 

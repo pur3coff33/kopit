@@ -238,7 +238,7 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
 .cat-sheet .tiles .cats.needs, .cat-sheet .tiles .cats.wants { grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .cat-sheet .tiles .cat { font-size: 13px; padding: 10px 4px 9px; min-height: 76px; background: rgba(255, 255, 255, 0.85); }
 .cat-sheet .tiles .cat .e { width: 38px; height: 38px; font-size: 22px; margin-bottom: 4px; }
-.sheet .skip {
+.sheet .skip, .install-modal .skip {
   display: block; width: 100%; margin-top: 12px; min-height: 48px; cursor: pointer;
   border: 1.5px solid rgba(31, 51, 38, 0.18); background: transparent; border-radius: 24px; font-size: 15px; font-weight: 800;
 }
@@ -406,12 +406,38 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
 }
 .install[hidden] { display: none; }
 .install > span { flex: 1; }
-.install[data-mode="prompt"] .if-ios, .install[data-mode="ios"] .if-prompt { display: none; }
+:is(.install, .install-modal):not([data-mode="prompt"]) .if-prompt,
+:is(.install, .install-modal):not([data-mode="ios"]) .if-ios,
+:is(.install, .install-modal):not([data-mode="chrome"]) .if-chrome { display: none; }
 .install-btn {
   border: 0; background: var(--btn); color: #fff; cursor: pointer;
   border-radius: 12px; padding: 6px 13px; font-size: 13px; font-weight: 900; box-shadow: 0 3px 8px rgba(62, 122, 74, 0.3);
 }
 .install .x { font-size: 20px; line-height: 1; padding: 0 4px; }
+
+/* The full-screen page with the steps. Like the tours, a dialog that fills the screen; its own paper, so it reads on its own. */
+.install-modal {
+  position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+  overflow-y: auto; color: var(--ink);
+  background: radial-gradient(ellipse 85% 42% at 2% 0%, #ffe1cf 0, transparent 72%), radial-gradient(ellipse 80% 36% at 100% 100%, #f7e7b8 0, transparent 70%), #f2f3e6;
+}
+.install-modal::backdrop { background: transparent; }
+.im-body {
+  display: flex; flex-direction: column; align-items: stretch; justify-content: center; min-height: 100%; max-width: 440px; margin: 0 auto; text-align: center;
+  padding: calc(32px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
+}
+.im-icon { align-self: center; border-radius: 22px; box-shadow: 0 10px 26px rgba(31, 51, 38, 0.18); }
+.install-modal h2 { margin: 20px 0 6px; font-size: 26px; font-weight: 900; letter-spacing: -0.01em; }
+.im-lead { margin: 0 8px 22px; font-size: 15px; line-height: 1.45; color: var(--muted); }
+.im-steps { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; text-align: left; }
+.im-steps li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px; background: var(--solid); border: 1px solid var(--edge); box-shadow: var(--lift); }
+.im-steps .n {
+  flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50% 50% 50% 10px; color: #fff; font-size: 15px; font-weight: 900; background: var(--btn);
+}
+.im-steps .t { font-size: 15px; line-height: 1.4; }
+.im-key { display: inline-grid; place-items: center; width: 28px; height: 28px; margin: -4px 1px; vertical-align: middle; border-radius: 8px; background: #fff; border: 1px solid rgba(31, 51, 38, 0.15); color: #2b6cd8; }
+.im-tip { margin: 14px 8px 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.install-modal .skip { margin-top: 22px; }
 
 /* ---------- bottom bar: a floating glass pill, Add as the round seed button in the middle ---------- */
 .app:has(> .nav) { padding-bottom: 0; }
