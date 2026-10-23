@@ -127,6 +127,24 @@ describe("history page", () => {
     expect(second).not.toContain('id="history-empty"');
   });
 
+  it("sends only the shelves and the next link when asked for the next batch (part=shelves)", async () => {
+    const now = Date.now();
+    const h = await seedHousehold({ createdAt: now - 70 * DAY });
+    await addEntry(h, { amount: 100, at: now - 1000, category: "Eating out" });
+    const first = await view("/history", h);
+    const more = /id="more-history" href="([^"]+)"/.exec(first)![1].replace(/&amp;/g, "&");
+    const whole = await view(more, h);
+    const part = await view(`${more}&part=shelves`, h);
+    // The same shelves, none of the page around them: no layout, header, sky or tour.
+    const shelves = (s: string) => [...s.matchAll(/class="g-shelf" data-week="([0-9-]+)"/g)].map((m) => m[1]);
+    expect(shelves(part)).toEqual(shelves(whole));
+    expect(part).toMatch(/^<section class="g-house" id="history">/);
+    expect(part).not.toMatch(/<html|class="sky|class="top"|kopit-version/);
+    expect(part.includes('id="more-history"')).toBe(whole.includes('id="more-history"'));
+    // The first batch is always the whole page, whatever is asked.
+    expect(await view("/history?part=shelves", h)).toContain("<html");
+  });
+
   it("hangs a sign for each month, once even across batches", async () => {
     const now = Date.now();
     const h = await seedHousehold({ createdAt: now - 70 * DAY });

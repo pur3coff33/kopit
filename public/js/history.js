@@ -4,6 +4,8 @@
 // added to the end.
 
 const SETTLE_MS = 700; // the drawer's fold (app.css), before a closed receipt is hidden
+const BUILD_MS = 900; // a shelf's build-in is given this long to itself before the next one may start
+const STILL_MS = 150; // the page counts as still this long after the last scroll
 
 /** Which pot and receipt a tap shows: `open` the pot's place on its shelf (0–6) or null; tapping the open one closes it. */
 export function nextOpen(open, tapped) {
@@ -18,19 +20,60 @@ export function mount() {
   let more = document.querySelector("#more-history");
   let stopped = false;
   if (!house || !list) return;
-  const still = matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window);
+  const observing = "IntersectionObserver" in window;
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches || !observing;
 
-  // Build each shelf and sign in as it comes into view.
+  // Build each shelf and sign in as it comes into view. One shelf builds at a time: one that comes into view while
+  // another is still going (a quick scroll) is just there.
+  let lastBuild = -Infinity;
   const reveal = still ? null : new IntersectionObserver((es) => es.forEach((e) => {
     if (!e.isIntersecting) return;
+    if (e.target.matches(".g-shelf")) {
+      const now = performance.now();
+      if (now - lastBuild < BUILD_MS) e.target.classList.add("quick");
+      else lastBuild = now;
+    }
     e.target.classList.add("in");
     reveal.unobserve(e.target);
   }), { threshold: 0.25 });
-  const watch = (els) => reveal && els.forEach((el) => el.matches(".g-shelf, .g-chapter") && reveal.observe(el));
-  if (reveal) {
-    house.classList.add("animate");
-    watch([...list.children]);
-  }
+  // Only what's on screen moves (app.css): the shelves, signs and roof in view are .live.
+  const live = observing
+    ? new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle("live", e.isIntersecting)), { rootMargin: "80px 0px" })
+    : null;
+  const roof = house.querySelector(".g-roof");
+  if (roof) live?.observe(roof);
+  // Shelves far from the screen stop being drawn (app.css) and keep their height: with years of history there are
+  // hundreds of them, each with seven swaying pots, and only a few are ever in view.
+  const park =
+    observing && CSS.supports("content-visibility", "hidden")
+      ? new IntersectionObserver(
+          (es) =>
+            es.forEach((e) => {
+              if (e.isIntersecting) return e.target.classList.remove("far");
+              e.target.style.containIntrinsicSize = `auto ${Math.round(e.boundingClientRect.height)}px`;
+              e.target.classList.add("far");
+            }),
+          { rootMargin: "1500px 0px" },
+        )
+      : null;
+  const watch = (els) =>
+    els.forEach((el) => {
+      if (!el.matches(".g-shelf, .g-chapter")) return;
+      reveal?.observe(el);
+      live?.observe(el);
+      park?.observe(el);
+    });
+  if (reveal) house.classList.add("animate");
+  watch([...list.children]);
+
+  // While the page is being scrolled, the endless motion holds still (app.css, .moving).
+  let scrollTimer = 0;
+  const onScroll = () => {
+    house.classList.add("moving");
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => house.classList.remove("moving"), STILL_MS);
+  };
+  addEventListener("scroll", onScroll, { passive: true });
 
   const timers = new Set();
   const later = (fn, ms) => {
@@ -88,24 +131,15 @@ export function mount() {
   }
   list.addEventListener("click", onClick);
 
-  // The glass's drops drift a little slower than the shelves.
-  const far = house.querySelector(".g-far");
-  let frame = 0;
-  const onScroll = () => {
-    if (frame || still || !far) return;
-    frame = requestAnimationFrame(() => {
-      frame = 0;
-      far.style.transform = `translateY(${(scrollY * 0.15).toFixed(1)}px)`;
-    });
-  };
-  addEventListener("scroll", onScroll, { passive: true });
-
   async function loadMore() {
     if (!more || more.dataset.loading) return;
     more.dataset.loading = "1";
     more.textContent = "Loading…";
     try {
-      const res = await fetch(more.href);
+      // Just the shelves and the next link, not the page around them.
+      const url = new URL(more.href);
+      url.searchParams.set("part", "shelves");
+      const res = await fetch(url);
       if (!res.ok) throw new Error(String(res.status));
       const doc = new DOMParser().parseFromString(await res.text(), "text/html");
       if (stopped) return;
@@ -120,6 +154,13 @@ export function mount() {
         more.href = next.href;
         more.textContent = "Show more";
         delete more.dataset.loading;
+        // An observer only speaks when the link crosses the edge. If it's still in range after this batch (a fast
+        // scroll can leave it there, or a slow phone has scrolled on while it loaded), no one would ask for the next
+        // weeks: observing again reports where it stands now.
+        if (seen) {
+          seen.unobserve(more);
+          seen.observe(more);
+        }
       } else {
         seen?.disconnect();
         more.remove();
@@ -132,15 +173,17 @@ export function mount() {
     }
   }
 
-  const seen = more && "IntersectionObserver" in window ? new IntersectionObserver((s) => s.some((e) => e.isIntersecting) && loadMore(), { rootMargin: "300px" }) : null;
+  const seen = more && observing ? new IntersectionObserver((s) => s.some((e) => e.isIntersecting) && loadMore(), { rootMargin: "300px" }) : null;
   if (seen) seen.observe(more);
   return () => {
     stopped = true;
     seen?.disconnect();
     reveal?.disconnect();
-    list.removeEventListener("click", onClick);
+    park?.disconnect();
+    live?.disconnect();
     removeEventListener("scroll", onScroll);
-    if (frame) cancelAnimationFrame(frame);
+    clearTimeout(scrollTimer);
+    list.removeEventListener("click", onClick);
     timers.forEach(clearTimeout);
   };
 }

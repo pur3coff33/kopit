@@ -609,18 +609,19 @@ history.get("/history", async (c) => {
   const nextHref = more ? `/history?who=${who}&before=${toDateInput(from)}` : null;
   // The bottom of the last batch: where the garden began (or the oldest back-dated expense).
   if (!more) shelves.push(<p class="g-start">🌱 Your garden began here · {dayHeading(Math.min(createdAt, oldest ?? createdAt), now)}</p>);
-  return c.html(
-    page(
-      <Greenhouse night={isNight(now)}>
-        <section class="g-house" id="history">
-          {shelves}
-        </section>
-        {nextHref && (
-          <a class="more" id="more-history" href={nextHref}>
-            Show more
-          </a>
-        )}
-      </Greenhouse>,
-    ),
+  const batch = (
+    <>
+      <section class="g-house" id="history">
+        {shelves}
+      </section>
+      {nextHref && (
+        <a class="more" id="more-history" href={nextHref}>
+          Show more
+        </a>
+      )}
+    </>
   );
+  // "Show more" (/js/history.js) only wants the next shelves and the link after them, not the whole page around them.
+  if (before !== null && c.req.query("part") === "shelves") return c.html(batch);
+  return c.html(page(<Greenhouse night={isNight(now)}>{batch}</Greenhouse>));
 });

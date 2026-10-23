@@ -764,7 +764,9 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
 .g-bed path { fill: none; stroke: #6aa279; stroke-width: 1.6; stroke-linecap: round; }
 .g-bed .pink { fill: #f0a3b5; } .g-bed .gold { fill: #f2c94c; }
 .g-start { margin: 26px 0 18px; text-align: center; font-size: 12.5px; font-weight: 800; color: #6b5a3a; }
-.g-far { position: absolute; inset: 0; overflow: hidden; pointer-events: none; will-change: transform; }
+/* The drops on the glass: one screenful that stays with the screen as the shelves scroll by. (As tall as the whole
+   greenhouse it was a layer that grew with every week loaded, and its drops ended up too far apart to be seen.) */
+.g-far { position: sticky; top: 0; flex: none; height: 100dvh; margin-bottom: -100dvh; overflow: hidden; pointer-events: none; }
 .g-drip { position: absolute; width: 3px; height: 7px; border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%; background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 2px rgba(120, 160, 180, 0.6); opacity: 0; }
 .g-roof { position: relative; height: 150px; margin: 0 -10px; }
 .g-sun { position: absolute; top: 34px; left: 40px; width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle, #fff6c9 0 35%, #ffd65a 62%, #ffbf3c); box-shadow: 0 0 26px 10px rgba(255, 214, 90, 0.5), 0 0 80px 30px rgba(255, 214, 90, 0.25); }
@@ -789,6 +791,8 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
 
 /* a week's shelf */
 .g-shelf { position: relative; margin: 22px 0 6px; }
+/* A shelf or sign far off screen isn't drawn at all (/js/history.js sets its height in contain-intrinsic-size). */
+.g-shelf.far, .g-chapter.far { content-visibility: hidden; }
 .g-sh { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 4px 4px; }
 .g-sh .lbl { font-size: 11px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 .g-sh .lbl small { display: block; font-size: 11px; letter-spacing: 0.02em; text-transform: none; color: #2f6b3c; font-weight: 800; }
@@ -882,6 +886,20 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
   .animate .g-shelf.in .g-tag { animation: g-swing 2.2s calc(var(--d) + 0.5s) both; }
   .animate .g-shelf .g-lights { opacity: 0; transition: opacity 0.8s 2.2s; }
   .animate .g-shelf.in .g-lights { opacity: 1; }
+  /* A shelf that comes into view while another is still building (a quick scroll) just stands there: dozens of
+     animations at once is what makes a scroll stutter. /js/history.js adds .quick. */
+  .animate .g-shelf.quick, .animate .g-shelf.quick * { transition: none !important; }
+  .animate .g-shelf.quick :is(.g-pot, .puff, .g-tag) { animation: none !important; }
+  /* ...so every part has to be put where its build-in would have left it. */
+  .animate .g-shelf.quick :is(.g-sh, .g-pot, .g-tag, .g-lights, .spark, .bf) { opacity: 1; translate: 0 0; rotate: 0deg; }
+  .animate .g-shelf.quick :is(.g-plank, .lf, .fl) { scale: 1 1; rotate: 0deg; }
+  .animate .g-shelf.quick .stem { stroke-dashoffset: 0; }
+  /* Only what's on screen moves (/js/history.js marks the shelves, signs and roof in view .live), and the endless
+     motion (swaying, twinkling, creaking, the roof's sky) holds still while the page is being scrolled. */
+  .greenhouse :is(.g-shelf, .g-chapter, .g-roof):not(.live) :is(.sway, .g-lights i, .board, .g-tag.today b, .glow, .bf, .roof-sky *, .g-rays, .g-mote),
+  .greenhouse :is(.g-shelf, .g-chapter, .g-roof):not(.live) :is(.g-pot.sel, .roof-sky .sun)::before,
+  .greenhouse.moving :is(.g-pot .sway, .g-lights i, .g-chapter .board, .g-tag.today b, .g-pot .glow, .g-pot .bf, .roof-sky *, .g-rays, .g-mote),
+  .greenhouse.moving :is(.g-pot.sel, .roof-sky .sun)::before { animation-play-state: paused; }
   .g-receipt li { animation: g-rise 0.5s calc(var(--i, 0) * 0.07s) cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 }
 @keyframes g-drip { 0% { translate: 0 0; opacity: 0; } 10% { opacity: 0.9; } 70% { opacity: 0.8; } 100% { translate: 0 120px; opacity: 0; } }
