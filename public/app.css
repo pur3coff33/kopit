@@ -723,9 +723,8 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
 .terrarium > .sky { flex: 1; min-width: 0; justify-content: flex-start; padding: 40px 12px 10px; border-radius: 0 0 26px 26px; min-height: 200px; }
 .terrarium > .sky .terra-text {
   z-index: 2; padding: 10px 12px; margin-bottom: 2px; border-radius: 18px;
-  background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(255, 255, 255, 0.8); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.82); border: 1px solid rgba(255, 255, 255, 0.8);
 }
-.terrarium > .sky[data-phase="night"] .terra-text { background: rgba(255, 255, 255, 0.8); }
 .terrarium > .sky .caption { color: var(--on-sky); text-shadow: 0 1px 6px var(--on-sky-glow); }
 .terra-text { flex: 1; min-width: 0; padding-bottom: 6px; }
 .terra-text p { margin: 2px 0; }
@@ -1268,7 +1267,11 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
 .app:has([data-sky][data-phase="night"]) .top .wm i { background: #9fd0aa; }
 .app:has(.add-sky[data-phase="night"]) .amount { color: #f4f1e6; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35); }
 .app:has(.add-sky[data-phase="night"]) .underline { filter: brightness(1.35); }
-.app:has(:is(.terrarium > .sky, .roof-sky)[data-phase="night"]) :is(main > .seg, main > .chips .chip:not(.on)) { background: rgba(255, 255, 255, 0.82); }
+/* Over a dark sky (night, rain, storm) frosted glass turns a muddy grey, so what sits on it is solid instead. */
+.app:has([data-sky]:is([data-phase="night"], [data-weather="rain"], [data-weather="storm"])) :is(.top .me, main > .seg, main > .chips .chip:not(.on), .cat-pick:not(.on), .terra-text) {
+  background: rgba(252, 253, 249, 0.95); -webkit-backdrop-filter: none; backdrop-filter: none;
+}
 
 /* PIN boxes are text fields (see PinInput), dotted out like a password. */
 .pin { -webkit-text-security: disc; letter-spacing: 0.15em; }
+
