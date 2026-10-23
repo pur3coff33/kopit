@@ -74,9 +74,13 @@ export function tourSteps(screen: TourScreen, profileName: string): TourStep[] {
         {
           spot: "day",
           title: "Every expense, by day",
-          text: "Newest first, from everyone. Tap one to fix or delete it. Quiet days get a leaf of their own.",
+          text: "Today's receipt starts open. Tap any pot to open its day, and tap an expense to fix or delete it.",
         },
-        { spot: "day-result", title: "How each day went", text: "A day's missions fold under it. Tap the line to see which ones were met." },
+        {
+          spot: "day-result",
+          title: "How each day went",
+          text: "Each week is a shelf, a pot for every day: leafy for a good day, a flower for a perfect one, droopy for a missed one, and a butterfly when nothing was spent.",
+        },
         { spot: "people", title: "Just one person", text: "See only what one person logged. Tap Everyone to see the whole household again." },
       ];
     case "shed":

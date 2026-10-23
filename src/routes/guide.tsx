@@ -64,7 +64,7 @@ guide.get("/guide", (c) => {
           Spending less grows a plant: a few small missions each day, leaves for good days, flowers for perfect ones. It only
           ever rewards, never scolds.
         </p>
-        <p>Every week and month ends with a short recap. Replay any of them from History.</p>
+        <p>Every week and month ends with a short recap. Replay any of them from History: a week's from its shelf, a month's from its sign.</p>
         <p>
           <a href="/?tour">Take the tour again</a>
         </p>
@@ -149,7 +149,7 @@ guide.get("/guide", (c) => {
         <p class="muted">
           Half of the day's missions met is a good day (a leaf). All of them is a perfect day (a flower). Spending nothing
           always meets every mission, but it's never needed. A day's missions don't change once the day has started. To
-          look back at a day's missions, open History and tap the line under the day.
+          look back at a day's missions, open History, tap that day's pot and tap the line in its receipt.
         </p>
       </section>
 

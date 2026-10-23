@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import { entries, profiles } from "../src/db/schema";
 import { todayGarden } from "../src/lib/garden";
 import { DAY_MS, dayKey, monthStart, toDateInput, weekStart } from "../src/lib/time";
-import { historyItems, placeRecaps, recapRows } from "../src/routes/history";
 import { finishedWeek, weekRecap } from "../src/lib/week";
 import { addEntry, authCookie, db, html, req, seedHousehold } from "./helpers";
 
@@ -128,85 +127,43 @@ describe("popping up", () => {
   });
 });
 
+/** History from the top, following "Show more" until `found` appears (or there's no more). */
+async function historyUntil(path: string, cookie: string, found: string) {
+  let body = "";
+  for (let next: string | undefined = path, i = 0; next && i < 6; i++) {
+    const page = await html(await req(next, { cookie }));
+    body += page;
+    if (page.includes(found)) break;
+    next = /id="more-history" href="([^"]+)"/.exec(page)?.[1]?.replace(/&amp;/g, "&");
+  }
+  return body;
+}
+
 describe("recaps in History", () => {
-  it("puts a row above the newest day of each finished week and month, on Everyone only", async () => {
+  it("put a watering can on each finished week's shelf, on Everyone only", async () => {
     const mon = weekStart(Date.now()) - 7 * DAY_MS;
     const h = await weeks(mon);
     const cookie = await authCookie(h.householdId, h.profileIds[0]);
     const body = await html(await req("/history", { cookie }));
-    const row = body.indexOf(`href="/week/${toDateInput(mon)}?from=history"`);
-    expect(row).toBeGreaterThan(0);
-    expect(body.slice(row, row + 400)).toContain("Week of");
-    expect(body.match(new RegExp(`/week/${toDateInput(mon)}\\?`, "g"))).toHaveLength(1);
+    const can = body.indexOf(`href="/week/${toDateInput(mon)}?from=history"`);
+    expect(can).toBeGreaterThan(0);
+    expect(body.slice(can, can + 400)).toContain("Week of");
+    expect(body.slice(can, can + 600)).toContain("₱4,170");
+    expect(body.match(new RegExp(`/week/${toDateInput(mon)}\?`, "g"))).toHaveLength(1);
     expect(body).not.toContain(`/week/${toDateInput(mon + 7 * DAY_MS)}`); // this week isn't over
     const person = await html(await req(`/history?who=${h.profileIds[0]}`, { cookie }));
     expect(person).not.toContain("/week/");
   });
 
-  it("links last month's Wrapped where the month ended", async () => {
+  it("link last month's Wrapped on its sign", async () => {
     const h = await seedHousehold({ createdAt: Date.now() - 70 * DAY_MS });
     const thisMonth = toDateInput(Date.now()).slice(0, 7);
     const lastMonthDay = Date.parse(`${thisMonth}-01T04:00:00Z`) - 2 * DAY_MS;
     await spend(h, 10_000, lastMonthDay, "Groceries");
-    const body = await html(await req("/history", { cookie: await authCookie(h.householdId, h.profileIds[0]) }));
-    expect(body).toContain(`href="/wrapped/${toDateInput(lastMonthDay).slice(0, 7)}?from=history"`);
-    expect(body).toContain("wrapped");
-  });
-});
-
-describe("recapRows", () => {
-  const now = Date.UTC(2026, 9, 21, 4); // Wed Oct 21
-  const created = Date.UTC(2026, 8, 1, 4); // Sep 1
-  const day = (m: number, d: number) => dayKey(Date.UTC(2026, m, d, 4));
-  const mon = (m: number, d: number) => Date.UTC(2026, m, d, 4) - 12 * 3_600_000; // Manila midnight
-
-  it("marks the newest day of each finished week and month, never this week or month", () => {
-    const rows = recapRows([day(9, 20), day(9, 16), day(9, 13), day(9, 9), day(8, 30)], null, created, now);
-    expect([...rows.keys()]).toEqual([day(9, 16), day(9, 9), day(8, 30)]);
-    expect(rows.get(day(9, 16))).toEqual({ week: mon(9, 12) });
-    expect(rows.get(day(8, 30))).toEqual({ week: mon(8, 28), month: mon(8, 1) });
-  });
-
-  it("doesn't repeat a week whose newest day was on the page before", () => {
-    expect(recapRows([day(9, 13), day(9, 9)], day(9, 14), created, now).has(day(9, 13))).toBe(false);
-    expect(recapRows([day(9, 9)], day(9, 13), created, now).get(day(9, 9))).toEqual({ week: mon(9, 5) });
-  });
-});
-
-describe("placeRecaps", () => {
-  const created = Date.UTC(2026, 8, 1, 4);
-  const now = Date.UTC(2026, 9, 21, 4); // Wed Oct 21
-  const day = (m: number, d: number) => dayKey(Date.UTC(2026, m, d, 4));
-  const start = (m: number, d: number) => Date.UTC(2026, m, d, 4) - 12 * 3_600_000;
-
-  it("puts each row where its period ended, splitting a quiet run that crosses it", () => {
-    const items = historyItems([day(9, 17), day(9, 14)], day(9, 1), day(9, 20));
-    const placed = placeRecaps(items, recapRows([day(9, 17), day(9, 14)], null, created, now));
-    expect(placed).toEqual([
-      { kind: "quiet", from: day(9, 19), to: day(9, 20) },
-      { kind: "week", start: start(9, 12) },
-      { kind: "quiet", from: day(9, 18), to: day(9, 18) },
-      { kind: "day", day: day(9, 17) },
-      { kind: "quiet", from: day(9, 15), to: day(9, 16) },
-      { kind: "day", day: day(9, 14) },
-      { kind: "quiet", from: day(9, 1), to: day(9, 13) },
-    ]);
-  });
-
-  it("puts a month's row above its last day and a week running into the next month above its own", () => {
-    const days = [day(9, 2), day(8, 29)];
-    const placed = placeRecaps(historyItems(days, day(8, 28), day(9, 6)), recapRows(days, null, created, now));
-    expect(placed.map((p) => (p.kind === "quiet" ? `quiet ${p.from}-${p.to}` : p.kind === "day" ? `day ${p.day}` : p.kind))).toEqual([
-      `quiet ${day(9, 5)}-${day(9, 6)}`,
-      "week", // Sep 28 – Oct 4
-      `quiet ${day(9, 3)}-${day(9, 4)}`,
-      `day ${day(9, 2)}`,
-      `quiet ${day(9, 1)}-${day(9, 1)}`,
-      "month", // September
-      `quiet ${day(8, 30)}-${day(8, 30)}`,
-      `day ${day(8, 29)}`,
-      `quiet ${day(8, 28)}-${day(8, 28)}`,
-    ]);
+    const link = `href="/wrapped/${toDateInput(lastMonthDay).slice(0, 7)}?from=history"`;
+    const body = await historyUntil("/history", await authCookie(h.householdId, h.profileIds[0]), link);
+    expect(body).toContain(link);
+    expect(body).toContain(", wrapped");
   });
 });
 

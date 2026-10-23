@@ -252,6 +252,11 @@ async function buildMonths(env: Env, householdId: number, createdAt: number, now
   });
 }
 
+/** Month gardens for `starts` (Manila month starts, oldest first), worked out together. */
+export async function monthGardens(env: Env, householdId: number, createdAt: number, now: number, starts: number[]): Promise<MonthGarden[]> {
+  return buildMonths(env, householdId, createdAt, now, starts);
+}
+
 /** One month of the household's garden. `start` is the Manila start of the month. */
 export async function monthGarden(env: Env, householdId: number, start: number, createdAt: number, now: number): Promise<MonthGarden> {
   return (await buildMonths(env, householdId, createdAt, now, [start]))[0];

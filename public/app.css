@@ -399,11 +399,6 @@ p { margin: 6px 0; }
 }
 
 /* ---------- history ---------- */
-.history .day { display: flex; justify-content: space-between; font-size: 14px; font-weight: 900; margin: 16px 0 2px; padding: 0 2px; opacity: 0.75; }
-.history .quiet {
-  margin: 14px 0 4px; padding: 8px 12px; border-radius: 16px; font-size: 13px; font-weight: 800; color: #2f6b3c;
-  background: rgba(255, 255, 255, 0.42); border: 1px solid var(--edge);
-}
 .more { display: block; text-align: center; padding: 12px; font-weight: 800; opacity: 0.7; }
 
 /* Custom range: From / To side by side, Show underneath — date inputs have a wide built-in minimum. */
@@ -704,22 +699,153 @@ p { margin: 6px 0; }
 .weeks .wk span { font-size: 10px; font-weight: 800; color: var(--muted); margin-top: 4px; white-space: nowrap; }
 .weeks .wk.now i { opacity: 0.55; }
 
-/* ---------- history: the garden path ---------- */
-/* The path runs down the screen's side margin (16px), so the days keep the full width. */
-.path { position: relative; }
-.path::before {
-  content: ""; position: absolute; left: -9.5px; top: 22px; bottom: 6px; width: 3px; border-radius: 2px;
-  background: repeating-linear-gradient(rgba(31, 51, 38, 0.18) 0 7px, transparent 7px 12px);
+/* ---------- history: the greenhouse ---------- */
+/* Every week is a shelf of seven pots, Monday to Sunday, under its month's hanging sign (routes/history.tsx). The glass
+   reaches the screen's edges; the shelves keep a small margin. With motion (/js/history.js adds .animate), each shelf
+   builds itself as it comes into view: the plank slides out, the pots drop on one by one, the plants grow in and the
+   price tags swing until they settle. Without it, everything simply stands there. */
+.greenhouse {
+  position: relative; min-width: 0; margin: 6px -16px 0; padding: 0 10px 18px; overflow: hidden;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.7) 0 3px, transparent 3px 25%),
+    linear-gradient(#eef6ec, #e2efdf 40%, #e9e6cf 85%, #ece0c2);
+  border-radius: 26px 26px 0 0;
 }
-.path .day, .path .quiet { position: relative; }
-/* A stone per row: centred on the path line (8px left of the content) and on its row. */
-.path .day::before, .path .quiet::before {
-  content: ""; position: absolute; left: -14.5px; top: 50%; transform: translateY(-50%);
-  width: 13px; height: 13px; border-radius: 50%;
-  background: rgba(255, 255, 255, 0.95); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+.g-far { position: absolute; inset: 0; pointer-events: none; will-change: transform; }
+.g-drip { position: absolute; width: 3px; height: 7px; border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%; background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 2px rgba(120, 160, 180, 0.6); opacity: 0; }
+.g-roof { position: relative; height: 150px; margin: 0 -10px; overflow: hidden; background: linear-gradient(#9fd3f0, #cfe9f5 60%, rgba(238, 246, 236, 0)); }
+.g-roof .sun { position: absolute; top: 34px; left: 40px; width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle, #fff6c9 0 35%, #ffd65a 62%, #ffbf3c); box-shadow: 0 0 26px 10px rgba(255, 214, 90, 0.5), 0 0 80px 30px rgba(255, 214, 90, 0.25); }
+.g-roof .frame { position: absolute; inset: 0; width: 100%; height: 100%; }
+.g-rays {
+  position: absolute; inset: -40% 10% 0 -40%;
+  background: repeating-linear-gradient(65deg, rgba(255, 250, 215, 0) 0 40px, rgba(255, 250, 215, 0.2) 40px 70px, rgba(255, 250, 215, 0) 70px 130px);
+  -webkit-mask-image: radial-gradient(70% 70% at 20% 10%, #000, transparent 75%); mask-image: radial-gradient(70% 70% at 20% 10%, #000, transparent 75%);
 }
-.path .quiet::before { background: var(--leaf); }
-.path .day-group .rows { margin-top: 4px; }
+.g-mote { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff8d6; box-shadow: 0 0 6px 2px rgba(255, 246, 200, 0.6); opacity: 0.6; }
+.g-house { position: relative; }
+
+/* a month's sign, hanging on two ropes; the first one hangs from the roof */
+.g-chapter { position: relative; display: flex; justify-content: center; margin: 34px 0 6px; padding-top: 30px; }
+.g-chapter::before { content: ""; position: absolute; top: 0; left: calc(50% - 92px); width: 184px; height: 34px; border-left: 2px solid #9c7a55; border-right: 2px solid #9c7a55; }
+#history > .g-chapter:first-child { margin-top: -104px; }
+.g-chapter .board { position: relative; min-width: 230px; padding: 11px 14px 10px; border-radius: 12px; text-align: center; color: #fff8ec; background: linear-gradient(#bf9163, #a0724a); box-shadow: 0 4px 0 #7e5636, 0 14px 22px rgba(60, 40, 20, 0.25); }
+.g-chapter .k { font-size: 10px; font-weight: 800; letter-spacing: 0.38em; text-transform: uppercase; }
+.g-chapter .m { margin: 0 0 0 0.28em; font-size: 26px; font-weight: 300; letter-spacing: 0.28em; text-transform: uppercase; line-height: 1.2; }
+.g-chapter .s { font-size: 12px; font-weight: 800; }
+.g-wrap { display: inline-flex; align-items: center; min-height: 36px; margin-top: 6px; padding: 2px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.18); color: #fff; font-size: 12.5px; font-weight: 800; text-decoration: none; }
+
+/* a week's shelf */
+.g-shelf { position: relative; margin: 22px 0 6px; }
+.g-sh { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 4px 4px; }
+.g-sh .lbl { font-size: 11px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.g-sh .lbl small { display: block; font-size: 11px; letter-spacing: 0.02em; text-transform: none; color: #2f6b3c; font-weight: 800; }
+.g-can { position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 4px 11px 4px 7px; border-radius: 16px; background: var(--deep); color: #fff; font-size: 12.5px; font-weight: 800; text-decoration: none; }
+.g-can svg { width: 22px; height: 18px; transform-origin: 70% 60%; transition: rotate 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); overflow: visible; }
+.g-can.pour svg { rotate: -32deg; }
+.g-can .drops i { position: absolute; left: 8px; top: 18px; width: 2.5px; height: 5px; border-radius: 2px; background: #9fd3f0; opacity: 0; }
+.g-vine { position: absolute; top: -18px; width: 30px; height: 84px; pointer-events: none; }
+.g-vine.left { left: -16px; } .g-vine.right { right: -16px; }
+.g-pots { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: end; padding: 0 3px; }
+.g-pot { position: relative; display: block; min-width: 0; width: 100%; padding: 0 2px; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.g-pot:disabled { cursor: default; }
+.g-pot:focus-visible { outline: 2px solid var(--deep); outline-offset: 2px; border-radius: 12px; }
+.g-pot svg { display: block; width: 100%; height: auto; overflow: visible; transform-origin: 50% 100%; transition: translate 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), scale 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.5s, opacity 0.5s; }
+.g-pot.none svg { opacity: 0.55; }
+.g-pot .puff { position: absolute; left: 50%; bottom: -2px; width: 34px; height: 8px; translate: -50% 0; border-radius: 50%; background: radial-gradient(rgba(190, 160, 120, 0.55), transparent 70%); opacity: 0; pointer-events: none; }
+.g-pot .sway { transform-box: view-box; transform-origin: 20px 35px; }
+.g-pot .lf, .g-pot .fl { transform-box: fill-box; transform-origin: center; }
+.g-pot .spark { transform-box: fill-box; transform-origin: center; }
+.g-pot.sel svg { translate: 0 -10px; scale: 1.22; filter: drop-shadow(0 10px 8px rgba(31, 51, 38, 0.25)); }
+.g-pot.sel::before { content: ""; position: absolute; left: 50%; bottom: -4px; width: 64px; height: 110px; translate: -50% 0; background: radial-gradient(50% 60% at 50% 70%, rgba(255, 250, 215, 0.85), transparent 70%); z-index: -1; }
+.g-pots.focus .g-pot:not(.sel) svg { filter: saturate(0.5) brightness(0.95); opacity: 0.45; }
+.g-plank { position: relative; z-index: 1; height: 13px; border-radius: 4px; background: linear-gradient(#cda274, #a87b4f); box-shadow: 0 5px 0 #8a6240, 0 12px 16px rgba(60, 40, 20, 0.22); }
+.g-plank::before, .g-plank::after { content: ""; position: absolute; top: 14px; width: 12px; height: 16px; border-left: 3px solid #6f6a60; border-bottom: 3px solid #6f6a60; border-radius: 0 0 0 10px; }
+.g-plank::before { left: calc(28.57% - 7px); }
+.g-plank::after { right: calc(28.57% - 7px); scale: -1 1; }
+.g-lights { position: absolute; left: 0; right: 0; top: 40px; height: 26px; z-index: 3; pointer-events: none; }
+.g-lights i { position: absolute; width: 6px; height: 8px; border-radius: 50%; background: #ffe58a; box-shadow: 0 0 8px 3px rgba(255, 229, 138, 0.7); }
+.g-tags { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 0 3px; }
+.g-tag { position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 16px; transform-origin: 50% 0; }
+.g-tag::before { content: ""; position: absolute; top: 0; left: 50%; width: 1px; height: 16px; background: rgba(90, 70, 40, 0.5); }
+.g-tag i { font-style: normal; font-size: 9px; font-weight: 900; color: var(--muted); letter-spacing: 0.04em; white-space: nowrap; }
+.g-tag b { display: inline-block; margin-top: 1px; padding: 2px 3px; border-radius: 4px 4px 4px 9px; background: #fffbe9; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12); font-size: 9.5px; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.g-tag.q b, .g-tag.f b { background: none; box-shadow: none; }
+.g-tag.q b { font-size: 12px; } .g-tag.f b { color: rgba(74, 94, 80, 0.45); }
+.g-tag.today b { background: var(--deep); color: #fff; }
+
+/* the open day's receipt, unrolled under its shelf, its point under its pot */
+.g-drawer { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.g-drawer.open { grid-template-rows: 1fr; }
+.g-drawer > div { overflow: hidden; min-height: 0; min-width: 0; }
+.g-receipt { position: relative; margin: 14px 2px 4px; padding: 12px 14px 4px; border-radius: 22px; background: var(--solid); border: 1px solid var(--edge); box-shadow: 0 10px 26px rgba(31, 51, 38, 0.12); }
+.g-receipt[hidden] { display: none; }
+.g-receipt::before { content: ""; position: absolute; top: -8px; left: var(--x, 50%); width: 14px; height: 14px; translate: -50% 0; rotate: 45deg; border-radius: 3px; background: inherit; border-left: 1px solid var(--edge); border-top: 1px solid var(--edge); }
+.g-receipt .sh { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.g-receipt .sh b { font-size: 16px; font-weight: 900; } .g-receipt .sh span { font-size: 19px; font-weight: 900; }
+.g-receipt .sm { margin: 2px 0 4px; font-size: 12px; font-weight: 800; color: #8a6b45; }
+.g-receipt .rows { margin: 4px 0 6px; padding: 0; background: none; border: 0; box-shadow: none; border-radius: 0; }
+.g-receipt .day-missions { margin: 6px 0 4px; }
+.g-receipt .quiet-day { margin: 6px 0 10px; font-size: 13px; font-weight: 800; color: #2f6b3c; }
+.greenhouse .more { position: relative; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .g-drip { animation: g-drip 7s linear infinite; }
+  .g-rays { animation: g-rays 9s ease-in-out infinite alternate; }
+  .g-mote { animation: g-mote 9s linear infinite; }
+  .g-pot .sway { animation: sway 4.5s ease-in-out infinite; }
+  .g-pot .glow { animation: g-glow 2.4s ease-in-out infinite; }
+  .g-pot .bf { animation: g-flutter 3.4s ease-in-out infinite; }
+  .g-pot.sel::before { animation: g-glow 2.4s ease-in-out infinite; }
+  .g-lights i { animation: g-twinkle 1.6s ease-in-out infinite alternate; }
+  .g-tag.today b { animation: g-glow 2.4s ease-in-out infinite; }
+  .g-can.pour .drops i { animation: g-pour 0.7s ease-in infinite; }
+  .g-can.pour .drops i:nth-child(2) { animation-delay: 0.2s; left: 11px; }
+  .g-can.pour .drops i:nth-child(3) { animation-delay: 0.4s; left: 5px; }
+  .g-chapter .board { animation: g-creak 7s ease-in-out infinite; transform-origin: 50% -30px; }
+
+  /* the build-in, as each shelf and sign comes into view (.in) */
+  .animate .g-chapter .board { rotate: -14deg; opacity: 0; transition: rotate 1.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s; animation: none; }
+  .animate .g-chapter.in .board { rotate: 0deg; opacity: 1; animation: g-creak 7s 1.8s ease-in-out infinite; }
+  .animate .g-chapter .board > * { opacity: 0; }
+  .animate .g-chapter.in .board > * { animation: g-title 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .animate .g-chapter.in .board > :nth-child(2) { animation-delay: 0.35s; }
+  .animate .g-chapter.in .board > :nth-child(n + 3) { animation-delay: 0.7s; }
+  .animate .g-shelf .g-sh { opacity: 0; translate: 0 8px; transition: opacity 0.6s, translate 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .animate .g-shelf.in .g-sh { opacity: 1; translate: 0 0; }
+  .animate .g-shelf .g-plank { scale: 0 1; transform-origin: left; transition: scale 1s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .animate .g-shelf.in .g-plank { scale: 1 1; }
+  .animate .g-shelf .g-pot { opacity: 0; translate: 0 -46px; }
+  .animate .g-shelf.in .g-pot { animation: g-drop 0.8s var(--d) both; }
+  .animate .g-shelf.in .g-pot .puff { animation: g-puff 0.9s calc(var(--d) + 0.38s) ease-out both; }
+  .animate .g-shelf .g-pot .stem { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 0.8s calc(var(--d) + 0.6s) cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .animate .g-shelf.in .g-pot .stem { stroke-dashoffset: 0; }
+  .animate .g-shelf .g-pot .lf { scale: 0; transition: scale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .animate .g-shelf.in .g-pot .lf { scale: 1; }
+  .animate .g-shelf .g-pot .fl { scale: 0; rotate: -90deg; transition: scale 0.9s calc(var(--d) + 1.5s) cubic-bezier(0.34, 1.56, 0.64, 1), rotate 1.2s calc(var(--d) + 1.5s) cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .animate .g-shelf.in .g-pot .fl { scale: 1; rotate: 0deg; }
+  .animate .g-shelf .g-pot .spark, .animate .g-shelf .g-pot .bf { opacity: 0; transition: opacity 0.5s calc(var(--d) + 1.6s); }
+  .animate .g-shelf.in .g-pot .spark, .animate .g-shelf.in .g-pot .bf { opacity: 1; }
+  .animate .g-shelf .g-tag { opacity: 0; rotate: 28deg; }
+  .animate .g-shelf.in .g-tag { animation: g-swing 2.2s calc(var(--d) + 0.5s) both; }
+  .animate .g-shelf .g-lights { opacity: 0; transition: opacity 0.8s 2.2s; }
+  .animate .g-shelf.in .g-lights { opacity: 1; }
+  .animate .g-shelf .g-drawer > div { opacity: 0; translate: 0 10px; transition: opacity 0.6s 1.4s, translate 0.7s 1.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .animate .g-shelf.in .g-drawer > div { opacity: 1; translate: 0 0; }
+  .g-receipt li { animation: g-rise 0.5s calc(var(--i, 0) * 0.07s) cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+}
+@keyframes g-drip { 0% { translate: 0 0; opacity: 0; } 10% { opacity: 0.9; } 70% { opacity: 0.8; } 100% { translate: 0 120px; opacity: 0; } }
+@keyframes g-rays { from { translate: -12px 0; opacity: 0.55; } to { translate: 14px 6px; opacity: 1; } }
+@keyframes g-mote { 0% { translate: 0 0; opacity: 0; } 15% { opacity: 0.9; } 85% { opacity: 0.7; } 100% { translate: var(--dx) -90px; opacity: 0; } }
+@keyframes g-glow { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.9; } }
+@keyframes g-flutter { 0%, 100% { translate: 0 0; } 30% { translate: 3px -5px; } 60% { translate: -2px -2px; } }
+@keyframes g-twinkle { from { opacity: 0.35; } to { opacity: 1; } }
+@keyframes g-pour { 0% { translate: 0 0; opacity: 1; } 100% { translate: -6px 26px; opacity: 0; } }
+@keyframes g-creak { 0%, 100% { rotate: 0deg; } 50% { rotate: 1.2deg; } }
+@keyframes g-title { from { opacity: 0; letter-spacing: 0.7em; filter: blur(5px); } to { opacity: 1; filter: blur(0); } }
+@keyframes g-drop { 0% { opacity: 0; translate: 0 -46px; } 55% { opacity: 1; translate: 0 2px; } 72% { translate: 0 -5px; } 86% { translate: 0 1px; } 100% { opacity: 1; translate: 0 0; } }
+@keyframes g-puff { 0% { opacity: 0; scale: 0.4; } 30% { opacity: 1; } 100% { opacity: 0; scale: 1.6; } }
+@keyframes g-swing { 0% { rotate: 28deg; opacity: 0; } 12% { opacity: 1; } 30% { rotate: -16deg; } 48% { rotate: 9deg; } 64% { rotate: -5deg; } 80% { rotate: 2deg; } 100% { rotate: 0deg; opacity: 1; } }
+@keyframes g-rise { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
 
 /* ---------- edit: category chips, note + date side by side ---------- */
 .field-label { font-size: 13px; font-weight: 800; margin-bottom: -4px; }
@@ -857,16 +983,6 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 .week-days i { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-style: normal; border-radius: 50%; background: rgba(255, 255, 255, 0.12); }
 .week-days .good i { background: #b9e3a5; }
 .week-days .perfect i { background: #f0a3b5; }
-
-/* History: a finished week's or month's recap, where it ended in the timeline. */
-.recap-row {
-  display: flex; align-items: center; gap: 12px; margin: 10px 0; padding: 10px 14px 10px 10px; text-decoration: none; color: #fff;
-  border-radius: 20px 20px 20px 8px; background: linear-gradient(160deg, #2f5a3a, #3e7a4a); box-shadow: 0 6px 16px rgba(31, 51, 38, 0.2);
-}
-.recap-row .ic { flex: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50% 50% 50% 14px; background: rgba(255, 255, 255, 0.16); font-size: 14px; }
-.recap-row .mid { display: flex; flex-direction: column; min-width: 0; }
-.recap-row b { font-size: 15px; font-weight: 900; }
-.recap-row .mid span { font-size: 13px; color: #d9ecd9; }
 
 /* ---------- small print: legal links on the login and setup pages ---------- */
 .fine { font-size: 12px; color: var(--muted); text-align: center; margin: 14px 0 4px; }
