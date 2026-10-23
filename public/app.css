@@ -487,97 +487,157 @@ p { margin: 6px 0; }
 }
 .terra-plant { display: flex; flex-direction: column; align-items: center; flex: none; }
 .terra-plant .caption { font-size: 10.5px; font-weight: 800; color: var(--muted); margin-top: -2px; }
-/* Today's sky behind this month's plant (see Sky in views/garden.tsx and /js/sky.js). data-phase is day or night,
-   data-weather is clear, cloudy, rain or storm; every layer is drawn and these pick what shows. The sky fades out
-   toward the pot so the plant still stands on the card. Decorative only, behind the plant, never behind text. */
-@property --sky-top { syntax: "<color>"; inherits: true; initial-value: #bfe0f5; }
-@property --sky-low { syntax: "<color>"; inherits: true; initial-value: #e6f3f9; }
+/* Today's sky (see Sky in views/garden.tsx and /js/sky.js). On the garden it is this month's whole card, the words on
+   frosted glass over it; the guide shows it small. data-phase is day or night, data-weather is clear, cloudy, drizzle,
+   rain or storm; every layer is drawn and these pick what shows. Sizes follow the sky's own width (cqi), so the small
+   tiles get a small sun. Decorative, apart from the line naming the town and the weather. */
+@property --sky-top { syntax: "<color>"; inherits: true; initial-value: #8fcdf2; }
+@property --sky-mid { syntax: "<color>"; inherits: true; initial-value: #c4e6f7; }
+@property --sky-low { syntax: "<color>"; inherits: true; initial-value: #fdf1d8; }
 .sky {
-  --sky-top: #bfe0f5; --sky-low: #e6f3f9; --cloud: #fff; --drop: rgba(62, 104, 140, 0.55);
-  position: relative; padding: 4px 6px 0; transition: --sky-top 1.2s, --sky-low 1.2s;
+  --sky-top: #8fcdf2; --sky-mid: #c4e6f7; --sky-low: #fdf1d8; --hill-far: #a9d4a3; --hill-near: #86bf86;
+  --cloud: #fff; --cloud-shade: #e3eef5; --drop: rgba(70, 110, 150, 0.6); --sun: 1; --on-sky: rgba(22, 40, 58, 0.82); --on-sky-glow: rgba(255, 255, 255, 0.45);
+  position: relative; container-type: inline-size; display: flex; align-items: flex-end; justify-content: center; gap: 6px;
+  padding: 22px 8px 6px; border-radius: 22px; transition: --sky-top 1.2s, --sky-mid 1.2s, --sky-low 1.2s;
 }
-.sky[data-weather="cloudy"] { --sky-top: #cfdbe2; --sky-low: #e8eef1; }
-.sky[data-weather="rain"] { --sky-top: #b3c3ce; --sky-low: #dce5ea; --cloud: #eef2f5; }
-.sky[data-weather="storm"] { --sky-top: #8f9eab; --sky-low: #c9d3da; --cloud: #b4bfc8; --drop: rgba(40, 70, 100, 0.65); }
-.sky[data-phase="night"] { --sky-top: #182a48; --sky-low: #3a5378; --cloud: #7b8ba3; --drop: rgba(205, 222, 250, 0.6); }
-.sky[data-phase="night"][data-weather="cloudy"] { --sky-top: #232e3f; --sky-low: #47546b; }
-.sky[data-phase="night"][data-weather="rain"] { --sky-top: #1f2a3a; --sky-low: #3d4a5e; --cloud: #66758b; }
-.sky[data-phase="night"][data-weather="storm"] { --sky-top: #151c28; --sky-low: #323c4e; --cloud: #4f5a6c; }
-.sky-back, .sky-front { position: absolute; inset: 0; overflow: hidden; border-radius: 22px 22px 0 0; pointer-events: none; }
-.sky-back {
-  background: linear-gradient(var(--sky-top), var(--sky-low));
-  mask-image: linear-gradient(#000 62%, transparent 94%); -webkit-mask-image: linear-gradient(#000 62%, transparent 94%);
+.sky[data-weather="cloudy"] { --sky-top: #a9c3d4; --sky-mid: #cfdde6; --sky-low: #eef1ef; --hill-far: #a7c7a5; --hill-near: #8db48c; --cloud-shade: #d3dee6; --sun: 0.55; }
+.sky[data-weather="drizzle"] { --sky-top: #9fb4c3; --sky-mid: #c6d3dc; --sky-low: #e6ebec; --hill-far: #9fc0a0; --hill-near: #83ab86; --cloud: #eef2f5; --cloud-shade: #c9d5de; --sun: 0.2; }
+.sky[data-weather="rain"] {
+  --sky-top: #7f97a9; --sky-mid: #a9bac6; --sky-low: #d6dfe3; --hill-far: #8fb193; --hill-near: #739c7a; --cloud: #dfe6ec; --cloud-shade: #aebcc8; --sun: 0;
+  --on-sky: rgba(255, 255, 255, 0.95); --on-sky-glow: rgba(0, 0, 0, 0.35);
 }
+.sky[data-weather="storm"] {
+  --sky-top: #4f5e70; --sky-mid: #75859a; --sky-low: #aab6c0; --hill-far: #6f8f78; --hill-near: #587a63; --cloud: #9aa7b4; --cloud-shade: #6b7887;
+  --drop: rgba(40, 65, 95, 0.7); --sun: 0; --on-sky: rgba(255, 255, 255, 0.95); --on-sky-glow: rgba(0, 0, 0, 0.35);
+}
+.sky[data-phase="night"] {
+  --sky-top: #0f1c3a; --sky-mid: #22396a; --sky-low: #4b5f8c; --hill-far: #2c4660; --hill-near: #1f354b; --cloud: #5d6f8f; --cloud-shade: #45577a;
+  --drop: rgba(200, 220, 250, 0.55); --on-sky: rgba(255, 255, 255, 0.95); --on-sky-glow: rgba(0, 0, 0, 0.35);
+}
+.sky[data-phase="night"][data-weather="cloudy"] { --sky-top: #1a2333; --sky-mid: #2d3a52; --sky-low: #4b5870; --cloud: #5a6782; }
+.sky[data-phase="night"][data-weather="drizzle"], .sky[data-phase="night"][data-weather="rain"] { --sky-top: #161f2e; --sky-mid: #27344a; --sky-low: #3f4c63; --cloud: #4f5d75; --cloud-shade: #3b475d; }
+.sky[data-phase="night"][data-weather="storm"] { --sky-top: #0b1018; --sky-mid: #1b2433; --sky-low: #2f3a4c; --cloud: #3c475a; --cloud-shade: #2a3344; }
+.sky-back, .sky-front { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.sky-back { background: linear-gradient(var(--sky-top), var(--sky-mid) 55%, var(--sky-low)); }
+.sky-front { z-index: 1; }
+.sky > :not(.sky-back, .sky-front) { position: relative; }
 .sky .plant { position: relative; display: block; transition: filter 1.2s; }
-.sky[data-phase="night"] .plant { filter: brightness(0.8) saturate(0.9); }
-.sky[data-weather="rain"] .plant, .sky[data-weather="storm"] .plant { filter: saturate(1.15) brightness(1.03) drop-shadow(0 0 1px rgba(255, 255, 255, 0.7)); }
-.sky[data-phase="night"][data-weather="rain"] .plant, .sky[data-phase="night"][data-weather="storm"] .plant { filter: brightness(0.8) saturate(1.05); }
-.sky .sun, .sky .moon, .sky .stars, .sky .cloud, .sky .flash, .sky .rain, .sky .fireflies { position: absolute; opacity: 0; transition: opacity 1.2s; }
-.sky .sun { top: 9px; right: 9px; width: 16px; height: 16px; border-radius: 50%; background: #f7d774; box-shadow: 0 0 0 4px rgba(247, 215, 116, 0.3), 0 0 14px rgba(247, 215, 116, 0.8); }
-.sky .moon { top: 9px; right: 13px; width: 14px; height: 14px; border-radius: 50%; box-shadow: 4px 2px 0 0 #f4eed3; }
+.sky[data-phase="night"] .plant { filter: brightness(0.82) saturate(0.9); }
+.sky[data-weather="drizzle"] .plant, .sky[data-weather="rain"] .plant, .sky[data-weather="storm"] .plant { filter: saturate(1.15) brightness(1.04); }
+.sky[data-phase="night"][data-weather="drizzle"] .plant, .sky[data-phase="night"][data-weather="rain"] .plant, .sky[data-phase="night"][data-weather="storm"] .plant { filter: brightness(0.82) saturate(1.05); }
+/* Stars and fireflies twinkle, so they show and hide as a group; everything else on its own. */
+.sky .sun, .sky .moon, .sky .stars, .sky .cloud, .sky .bolt, .sky .mist, .sky .flash, .sky .rain i, .sky .splash i, .sky .fireflies { position: absolute; opacity: 0; transition: opacity 1.2s; }
+
+/* the sun with its slow rays, and the moon: a crescent cut out by the sky's own colour */
+.sky .sun {
+  top: 12px; right: 14px; width: clamp(12px, 7cqi, 28px); aspect-ratio: 1; border-radius: 50%; opacity: var(--sun);
+  background: radial-gradient(circle, #fff6c9 0 35%, #ffd65a 62%, #ffbf3c); box-shadow: 0 0 18px 6px rgba(255, 214, 90, 0.55), 0 0 50px 18px rgba(255, 214, 90, 0.25);
+}
+.sky .sun::before {
+  content: ""; position: absolute; inset: -80%; border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255, 226, 140, 0.38) 0 7deg, transparent 7deg 30deg);
+  -webkit-mask-image: radial-gradient(circle, #000 25%, transparent 70%); mask-image: radial-gradient(circle, #000 25%, transparent 70%); transition: opacity 1.2s;
+}
+.sky:not([data-weather="clear"]) .sun::before { opacity: 0; }
+.sky .moon { top: 12px; right: 16px; width: clamp(10px, 6cqi, 22px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fffbe8, #efe6c2); box-shadow: 0 0 16px 4px rgba(255, 248, 215, 0.35); }
+.sky .moon::after { content: ""; position: absolute; top: -14%; left: 32%; width: 100%; height: 100%; border-radius: 50%; background: var(--sky-top); }
 .sky .stars { inset: 0; }
-.sky .stars i { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff; }
-.sky .stars i:nth-child(1) { top: 14px; left: 14px; }
-.sky .stars i:nth-child(2) { top: 30px; left: 30px; }
-.sky .stars i:nth-child(3) { top: 10px; left: 50px; }
-.sky .stars i:nth-child(4) { top: 40px; right: 12px; }
-.sky .stars i:nth-child(5) { top: 56px; left: 10px; }
-.sky .cloud { width: 30px; height: 10px; border-radius: 10px; background: var(--cloud); transition: opacity 1.2s, background 1.2s; }
-.sky .cloud::before { content: ""; position: absolute; left: 7px; bottom: 4px; width: 15px; height: 13px; border-radius: 50%; background: inherit; }
-.sky .c1 { top: 20px; left: 8px; }
-.sky .c2 { top: 40px; right: 6px; width: 24px; scale: 0.85; }
+.sky .stars i { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff; box-shadow: 0 0 3px #fff; }
+.sky .stars i.big { width: 3px; height: 3px; }
+.sky .cloud { left: calc(var(--x) * 1cqi); width: calc(var(--w) * 1cqi); }
+.sky .cloud * { fill: var(--cloud); transition: fill 1.2s; }
+.sky .cloud .shade { fill: var(--cloud-shade); }
+.sky .hills { position: absolute; left: 0; bottom: 0; width: 100%; height: 26%; }
+.sky .hills .far { fill: var(--hill-far); transition: fill 1.2s; }
+.sky .hills .near { fill: var(--hill-near); transition: fill 1.2s; }
+.sky .mist { inset: 0; background: linear-gradient(transparent 40%, rgba(255, 255, 255, 0.35)); }
 .sky .flash { inset: 0; background: #fff; }
-.sky .rain { inset: 0; }
-.sky .rain i { position: absolute; top: 0; width: 1.5px; height: 9px; border-radius: 1px; background: var(--drop); rotate: 12deg; }
-.sky .rain i:nth-child(1) { left: 8%; translate: 0 30px; }
-.sky .rain i:nth-child(2) { left: 18%; translate: 0 80px; }
-.sky .rain i:nth-child(3) { left: 27%; translate: 0 10px; }
-.sky .rain i:nth-child(4) { left: 37%; translate: 0 104px; }
-.sky .rain i:nth-child(5) { left: 47%; translate: 0 52px; }
-.sky .rain i:nth-child(6) { left: 56%; translate: 0 20px; }
-.sky .rain i:nth-child(7) { left: 65%; translate: 0 92px; }
-.sky .rain i:nth-child(8) { left: 74%; translate: 0 44px; }
-.sky .rain i:nth-child(9) { left: 83%; translate: 0 70px; }
-.sky .rain i:nth-child(10) { left: 92%; translate: 0 6px; }
+.sky .bolt { top: 14%; left: 22%; width: clamp(10px, 6cqi, 22px); fill: #fff7c2; filter: drop-shadow(0 0 6px #fff7c2); }
+.sky .rain, .sky .splash { position: absolute; inset: 0; }
 .sky .fireflies { inset: 0; }
-.sky .fireflies i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #f6e27a; box-shadow: 0 0 6px 2px rgba(246, 226, 122, 0.6); }
-.sky .fireflies i:nth-child(1) { top: 52%; left: 20%; }
-.sky .fireflies i:nth-child(2) { top: 34%; left: 76%; }
-.sky .fireflies i:nth-child(3) { top: 68%; left: 70%; }
-.sky[data-phase="day"] .sun { opacity: 1; }
-.sky[data-phase="day"][data-weather="cloudy"] .sun { opacity: 0.45; }
-.sky[data-phase="day"][data-weather="rain"] .sun, .sky[data-phase="day"][data-weather="storm"] .sun { opacity: 0; }
+.sky .rain i { top: -20px; width: 1.6px; border-radius: 2px; background: linear-gradient(transparent, var(--drop)); rotate: 10deg; }
+.sky .splash i { bottom: 6px; width: 10px; height: 3px; border-radius: 50%; border: 1px solid var(--drop); }
+.sky .fireflies i { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #fbe98a; box-shadow: 0 0 8px 3px rgba(251, 233, 138, 0.6); }
+
+.sky[data-phase="day"] .sun { opacity: var(--sun); }
+.sky[data-phase="night"] .sun { opacity: 0; }
 .sky[data-phase="night"] .moon { opacity: 1; }
-.sky[data-phase="night"][data-weather="rain"] .moon, .sky[data-phase="night"][data-weather="storm"] .moon { opacity: 0.3; }
+.sky[data-phase="night"]:is([data-weather="drizzle"], [data-weather="rain"], [data-weather="storm"]) .moon { opacity: 0.15; }
 .sky[data-phase="night"][data-weather="clear"] .stars { opacity: 1; }
 .sky[data-phase="night"][data-weather="cloudy"] .stars { opacity: 0.35; }
-.sky[data-phase="night"][data-weather="clear"] .fireflies, .sky[data-phase="night"][data-weather="cloudy"] .fireflies { opacity: 1; }
-.sky:not([data-weather="clear"]) .cloud { opacity: 0.95; }
-.sky[data-weather="rain"] .rain, .sky[data-weather="storm"] .rain { opacity: 1; }
+.sky .cloud.clear { opacity: 0.9; }
+.sky:not([data-weather="clear"]) .cloud.cloudy, .sky:is([data-weather="drizzle"], [data-weather="rain"], [data-weather="storm"]) .cloud { opacity: 1; }
+.sky[data-phase="day"]:is([data-weather="drizzle"], [data-weather="rain"]) .mist { opacity: 1; }
+.sky[data-weather="drizzle"] .rain i.d { opacity: 0.7; height: 6px !important; }
+.sky:is([data-weather="rain"], [data-weather="storm"]) .rain i { opacity: 1; }
+.sky[data-weather="storm"] .rain i { rotate: 22deg; }
+.sky[data-phase="night"]:is([data-weather="clear"], [data-weather="cloudy"]) .fireflies { opacity: 1; }
+
+/* The line across the top: the town and the weather, like the opening shot of a film (/js/sky.js fills it in). */
+.sky > .sky-label {
+  position: absolute; z-index: 2; top: 13px; left: 16px; right: 52px; margin: 0; display: flex; align-items: center;
+  font-size: 11px; font-weight: 300; text-transform: uppercase; white-space: nowrap; color: var(--on-sky); text-shadow: 0 1px 10px var(--on-sky-glow); pointer-events: none;
+}
+.sky > .sky-label[hidden] { display: none; }
+.sky-label .where, .sky-label .what { letter-spacing: 0.34em; }
+.sky-label .where { overflow: hidden; text-overflow: ellipsis; }
+.sky-label .rule { flex: none; width: 22px; height: 1px; margin: 0 0.5em 0 0.2em; background: currentColor; opacity: 0.6; }
+
 /* The daytime creatures (views/garden.tsx): a bee and a butterfly when clear, a dragonfly and a bird when cloudy, a
-   grasshopper by the pot in the rain. Still for anyone who asks for less motion. */
+   grasshopper by the pot in drizzle and rain. Still for anyone who asks for less motion. */
 .sky .critter { position: absolute; opacity: 0; transition: opacity 1.2s; }
 .sky .critter svg { display: block; width: 100%; height: auto; overflow: visible; }
 .sky .critter .wings { transform-box: fill-box; transform-origin: center; }
-.sky .bee { top: 46%; left: 26%; width: 13px; }
-.sky .butterfly { top: 22%; left: 10%; width: 14px; }
-.sky .dragonfly { top: 30%; left: 58%; width: 17px; }
-.sky .bird { top: 12%; left: 14%; width: 12px; }
-.sky .grasshopper { bottom: 4px; right: 8px; width: 15px; }
+.sky .bee { top: 50%; left: 26%; width: clamp(9px, 4cqi, 14px); }
+.sky .butterfly { top: 18%; left: 12%; width: clamp(10px, 4.5cqi, 16px); }
+.sky .dragonfly { top: 20%; left: 52%; width: clamp(12px, 5.5cqi, 20px); }
+.sky .bird { top: 10%; left: 0; width: clamp(9px, 4cqi, 14px); }
+.sky .grasshopper { bottom: 6px; left: 34%; width: clamp(11px, 4.5cqi, 17px); }
 .sky[data-phase="day"][data-weather="clear"] .bee, .sky[data-phase="day"][data-weather="clear"] .butterfly { opacity: 1; }
 .sky[data-phase="day"][data-weather="cloudy"] .dragonfly, .sky[data-phase="day"][data-weather="cloudy"] .bird { opacity: 1; }
-.sky[data-phase="day"][data-weather="rain"] .grasshopper { opacity: 1; }
+.sky[data-phase="day"]:is([data-weather="drizzle"], [data-weather="rain"]) .grasshopper { opacity: 1; }
+
 @media (prefers-reduced-motion: no-preference) {
+  .sky .sun::before { animation: sky-spin 40s linear infinite; }
+  .sky .stars i { animation: twinkle 3s ease-in-out infinite alternate; }
+  .sky .stars i:nth-child(2n) { animation-duration: 2.3s; }
+  .sky .cloud { animation: drift linear infinite; }
+  .sky .rain i { animation: fall 0.7s linear infinite; }
+  .sky .rain i:nth-child(3n + 2) { animation-duration: 0.6s; }
+  .sky[data-weather="drizzle"] .rain i { animation-duration: 1.6s; }
+  .sky[data-weather="storm"] .rain i { animation-duration: 0.42s; }
+  .sky:is([data-weather="rain"], [data-weather="storm"]) .splash i { animation: ripple 1.1s ease-out infinite; }
+  .sky[data-weather="storm"] .flash { animation: lightning 6s linear infinite; }
+  .sky[data-weather="storm"] .bolt { animation: bolt 6s linear infinite; }
+  .sky[data-weather="storm"] .plant .sway { animation: gust 3s ease-in-out infinite; }
+  .sky .fireflies i { animation: glow 5s ease-in-out infinite; }
+  .sky .fireflies i:nth-child(2n) { animation-duration: 6.2s; }
   .sky .bee { animation: buzz 9s ease-in-out infinite; }
   .sky .bee .wings { animation: whirr 0.12s linear infinite alternate; }
   .sky .butterfly { animation: flit 13s ease-in-out infinite; }
   .sky .butterfly .wings { animation: flap 0.4s ease-in-out infinite alternate; }
-  .sky .dragonfly { animation: dart 8s steps(1, end) infinite; }
-  .sky .dragonfly .wings { animation: whirr 0.08s linear infinite alternate; }
-  .sky .bird { animation: glide 16s linear infinite; }
+  /* Glides from spot to spot, hovers, turns on the spot and glides on: every leg eases in and out, so it never jumps. */
+  .sky .dragonfly { animation: hover-fly 15s cubic-bezier(0.45, 0.05, 0.3, 1) infinite; }
+  .sky .dragonfly svg { animation: hover-bob 1.3s ease-in-out infinite alternate; }
+  .sky .dragonfly .wings { animation: whirr 0.07s linear infinite alternate; }
+  .sky .bird { animation: glide 18s linear infinite; }
+  .sky .bird svg { animation: hover-bob 2.4s ease-in-out infinite alternate; }
   .sky .bird .wings { animation: beat 0.7s ease-in-out infinite alternate; }
   .sky .grasshopper { animation: hop 7s ease-out infinite; }
+  .sky-label.play > * { animation: sky-title 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .sky-label.play > .rule { animation-delay: 0.3s; }
+  .sky-label.play > .what { animation-delay: 0.6s; }
 }
+@keyframes sky-spin { to { rotate: 360deg; } }
+@keyframes twinkle { from { opacity: 0.25; } to { opacity: 1; } }
+@keyframes drift { from { translate: calc(var(--x) * -1cqi - 70px) 0; } to { translate: calc((110 - var(--x)) * 1cqi) 0; } }
+@keyframes fall { from { translate: 0 -10px; } to { translate: 30px 190px; } }
+@keyframes ripple { 0% { scale: 0.2; opacity: 0.9; } 100% { scale: 1.6; opacity: 0; } }
+@keyframes lightning { 0%, 88%, 90.5%, 93%, 100% { opacity: 0; } 89% { opacity: 0.6; } 92% { opacity: 0.35; } }
+@keyframes bolt { 0%, 88%, 91%, 100% { opacity: 0; } 88.5%, 90% { opacity: 1; } }
+@keyframes gust { 0%, 100% { rotate: 0deg; } 25% { rotate: 7deg; } 40% { rotate: -2deg; } 60% { rotate: 9deg; } 80% { rotate: -3deg; } }
+@keyframes glow { 0%, 100% { opacity: 0.05; translate: 0 0; } 50% { opacity: 1; translate: 8px -10px; } }
+@keyframes sky-title { from { opacity: 0; letter-spacing: 0.8em; filter: blur(5px); } to { opacity: 1; filter: blur(0); } }
 @keyframes buzz {
   0%, 100% { translate: 0 0; rotate: 0deg; }
   20% { translate: 26px -14px; rotate: 10deg; }
@@ -593,13 +653,16 @@ p { margin: 6px 0; }
   75% { translate: 28px -12px; }
 }
 @keyframes flap { from { scale: 1 1; } to { scale: 0.25 1; } }
-@keyframes dart {
-  0%, 100% { translate: 0 0; }
-  22% { translate: -34px 10px; }
-  48% { translate: -14px -12px; }
-  74% { translate: 8px 18px; }
+@keyframes hover-fly {
+  0%, 12% { translate: 0 0; scale: 1 1; }
+  16% { translate: 0 0; scale: -1 1; }
+  36%, 48% { translate: -28cqi 4cqi; scale: -1 1; }
+  52% { translate: -28cqi 4cqi; scale: 1 1; }
+  70%, 82% { translate: -12cqi -4cqi; scale: 1 1; }
+  98%, 100% { translate: 0 0; scale: 1 1; }
 }
-@keyframes glide { from { translate: -40px 0; } to { translate: 160px -6px; } }
+@keyframes hover-bob { from { translate: 0 -1.5px; } to { translate: 0 1.5px; } }
+@keyframes glide { from { translate: -20px 0; } to { translate: 110cqi -8px; } }
 @keyframes beat { from { scale: 1 1; } to { scale: 1 0.5; } }
 @keyframes hop {
   0%, 40%, 100% { translate: 0 0; }
@@ -607,27 +670,16 @@ p { margin: 6px 0; }
   52%, 88% { translate: -18px 0; }
   94% { translate: -9px -11px; }
 }
-@media (prefers-reduced-motion: no-preference) {
-  .sky .stars i { animation: twinkle 3s ease-in-out infinite alternate; }
-  .sky .stars i:nth-child(2n) { animation-delay: -1.4s; animation-duration: 2.3s; }
-  .sky .cloud { animation: drift 14s ease-in-out infinite alternate; }
-  .sky .c2 { animation-duration: 11s; animation-delay: -5s; }
-  .sky .rain i { animation: fall 0.9s linear infinite; }
-  .sky .rain i:nth-child(3n + 1) { animation-delay: -0.3s; }
-  .sky .rain i:nth-child(3n + 2) { animation-delay: -0.6s; animation-duration: 0.8s; }
-  .sky[data-weather="storm"] .rain i { animation-duration: 0.55s; }
-  .sky[data-weather="storm"] .flash { animation: lightning 7s linear infinite; }
-  .sky[data-weather="storm"] .plant .sway { animation: gust 3.2s ease-in-out infinite; }
-  .sky .fireflies i { animation: glow 4s ease-in-out infinite; }
-  .sky .fireflies i:nth-child(2) { animation-delay: -1.5s; animation-duration: 5s; }
-  .sky .fireflies i:nth-child(3) { animation-delay: -3s; animation-duration: 4.5s; }
+
+/* This month's garden card is the sky: the plant stands on its hills, the words sit on frosted glass. */
+.terrarium:has(> .sky) { padding: 0; overflow: hidden; }
+.terrarium > .sky { flex: 1; min-width: 0; justify-content: flex-start; padding: 40px 12px 10px; border-radius: 26px; min-height: 200px; }
+.terrarium > .sky .terra-text {
+  z-index: 2; padding: 10px 12px; margin-bottom: 2px; border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(255, 255, 255, 0.8); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
-@keyframes twinkle { from { opacity: 0.25; } to { opacity: 1; } }
-@keyframes drift { from { translate: -6px 0; } to { translate: 12px 0; } }
-@keyframes fall { from { translate: -4px -12px; } to { translate: 26px 150px; } }
-@keyframes lightning { 0%, 90%, 92.5%, 95.5%, 100% { opacity: 0; } 91% { opacity: 0.55; } 94% { opacity: 0.35; } }
-@keyframes gust { 0%, 100% { rotate: 0deg; } 20% { rotate: 7deg; } 35% { rotate: -2deg; } 55% { rotate: 9deg; } 75% { rotate: -4deg; } }
-@keyframes glow { 0%, 100% { opacity: 0.1; translate: 0 0; } 50% { opacity: 1; translate: 5px -6px; } }
+.terrarium > .sky[data-phase="night"] .terra-text { background: rgba(255, 255, 255, 0.8); }
+.terrarium > .sky .caption { color: var(--on-sky); text-shadow: 0 1px 6px var(--on-sky-glow); }
 .terra-text { flex: 1; min-width: 0; padding-bottom: 6px; }
 .terra-text p { margin: 2px 0; }
 .terra-text .total { font-size: 32px; margin: 0 0 4px; line-height: 1.05; }
@@ -841,7 +893,8 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 .stages { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px 10px; }
 .stages li { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; font-size: 13px; }
 .stages .muted { font-size: 12px; line-height: 1.35; }
-.skies { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 6px; }
+.skies { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px 6px; }
+.skies .sky { width: 100%; padding: 18px 4px 4px; border-radius: 16px; }
 .skies li { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; text-align: center; }
 .missions-list li { display: flex; flex-direction: column; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 .missions-list li:last-child { border-bottom: 0; }

@@ -125,75 +125,80 @@ spending.get("/spending", async (c) => {
   const plant = <Plant leaves={leafCount} perfect={perfectCount} bud={bud} bloom={!!g?.bloomed} width={104} />;
   const tally = `${plural(leafCount, "good day", "good days")} · ${perfectCount} perfect · ${plural(b.count, "expense", "expenses")}`;
   const sample = thisMonth && b.count === 0;
+  const card = (
+    <>
+      <div class="terra-plant">
+        {plant}
+        {view.who !== "all" && <span class="caption">the household's garden</span>}
+      </div>
+      <div class="terra-text">
+        {g ? (
+          <>
+            <p class="headline">
+              {beforeGarden
+                ? "Before your garden began"
+                : g.bloomed
+                ? `${monthName(g.start)} bloomed 🌸`
+                : g.goodDays === 0
+                  ? `${monthName(g.start)} stayed a sprout`
+                  : `${monthName(g.start)} grew ${plural(g.goodDays, "leaf", "leaves")}`}
+            </p>
+            <div class="total">
+              {totalPeso(b.total)}
+              {eye}
+            </div>
+            {g.bloomed && g.prevTotal !== null ? (
+              <p class="muted">
+                {view.who === "all" ? "" : "The household spent "}
+                {/* The month's total again (the household's, or the same as above): hidden with it. */}
+                {totalPeso(g.total)}
+                {view.who === "all" ? " spent" : ""}, {formatPeso(g.prevTotal - g.total)} less than {monthName(addMonths(g.start, -1))}.
+              </p>
+            ) : (
+              <p class="muted">{plural(b.count, "expense", "expenses")}</p>
+            )}
+          </>
+        ) : (
+          <>
+            <p class="muted">Spent {label}</p>
+            <div class="total">
+              {/* Nothing logged yet this month: the tour shows a made-up total instead, labelled Example. */}
+              <Hideable centavos={b.total} hidden={hidden} tourText={sample ? "₱1,250" : undefined} />
+              {eye}
+            </div>
+            {sample && (
+              <span class="pill" data-tour-show hidden>
+                ↓ ₱180 · 🌸 on track · Example
+              </span>
+            )}
+            {p &&
+              (p.diff < 0 && profileId === null ? (
+                <span class="pill">↓ {formatPeso(-p.diff)} · 🌸 on track</span>
+              ) : (
+                <span class="pill neutral">{paceText(p.diff)}</span>
+              ))}
+            <p class="muted tally" data-tour-text={sample ? "🍃 3 good days · 1 perfect · 12 expenses" : undefined}>
+              🍃 {tally}
+            </p>
+          </>
+        )}
+        <div class="terra-links">
+          <a class="chip gallery-link" href="/gallery">
+            🪴 Gallery
+          </a>
+          <a class="chip" href="/guide">
+            📖 Guide
+          </a>
+        </div>
+      </div>
+    </>
+  );
   return c.html(
     <Layout title="Garden" tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/sky.js", "/js/tour-page.js", "/js/eye.js"]}>
       <Filters view={view} />
       <section class="terrarium" data-spot="garden">
-        <div class="terra-plant">
-          {/* Only this month's plant stands under today's sky; past months are records. */}
-          {thisMonth ? <Sky night={isNight(now)}>{plant}</Sky> : plant}
-          {view.who !== "all" && <span class="caption">the household's garden</span>}
-        </div>
-        <div class="terra-text">
-          {g ? (
-            <>
-              <p class="headline">
-                {beforeGarden
-                  ? "Before your garden began"
-                  : g.bloomed
-                  ? `${monthName(g.start)} bloomed 🌸`
-                  : g.goodDays === 0
-                    ? `${monthName(g.start)} stayed a sprout`
-                    : `${monthName(g.start)} grew ${plural(g.goodDays, "leaf", "leaves")}`}
-              </p>
-              <div class="total">
-                {totalPeso(b.total)}
-                {eye}
-              </div>
-              {g.bloomed && g.prevTotal !== null ? (
-                <p class="muted">
-                  {view.who === "all" ? "" : "The household spent "}
-                  {/* The month's total again (the household's, or the same as above): hidden with it. */}
-                  {totalPeso(g.total)}
-                  {view.who === "all" ? " spent" : ""}, {formatPeso(g.prevTotal - g.total)} less than {monthName(addMonths(g.start, -1))}.
-                </p>
-              ) : (
-                <p class="muted">{plural(b.count, "expense", "expenses")}</p>
-              )}
-            </>
-          ) : (
-            <>
-              <p class="muted">Spent {label}</p>
-              <div class="total">
-                {/* Nothing logged yet this month: the tour shows a made-up total instead, labelled Example. */}
-                <Hideable centavos={b.total} hidden={hidden} tourText={sample ? "₱1,250" : undefined} />
-                {eye}
-              </div>
-              {sample && (
-                <span class="pill" data-tour-show hidden>
-                  ↓ ₱180 · 🌸 on track · Example
-                </span>
-              )}
-              {p &&
-                (p.diff < 0 && profileId === null ? (
-                  <span class="pill">↓ {formatPeso(-p.diff)} · 🌸 on track</span>
-                ) : (
-                  <span class="pill neutral">{paceText(p.diff)}</span>
-                ))}
-              <p class="muted tally" data-tour-text={sample ? "🍃 3 good days · 1 perfect · 12 expenses" : undefined}>
-                🍃 {tally}
-              </p>
-            </>
-          )}
-          <div class="terra-links">
-            <a class="chip gallery-link" href="/gallery">
-              🪴 Gallery
-            </a>
-            <a class="chip" href="/guide">
-              📖 Guide
-            </a>
-          </div>
-        </div>
+        {/* Only this month's card is today's sky; past months are records. */}
+        {thisMonth ? <Sky night={isNight(now)} label>{card}</Sky> : card}
       </section>
       {missions && (
         <section class="missions" data-spot="missions">

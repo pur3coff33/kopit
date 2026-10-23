@@ -30,7 +30,7 @@ const STAGES = [
 ];
 
 const SKIES: Array<{ night: boolean; weather: Weather; label: string }> = (["day", "night"] as const).flatMap((p) =>
-  (["clear", "cloudy", "rain", "storm"] as const).map((w) => ({
+  (["clear", "cloudy", "drizzle", "rain", "storm"] as const).map((w) => ({
     night: p === "night",
     weather: w,
     label: `${p === "day" ? "Day" : "Night"} · ${w[0].toUpperCase()}${w.slice(1)}`,
@@ -89,12 +89,15 @@ guide.get("/guide", (c) => {
 
       <section class="card guide-sec" id="sky">
         <h2>The sky</h2>
-        <p>This month's plant stands under the sky where you are right now: day or night, and the weather.</p>
+        <p>
+          This month's garden is the sky where you are right now: day or night, and the weather, with your town's name and
+          the weather written across the top.
+        </p>
         <ul class="skies">
           {SKIES.map((s) => (
             <li>
               <Sky night={s.night} weather={s.weather} still>
-                <Plant leaves={10} perfect={3} width={64} />
+                <Plant leaves={10} perfect={3} width={48} />
               </Sky>
               <span>{s.label}</span>
             </li>
@@ -102,8 +105,10 @@ guide.get("/guide", (c) => {
         </ul>
         <p class="muted">
           The weather comes from <a href="https://open-meteo.com">Open-Meteo</a>, a free service built on national weather
-          forecasts, every 30 minutes. The phone asks for your location once and sends only a rounded one (about a
-          kilometre). Say no, or have no signal, and the sky stays clear and follows the clock.
+          forecasts, every 30 minutes, and the town's name from <a href="https://www.bigdatacloud.com">BigDataCloud</a>. The
+          phone asks for your location once and sends only a rounded one (about a kilometre). A light drizzle gets its own
+          lighter sky, so a wet day doesn't look like a downpour. Say no, or have no signal, and the sky stays clear,
+          follows the clock and names no town.
         </p>
       </section>
 

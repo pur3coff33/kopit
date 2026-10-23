@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 // @ts-ignore plain browser module
-import { forecastUrl, needsFetch, phaseAt, readForecast, shouldLocate, skyState, weatherKind } from "../public/js/sky.js";
+import { forecastUrl, needsFetch, needsPlace, phaseAt, placeUrl, readForecast, readPlace, shouldLocate, skyLabel, skyState, weatherKind } from "../public/js/sky.js";
 
 const MIN = 60_000;
 const HOUR = 3_600_000;
@@ -10,10 +10,11 @@ const set = Date.UTC(2026, 9, 21, 9, 34);
 const noon = Date.UTC(2026, 9, 21, 4, 0);
 
 describe("sky helpers (garden screen)", () => {
-  it("sorts the weather codes into the four skies", () => {
+  it("sorts the weather codes into the five skies", () => {
     expect([0, 1].map(weatherKind)).toEqual(["clear", "clear"]);
     expect([2, 3, 45, 48].map(weatherKind)).toEqual(["cloudy", "cloudy", "cloudy", "cloudy"]);
-    expect([51, 61, 65, 80, 82].map(weatherKind)).toEqual(["rain", "rain", "rain", "rain", "rain"]);
+    expect([51, 53, 55].map(weatherKind)).toEqual(["drizzle", "drizzle", "drizzle"]); // a wet day's "light drizzle" isn't rain
+    expect([61, 65, 80, 82].map(weatherKind)).toEqual(["rain", "rain", "rain", "rain"]);
     expect([95, 96, 99].map(weatherKind)).toEqual(["storm", "storm", "storm"]);
     expect(weatherKind(undefined)).toBe("clear");
   });
@@ -61,9 +62,37 @@ describe("sky helpers (garden screen)", () => {
 
   it("shows the weather while it's recent, and only the clock after that", () => {
     const cache = { at: noon, code: 95, rise, set };
-    expect(skyState(cache, noon + HOUR)).toEqual({ phase: "day", weather: "storm" });
-    expect(skyState(cache, noon + 3 * HOUR)).toEqual({ phase: "day", weather: "clear" });
-    expect(skyState(cache, set + HOUR)).toEqual({ phase: "night", weather: "clear" });
-    expect(skyState(null, Date.UTC(2026, 9, 21, 15, 0))).toEqual({ phase: "night", weather: "clear" });
+    expect(skyState(cache, noon + HOUR)).toEqual({ phase: "day", weather: "storm", known: true });
+    expect(skyState(cache, noon + 3 * HOUR)).toEqual({ phase: "day", weather: "clear", known: false });
+    expect(skyState(cache, set + HOUR)).toEqual({ phase: "night", weather: "clear", known: false });
+    expect(skyState(null, Date.UTC(2026, 9, 21, 15, 0))).toEqual({ phase: "night", weather: "clear", known: false });
+  });
+
+  it("names the town and the weather only when both are known", () => {
+    const place = { lat: 13.62, lon: 123.17, name: "Camaligan" };
+    expect(skyLabel({ phase: "day", weather: "drizzle", known: true }, place)).toEqual({ place: "Camaligan", weather: "Drizzle" });
+    expect(skyLabel({ phase: "night", weather: "clear", known: true }, place)).toEqual({ place: "Camaligan", weather: "Clear night" });
+    expect(skyLabel({ phase: "day", weather: "clear", known: false }, place)).toBeNull(); // an old reading: no "Clear skies"
+    expect(skyLabel({ phase: "day", weather: "rain", known: true }, null)).toBeNull();
+  });
+
+  it("looks the town up once per place", () => {
+    const place = { lat: 13.62, lon: 123.17, name: "Camaligan" };
+    expect(needsPlace(null, { lat: 13.62, lon: 123.17 })).toBe(true);
+    expect(needsPlace(place, { lat: 13.63, lon: 123.18 })).toBe(false); // the same town
+    expect(needsPlace(place, { lat: 13.62, lon: 123.21 })).toBe(true); // moved to Naga
+    expect(needsPlace(place, null)).toBe(false);
+  });
+
+  it("sends the town lookup only a rounded location, and reads its answer", () => {
+    const url = new URL(placeUrl(13.621834, 123.168812));
+    expect(url.origin).toBe("https://api.bigdatacloud.net");
+    expect(url.searchParams.get("latitude")).toBe("13.62");
+    expect(url.searchParams.get("longitude")).toBe("123.17");
+    const where = { lat: 13.62, lon: 123.17 };
+    expect(readPlace({ city: "Camaligan", locality: "Camaligan" }, where)).toEqual({ ...where, name: "Camaligan" });
+    expect(readPlace({ city: "", locality: "Naga" }, where)).toEqual({ ...where, name: "Naga" });
+    expect(readPlace({ city: " " }, where)).toBeNull();
+    expect(readPlace(null, where)).toBeNull();
   });
 });

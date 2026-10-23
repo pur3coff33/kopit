@@ -55,14 +55,17 @@ legal.get("/privacy", (c) =>
         <li>Two cookies: one keeps you logged in, the other remembers who the phone belongs to.</li>
         <li>Expenses saved without signal, until they're sent.</li>
         <li>A copy of the add screen, so it opens offline.</li>
-        <li>Small notes like "this leaf was already celebrated", and the last weather and rounded location for the sky.</li>
+        <li>Small notes like "this leaf was already celebrated", and the last weather, rounded location and town name for the sky.</li>
       </ul>
 
       <h2>Your location and the weather</h2>
       <p>
         The garden's sky asks for your location once. If you say yes, your phone rounds it to about a kilometre and asks{" "}
-        <a href="https://open-meteo.com/en/terms">Open-Meteo</a> for the weather directly. Your location is never sent to
-        kop.it's server. Say no and nothing is sent anywhere; the sky just follows the clock.
+        <a href="https://open-meteo.com/en/terms">Open-Meteo</a> for the weather directly. To write your town's name across
+        the sky, it also sends that rounded location to{" "}
+        <a href="https://www.bigdatacloud.com/terms-of-use">BigDataCloud</a> once, and again only if you move a few
+        kilometres. Your location is never sent to kop.it's server. Say no and nothing is sent anywhere; the sky just
+        follows the clock.
       </p>
 
       <h2>Where it's stored</h2>

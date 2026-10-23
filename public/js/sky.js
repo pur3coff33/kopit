@@ -1,7 +1,8 @@
 // Today's sky behind the garden's plant. The server draws day or night from the Manila clock; this swaps in the
-// weather and the real sunrise and sunset where the phone is, from Open-Meteo (free, no account). Location is asked
-// for once; after that it's only refreshed when the phone already allows it, so nobody is nagged. No location, or no
-// signal: the sky just follows the clock.
+// weather and the real sunrise and sunset where the phone is, from Open-Meteo (free, no account), and the town's name
+// for the line across the top ("CAMALIGAN — DRIZZLE"), from BigDataCloud (free, no account, asked once per place).
+// Location is asked for once; after that it's only refreshed when the phone already allows it, so nobody is nagged.
+// No location, or no signal: the sky just follows the clock, with no line.
 const MANILA_OFFSET_MS = 8 * 3_600_000;
 const DAY_MS = 86_400_000;
 const FETCH_EVERY_MS = 30 * 60_000;
@@ -9,11 +10,17 @@ const WEATHER_FOR_MS = 3 * 3_600_000; // older than this, a rain cloud is a gues
 const CACHE_KEY = "kopit-sky";
 const ASKED_KEY = "kopit-sky-asked";
 const WHERE_KEY = "kopit-sky-where";
+const PLACE_KEY = "kopit-sky-place";
+const MOVED_DEG = 0.03; // about 3 km: further than this from where the town was looked up, look it up again
 
-/** Open-Meteo's WMO weather code → the sky we draw. Drizzle, rain and showers are rain; snow never falls here. */
+/**
+ * Open-Meteo's WMO weather code → the sky we draw. Drizzle is its own, lighter sky: in a wet month the forecast calls
+ * a tenth of a millimetre "light drizzle" for hours, and that isn't rain. Rain and showers are rain; snow never falls here.
+ */
 export function weatherKind(code) {
   if (code >= 95) return "storm";
-  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return "rain";
+  if (code >= 51 && code <= 57) return "drizzle";
+  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return "rain";
   if (code >= 2) return "cloudy";
   return "clear";
 }
@@ -60,11 +67,42 @@ export function readForecast(json, nowMs) {
   return { at: nowMs, code, rise: rise * 1000, set: set * 1000 };
 }
 
+/** `known`: the weather is a recent reading, not the clear sky we fall back to. */
 export function skyState(cache, nowMs) {
+  const known = !!cache && nowMs - cache.at < WEATHER_FOR_MS;
   return {
     phase: phaseAt(nowMs, cache && { rise: cache.rise, set: cache.set }),
-    weather: cache && nowMs - cache.at < WEATHER_FOR_MS ? weatherKind(cache.code) : "clear",
+    weather: known ? weatherKind(cache.code) : "clear",
+    known,
   };
+}
+
+const WORDS = {
+  day: { clear: "Clear skies", cloudy: "Overcast", drizzle: "Drizzle", rain: "Rain", storm: "Thunderstorm" },
+  night: { clear: "Clear night", cloudy: "Cloudy night", drizzle: "Drizzle", rain: "Rain", storm: "Thunderstorm" },
+};
+
+/** The line across the sky: the town and the weather in words, or null unless both are known. */
+export function skyLabel(state, place) {
+  return state.known && place?.name ? { place: place.name, weather: WORDS[state.phase][state.weather] } : null;
+}
+
+/** Look the town up again when there's none yet, or the phone is now somewhere else. */
+export function needsPlace(place, where) {
+  return !!where && (!place || Math.abs(place.lat - where.lat) > MOVED_DEG || Math.abs(place.lon - where.lon) > MOVED_DEG);
+}
+
+/** BigDataCloud's free lookup made for browsers, with the same rounded location the weather gets. */
+export function placeUrl(lat, lon) {
+  const round = (n) => String(Math.round(n * 100) / 100);
+  const q = new URLSearchParams({ latitude: round(lat), longitude: round(lon), localityLanguage: "en" });
+  return `https://api.bigdatacloud.net/data/reverse-geocode-client?${q}`;
+}
+
+/** The town or city from BigDataCloud's answer; null when it doesn't name one. */
+export function readPlace(json, where) {
+  const name = [json?.city, json?.locality].find((n) => typeof n === "string" && n.trim())?.trim();
+  return name ? { lat: where.lat, lon: where.lon, name } : null;
 }
 
 // ---------- in the browser ----------
@@ -108,10 +146,24 @@ export function mount() {
   let stopped = false;
   let busy = false;
 
+  const line = sky.querySelector("[data-sky-label]");
   const paint = () => {
-    const { phase, weather } = skyState(load(CACHE_KEY), Date.now());
-    sky.dataset.phase = phase;
-    sky.dataset.weather = weather;
+    const state = skyState(load(CACHE_KEY), Date.now());
+    sky.dataset.phase = state.phase;
+    sky.dataset.weather = state.weather;
+    if (!line) return;
+    const label = skyLabel(state, load(PLACE_KEY));
+    const text = label ? `${label.place} — ${label.weather}` : "";
+    if (line.dataset.text === text) return;
+    line.dataset.text = text;
+    line.hidden = !label;
+    if (!label) return;
+    line.querySelector(".where").textContent = label.place;
+    line.querySelector(".what").textContent = label.weather;
+    // Drift in again, like a film title, whenever the words change.
+    line.classList.remove("play");
+    void line.offsetWidth;
+    line.classList.add("play");
   };
 
   async function refresh() {
@@ -130,6 +182,12 @@ export function mount() {
       const forecast = readForecast(await res.json(), Date.now());
       if (!forecast || stopped) return;
       save(CACHE_KEY, forecast);
+      if (needsPlace(load(PLACE_KEY), where)) {
+        const at = await fetch(placeUrl(where.lat, where.lon)).catch(() => null);
+        const place = at?.ok ? readPlace(await at.json(), where) : null;
+        if (place) save(PLACE_KEY, place);
+      }
+      if (stopped) return;
       paint();
     } catch {
       // offline or the weather service is down: keep the sky we have

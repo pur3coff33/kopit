@@ -127,16 +127,11 @@ export function Welcome() {
   );
 }
 
-export type Weather = "clear" | "cloudy" | "rain" | "storm";
+export type Weather = "clear" | "cloudy" | "drizzle" | "rain" | "storm";
 
 /**
- * Today's sky behind the live plant: day or night from the Manila clock, then /js/sky.js swaps in the real weather
- * and sunset for where the phone is. Every layer is drawn; data-phase and data-weather pick what shows (app.css).
- * `still`: a fixed sky for showing the looks (the guide); /js/sky.js leaves it alone.
- */
-/**
  * The garden's daytime company, each showing in its weather (app.css): a bee and a butterfly when it's clear, a
- * dragonfly and a bird when it's cloudy, a grasshopper sheltering in the rain. A storm sends them all under cover;
+ * dragonfly and a bird when it's cloudy, a grasshopper sheltering in drizzle and rain. A storm sends them all under cover;
  * at night the fireflies come out instead.
  */
 function Critters() {
@@ -194,31 +189,85 @@ function Critters() {
   );
 }
 
-export function Sky(props: { night: boolean; weather?: Weather; still?: boolean; children?: Child }) {
-  const drops = Array.from({ length: 10 }, () => <i></i>);
+// Where the stars, drops and fireflies sit, as [left %, top %] or [left %, height px]: fixed, so every page draws the same sky.
+const STARS = [[6, 10], [14, 34], [22, 8], [31, 22], [40, 6], [47, 30], [58, 12], [66, 26], [73, 6], [82, 18], [90, 34], [52, 44]];
+const DROPS = Array.from({ length: 24 }, (_, i) => [(i * 41 + 7) % 104 - 4, 9 + ((i * 7) % 8)]);
+const FLIES = [[18, 52], [72, 34], [64, 70], [34, 76], [88, 58]];
+
+/** A soft cloud; `kind` says from which weather it shows (app.css). */
+/** `x`, `top`, `width`: where it rests (with less motion) and how big, in % of the sky. */
+function Cloud(props: { kind: "clear" | "cloudy" | "wet"; x: number; top: number; width: number; drift: number; delay: number }) {
+  return (
+    <svg
+      class={`cloud ${props.kind}`}
+      viewBox="0 0 60 28"
+      style={`--x:${props.x};top:${props.top}%;--w:${props.width};animation-duration:${props.drift}s;animation-delay:-${props.delay}s`}
+    >
+      <ellipse class="shade" cx="30" cy="22" rx="27" ry="6"></ellipse>
+      <circle cx="18" cy="17" r="9"></circle>
+      <circle cx="31" cy="12" r="12"></circle>
+      <circle cx="44" cy="17" r="8"></circle>
+      <rect x="10" y="16" width="42" height="8" rx="4"></rect>
+    </svg>
+  );
+}
+
+/**
+ * Today's sky, holding whatever stands under it: on the garden, this month's whole card (plant and words); in the
+ * guide, a small tile. Day or night comes from the Manila clock, then /js/sky.js swaps in the real weather and sunset
+ * for where the phone is. Every layer is drawn; data-phase and data-weather pick what shows (app.css).
+ * `label`: the line across the top naming the town and the weather, filled in by /js/sky.js once both are known.
+ * `still`: a fixed sky for showing the looks (the guide); /js/sky.js leaves it alone.
+ */
+export function Sky(props: { night: boolean; weather?: Weather; still?: boolean; label?: boolean; children?: Child }) {
   return (
     <div class="sky" data-sky={props.still ? undefined : ""} data-phase={props.night ? "night" : "day"} data-weather={props.weather ?? "clear"}>
       <div class="sky-back" aria-hidden="true">
         <span class="sun"></span>
         <span class="moon"></span>
         <span class="stars">
-          <i></i>
-          <i></i>
-          <i></i>
-          <i></i>
-          <i></i>
+          {STARS.map(([x, y], i) => (
+            <i class={i % 4 === 0 ? "big" : undefined} style={`left:${x}%;top:${y}%;animation-delay:-${(i * 0.7) % 3}s`}></i>
+          ))}
         </span>
-        <span class="cloud c1"></span>
-        <span class="cloud c2"></span>
+        <Cloud kind="clear" x={58} top={8} width={16} drift={70} delay={20} />
+        <Cloud kind="cloudy" x={6} top={24} width={11} drift={95} delay={60} />
+        <Cloud kind="cloudy" x={34} top={14} width={18} drift={60} delay={38} />
+        <Cloud kind="wet" x={70} top={2} width={14} drift={80} delay={8} />
+        <Cloud kind="wet" x={18} top={30} width={20} drift={52} delay={30} />
+        <svg class="bolt" viewBox="0 0 20 40">
+          <path d="M12 0 L2 22 H9 L6 40 L18 14 H11 Z"></path>
+        </svg>
+        <svg class="hills" viewBox="0 0 100 30" preserveAspectRatio="none">
+          <path class="far" d="M0 18 Q 25 4 50 14 T 100 10 V30 H0Z"></path>
+          <path class="near" d="M0 25 Q 30 15 62 22 T 100 20 V30 H0Z"></path>
+        </svg>
+        <span class="mist"></span>
         <span class="flash"></span>
       </div>
+      {props.label && (
+        <p class="sky-label" data-sky-label="" hidden>
+          <span class="where"></span>
+          <span class="rule" aria-hidden="true"></span>
+          <span class="what"></span>
+        </p>
+      )}
       {props.children}
       <div class="sky-front" aria-hidden="true">
-        <span class="rain">{drops}</span>
+        <span class="rain">
+          {DROPS.map(([x, h], i) => (
+            <i class={i % 3 === 0 ? "d" : undefined} style={`left:${x}%;height:${h}px;animation-delay:-${((i * 0.37) % 1).toFixed(2)}s`}></i>
+          ))}
+        </span>
+        <span class="splash">
+          {[8, 24, 41, 57, 73, 90].map((x, i) => (
+            <i style={`left:${x}%;animation-delay:-${(i * 0.19).toFixed(2)}s`}></i>
+          ))}
+        </span>
         <span class="fireflies">
-          <i></i>
-          <i></i>
-          <i></i>
+          {FLIES.map(([x, y], i) => (
+            <i style={`left:${x}%;top:${y}%;animation-delay:-${i * 1.1}s`}></i>
+          ))}
         </span>
         <Critters />
       </div>
