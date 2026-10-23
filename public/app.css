@@ -705,12 +705,18 @@ p { margin: 6px 0; }
    builds itself as it comes into view: the plank slides out, the pots drop on one by one, the plants grow in and the
    price tags swing until they settle. Without it, everything simply stands there. */
 .greenhouse {
-  position: relative; min-width: 0; margin: 6px -16px 0; padding: 0 10px 18px; overflow: hidden;
+  position: relative; display: flex; flex-direction: column; min-width: 0; min-height: calc(100dvh - 240px); margin: 6px -16px 8px; padding: 0 10px; overflow: hidden;
   background:
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.7) 0 3px, transparent 3px 25%),
     linear-gradient(#eef6ec, #e2efdf 40%, #e9e6cf 85%, #ece0c2);
-  border-radius: 26px 26px 0 0;
+  border-radius: 26px;
 }
+/* the garden bed the glass house stands on, at its very bottom */
+.g-bed { position: relative; margin: auto -10px 0; height: 44px; background: linear-gradient(transparent 14px, #a9c98f 14px, #8fb877 26px, #a07650 26px, #7d5a3c); }
+.g-bed svg { position: absolute; left: 0; right: 0; top: 0; width: 100%; height: 30px; }
+.g-bed path { fill: none; stroke: #6aa279; stroke-width: 1.6; stroke-linecap: round; }
+.g-bed .pink { fill: #f0a3b5; } .g-bed .gold { fill: #f2c94c; }
+.g-start { margin: 26px 0 18px; text-align: center; font-size: 12.5px; font-weight: 800; color: #6b5a3a; }
 .g-far { position: absolute; inset: 0; pointer-events: none; will-change: transform; }
 .g-drip { position: absolute; width: 3px; height: 7px; border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%; background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 2px rgba(120, 160, 180, 0.6); opacity: 0; }
 .g-roof { position: relative; height: 150px; margin: 0 -10px; overflow: hidden; background: linear-gradient(#9fd3f0, #cfe9f5 60%, rgba(238, 246, 236, 0)); }
@@ -743,8 +749,8 @@ p { margin: 6px 0; }
 .g-can svg { width: 22px; height: 18px; transform-origin: 70% 60%; transition: rotate 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); overflow: visible; }
 .g-can.pour svg { rotate: -32deg; }
 .g-can .drops i { position: absolute; left: 8px; top: 18px; width: 2.5px; height: 5px; border-radius: 2px; background: #9fd3f0; opacity: 0; }
-.g-vine { position: absolute; top: -18px; width: 30px; height: 84px; pointer-events: none; }
-.g-vine.left { left: -16px; } .g-vine.right { right: -16px; }
+.g-vine { position: absolute; top: 58px; width: 26px; height: 84px; pointer-events: none; }
+.g-vine.left { left: 2px; } .g-vine.right { right: 2px; top: 50px; }
 .g-pots { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: end; padding: 0 3px; }
 .g-pot { position: relative; display: block; min-width: 0; width: 100%; padding: 0 2px; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .g-pot:disabled { cursor: default; }
@@ -776,7 +782,8 @@ p { margin: 6px 0; }
 /* the open day's receipt, unrolled under its shelf, its point under its pot */
 .g-drawer { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .g-drawer.open { grid-template-rows: 1fr; }
-.g-drawer > div { overflow: hidden; min-height: 0; min-width: 0; }
+/* room inside the fold for the receipt's shadow, so it isn't cut into a flat band */
+.g-drawer > div { overflow: hidden; min-height: 0; min-width: 0; margin: 0 -10px -24px; padding: 0 10px 24px; }
 .g-receipt { position: relative; margin: 14px 2px 4px; padding: 12px 14px 4px; border-radius: 22px; background: var(--solid); border: 1px solid var(--edge); box-shadow: 0 10px 26px rgba(31, 51, 38, 0.12); }
 .g-receipt[hidden] { display: none; }
 .g-receipt::before { content: ""; position: absolute; top: -8px; left: var(--x, 50%); width: 14px; height: 14px; translate: -50% 0; rotate: 45deg; border-radius: 3px; background: inherit; border-left: 1px solid var(--edge); border-top: 1px solid var(--edge); }
@@ -829,8 +836,6 @@ p { margin: 6px 0; }
   .animate .g-shelf.in .g-tag { animation: g-swing 2.2s calc(var(--d) + 0.5s) both; }
   .animate .g-shelf .g-lights { opacity: 0; transition: opacity 0.8s 2.2s; }
   .animate .g-shelf.in .g-lights { opacity: 1; }
-  .animate .g-shelf .g-drawer > div { opacity: 0; translate: 0 10px; transition: opacity 0.6s 1.4s, translate 0.7s 1.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
-  .animate .g-shelf.in .g-drawer > div { opacity: 1; translate: 0 0; }
   .g-receipt li { animation: g-rise 0.5s calc(var(--i, 0) * 0.07s) cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 }
 @keyframes g-drip { 0% { translate: 0 0; opacity: 0; } 10% { opacity: 0.9; } 70% { opacity: 0.8; } 100% { translate: 0 120px; opacity: 0; } }

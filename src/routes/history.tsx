@@ -270,7 +270,6 @@ function Shelf(props: {
   });
   return (
     <div class="g-shelf" data-week={toDateInput(week)}>
-      {VINE(dayKey(week) % 2 ? "left" : "right")}
       <div class="g-sh">
         <span class="lbl">
           {props.label}
@@ -305,7 +304,7 @@ function Shelf(props: {
             <i>
               {LETTERS[k]} {Number(toDateInput(startOf(d.day)).slice(8))}
             </i>
-            <b>{d.kind === "none" ? "·" : d.rows.length ? formatPeso(Math.round(d.total / 100) * 100) : d.kind === "quiet" ? "🦋" : "–"}</b>
+            <b>{d.kind === "none" ? "·" : d.rows.length ? formatPeso(Math.round(d.total / 100) * 100) : d.kind === "quiet" ? "🦋" : "₱0"}</b>
           </div>
         ))}
       </div>
@@ -368,6 +367,8 @@ function Greenhouse({ children, after }: { children: Child; after?: Child }) {
       <div class="g-roof" aria-hidden="true">
         <span class="sun"></span>
         <span class="g-rays"></span>
+        {VINE("left")}
+        {VINE("right")}
         <svg class="frame" viewBox="0 0 390 150" preserveAspectRatio="none">
           <path d="M0 120 Q 195 0 390 120" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.9)" stroke-width="5" />
           <path d="M97 66 V150 M195 50 V150 M293 66 V150" stroke="rgba(255,255,255,.8)" stroke-width="3" />
@@ -379,6 +380,18 @@ function Greenhouse({ children, after }: { children: Child; after?: Child }) {
       </div>
       {children}
       {after}
+      <div class="g-bed" aria-hidden="true">
+        <svg viewBox="0 0 400 30" preserveAspectRatio="none">
+          {Array.from({ length: 40 }, (_, k) => {
+            const x = k * 10 + 4;
+            const h = 8 + ((k * 7) % 9);
+            return <path d={`M${x} 30 C${x - 2} ${30 - h / 2} ${x - 4} ${30 - h} ${x - 5} ${28 - h} M${x} 30 C${x + 1} ${30 - h / 2} ${x + 3} ${28 - h} ${x + 5} ${26 - h}`} />;
+          })}
+          {[30, 110, 190, 270, 350].map((x, k) => (
+            <circle cx={x + (k % 2) * 14} cy={14 + (k % 3) * 2} r="3" class={k % 2 ? "pink" : "gold"} />
+          ))}
+        </svg>
+      </div>
     </div>
   );
 }
@@ -594,6 +607,8 @@ history.get("/history", async (c) => {
   }
 
   const nextHref = more ? `/history?who=${who}&before=${toDateInput(from)}` : null;
+  // The bottom of the last batch: where the garden began (or the oldest back-dated expense).
+  if (!more) shelves.push(<p class="g-start">🌱 Your garden began here · {dayHeading(Math.min(createdAt, oldest ?? createdAt), now)}</p>);
   return c.html(
     page(
       <Greenhouse
