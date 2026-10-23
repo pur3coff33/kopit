@@ -8,12 +8,12 @@ import type { CategoryKey } from "../lib/categories";
 import { categoryColor } from "../lib/colors";
 import { dayResults, isGood, isPerfect, missionDays, monthGardens, monthName, type DayMissions, type DayResult } from "../lib/garden";
 import { formatPeso } from "../lib/money";
-import { DAY_MS, MANILA_OFFSET_MS, addMonths, clockTime, dayKey, dayStart, fromDateInput, monthStart, toDateInput, weekStart } from "../lib/time";
+import { DAY_MS, MANILA_OFFSET_MS, addMonths, clockTime, dayKey, dayStart, fromDateInput, isNight, monthStart, toDateInput, weekStart } from "../lib/time";
 import { WEEK_MS } from "../lib/week";
 import { weekLabel } from "../views/week";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Hideable } from "../views/components";
-import { RoofGlass } from "../views/garden";
+import { RoofGlass, Sky } from "../views/garden";
 import { Layout } from "../views/layout";
 import { Tour } from "../views/tour";
 import { householdProfiles } from "./setup";
@@ -356,8 +356,8 @@ function Chapter(props: { start: number; chapter: number; stats: Child; wrapped:
   );
 }
 
-/** The glass house the shelves stand in, with its roof, sun and light (decorative). */
-function Greenhouse({ children, after }: { children: Child; after?: Child }) {
+/** The glass house the shelves stand in (decorative), its roof the garden's own live sky: the same weather, day or night. */
+function Greenhouse({ children, after, night }: { children: Child; after?: Child; night: boolean }) {
   return (
     <div class="greenhouse">
       <div class="g-far" aria-hidden="true">
@@ -366,7 +366,8 @@ function Greenhouse({ children, after }: { children: Child; after?: Child }) {
         ))}
       </div>
       <div class="g-roof" aria-hidden="true">
-        <RoofGlass>
+        <Sky night={night} quiet label class="roof-sky" />
+        <RoofGlass sun={false}>
           {VINE("left")}
           {VINE("right")}
         </RoofGlass>
@@ -464,7 +465,7 @@ history.get("/history", async (c) => {
     </div>
   );
   const page = (body: Child) => (
-    <Layout title="History" tab="history" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/history.js", "/js/tour-page.js"]}>
+    <Layout title="History" tab="history" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/history.js", "/js/sky.js", "/js/tour-page.js"]}>
       {chips}
       {body}
       <Tour screen="history" profileId={c.get("profileId")} profileName={c.get("profileName")} seen={c.get("toursSeen")} />
@@ -605,6 +606,7 @@ history.get("/history", async (c) => {
   return c.html(
     page(
       <Greenhouse
+        night={isNight(now)}
         after={
           nextHref && (
             <a class="more" id="more-history" href={nextHref}>

@@ -2,11 +2,11 @@ import { Hono } from "hono";
 import type { AppEnv } from "../env";
 import { FIXED, listCategories, usualCategories } from "../lib/categories";
 import { todayGarden } from "../lib/garden";
-import { DAY_MS, fromDateInput, weekdayDate } from "../lib/time";
+import { DAY_MS, fromDateInput, isNight, weekdayDate } from "../lib/time";
 import { noteSuggestions } from "../lib/notes";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Amount, CategoryPicker, CategorySheet, Keypad, Toast } from "../views/components";
-import { Plant } from "../views/garden";
+import { Plant, Sky } from "../views/garden";
 import { Layout } from "../views/layout";
 import { Tour } from "../views/tour";
 
@@ -31,7 +31,9 @@ add.get("/", requireSession, requireProfile, async (c) => {
   const presets = Object.fromEntries(cats.map((c) => [c.id, FIXED.find((f) => f.key === c.key)!.presets]));
   const leafAt = garden.leafDay ? (fromDateInput(garden.leafDay) ?? now - DAY_MS) : null;
   return c.html(
-    <Layout title="kop.it" tab="add" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/add.js"]}>
+    <Layout title="kop.it" tab="add" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/add.js", "/js/sky.js"]}>
+      {/* The garden's live sky, as a band behind the header and the amount. */}
+      <Sky night={isNight(now)} quiet label class="add-sky" />
       <section
         id="add"
         data-profile-id={String(c.get("profileId"))}

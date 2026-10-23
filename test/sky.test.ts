@@ -39,6 +39,10 @@ describe("sky helpers (garden screen)", () => {
     expect(shouldLocate("denied", false)).toBe(false);
     expect(shouldLocate(null, false)).toBe(true); // no permissions API (older iPhones)
     expect(shouldLocate(null, true)).toBe(false);
+    // Add and History never ask: they follow once it's allowed (asked on the garden).
+    expect(shouldLocate("granted", false, true)).toBe(true);
+    expect(shouldLocate("prompt", false, true)).toBe(false);
+    expect(shouldLocate(null, false, true)).toBe(false);
   });
 
   it("refetches the weather after 30 minutes", () => {

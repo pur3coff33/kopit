@@ -1227,5 +1227,44 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
 @keyframes page-rise { from { opacity: 0; translate: 0 14px; } }
 @keyframes page-grow { from { opacity: 0; scale: 0.6; } }
 
+/* ---------- one sky over add, the garden and history ---------- */
+/* The garden's card and History's greenhouse open up to the top of the screen: their sky carries on, in its own top
+   colour, behind the header and the buttons (which float on it), and is cut off at the screen's edge. */
+.terrarium:has(> .sky), .greenhouse { margin-left: -16px; margin-right: -16px; border: 0; border-radius: 0 0 26px 26px; }
+.terrarium:has(> .sky) { overflow: visible; clip-path: inset(-100vh 0 0 0 round 0 0 26px 26px); }
+.terrarium > .sky { border-radius: 0 0 26px 26px; }
+.terrarium > .sky::before, .roof-sky::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 100vh; background: var(--sky-top); transition: background-color 1.2s;
+}
+.app:has(:is(.terrarium > .sky, .roof-sky)) :is(.install, .top, main > .seg, main > .chips) { position: relative; z-index: 2; }
+/* History's roof is that same live sky behind the glass, fading into the greenhouse; no hills, no critters in there. */
+.greenhouse { overflow: visible; clip-path: inset(-100vh 0 0 0 round 0 0 26px 26px); }
+.greenhouse .g-far { overflow: hidden; }
+.g-roof:has(> .roof-sky) { overflow: visible; background: none; }
+.roof-sky { position: absolute; inset: 0; display: block; padding: 0; }
+.roof-sky > .sky-back, .roof-sky > .sky-front { -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); border-radius: 0; }
+.roof-sky :is(.hills, .critter, .splash, .fireflies) { display: none; }
+.roof-sky .sun { top: 18px; left: auto; right: 22px; }
+.roof-sky .moon { top: 18px; right: 24px; }
+.greenhouse:has(.roof-sky[data-phase="night"]) {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.45) 0 3px, transparent 3px 25%),
+    linear-gradient(#c9d3d6, #d6e0d6 40%, #e2e0cc 85%, #e6dcc0);
+}
+/* Add: a band of it behind the header and the amount, fading out before the category button. */
+.add-sky {
+  position: absolute; top: 0; left: 0; right: 0; z-index: -1; height: 190px; min-height: 0; padding: 0; display: block; pointer-events: none;
+  -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent);
+}
+.add-sky :is(.hills, .critter, .splash, .fireflies) { display: none; }
+.add-sky .sun, .add-sky .moon { top: 54px; right: 22px; }
+.sky.add-sky > .sky-label { top: 50px; right: 60px; }
+/* After dark the words on the sky turn light: the wordmark, Add's amount; the buttons on it get more glass. */
+.app:has([data-sky][data-phase="night"]) .top .wm { color: #f4f1e6; }
+.app:has([data-sky][data-phase="night"]) .top .wm i { background: #9fd0aa; }
+.app:has(.add-sky[data-phase="night"]) .amount { color: #f4f1e6; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35); }
+.app:has(.add-sky[data-phase="night"]) .underline { filter: brightness(1.35); }
+.app:has(:is(.terrarium > .sky, .roof-sky)[data-phase="night"]) :is(main > .seg, main > .chips .chip:not(.on)) { background: rgba(255, 255, 255, 0.82); }
+
 /* PIN boxes are text fields (see PinInput), dotted out like a password. */
 .pin { -webkit-text-security: disc; letter-spacing: 0.15em; }

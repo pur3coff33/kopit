@@ -33,10 +33,13 @@ export function phaseAt(nowMs, sun) {
   return h >= 6 && h < 18 ? "day" : "night";
 }
 
-/** Whether to read the location now. `permission`: the Permissions API state, or null where it's missing. */
-export function shouldLocate(permission, asked) {
+/**
+ * Whether to read the location now. `permission`: the Permissions API state, or null where it's missing. `quiet`: a
+ * screen that never asks (add, history), so only once it's been allowed.
+ */
+export function shouldLocate(permission, asked, quiet = false) {
   if (permission === "granted") return true;
-  if (permission === "denied") return false;
+  if (permission === "denied" || quiet) return false;
   return !asked;
 }
 
@@ -157,10 +160,11 @@ function locate() {
   );
 }
 
-/** Starts the sky on the garden screen; returns a function that stops it. */
+/** Starts the sky on the garden, add or history screen; returns a function that stops it. */
 export function mount() {
   const sky = document.querySelector("[data-sky]");
   if (!sky) return;
+  const quiet = sky.dataset.sky === "quiet";
   let stopped = false;
   let busy = false;
 
@@ -190,8 +194,8 @@ export function mount() {
     busy = true;
     try {
       let where = load(WHERE_KEY);
-      if (shouldLocate(await permission(), !!load(ASKED_KEY))) {
-        save(ASKED_KEY, true);
+      if (shouldLocate(await permission(), !!load(ASKED_KEY), quiet)) {
+        if (!quiet) save(ASKED_KEY, true);
         const here = await locate();
         if (here) save(WHERE_KEY, (where = here));
       }

@@ -90,7 +90,8 @@ guide.get("/guide", (c) => {
         <h2>The sky</h2>
         <p>
           This month's garden is the sky where you are right now: day or night, and the weather, with your town's name and
-          the weather written across the top.
+          the weather written across the top. The same sky shows at the top of the add screen and through History's glass
+          roof, so all three turn to night or rain together.
         </p>
         <ul class="skies">
           {SKIES.map((s) => (

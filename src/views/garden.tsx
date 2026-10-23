@@ -128,12 +128,15 @@ export function Welcome({ small }: { small?: boolean }) {
   );
 }
 
-/** The greenhouse's glass roof: its sun and light, the frame, and motes in the air. `children` hang under the frame. */
-export function RoofGlass({ children }: { children?: Child }) {
+/**
+ * The greenhouse's glass roof: its sun and light, the frame, and motes in the air. `children` hang under the frame.
+ * `sun={false}` when a live Sky behind the glass brings its own sun.
+ */
+export function RoofGlass({ children, sun = true }: { children?: Child; sun?: boolean }) {
   return (
     <>
-      <span class="sun"></span>
-      <span class="g-rays"></span>
+      {sun && <span class="sun"></span>}
+      {sun && <span class="g-rays"></span>}
       {children}
       <svg class="frame" viewBox="0 0 390 150" preserveAspectRatio="none">
         <path d="M0 120 Q 195 0 390 120" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.9)" stroke-width="5" />
@@ -238,10 +241,17 @@ function Cloud(props: { kind: "clear" | "cloudy" | "wet"; x: number; top: number
  * for where the phone is. Every layer is drawn; data-phase and data-weather pick what shows (app.css).
  * `label`: the line across the top naming the town and the weather, filled in by /js/sky.js once both are known.
  * `still`: a fixed sky for showing the looks (the guide); /js/sky.js leaves it alone.
+ * `quiet`: the same sky on another screen (add, history): /js/sky.js keeps it up to date but never asks for the
+ * location there; that stays the garden's question.
  */
-export function Sky(props: { night: boolean; weather?: Weather; still?: boolean; label?: boolean; children?: Child }) {
+export function Sky(props: { night: boolean; weather?: Weather; still?: boolean; quiet?: boolean; label?: boolean; class?: string; children?: Child }) {
   return (
-    <div class="sky" data-sky={props.still ? undefined : ""} data-phase={props.night ? "night" : "day"} data-weather={props.weather ?? "clear"}>
+    <div
+      class={props.class ? `sky ${props.class}` : "sky"}
+      data-sky={props.still ? undefined : props.quiet ? "quiet" : ""}
+      data-phase={props.night ? "night" : "day"}
+      data-weather={props.weather ?? "clear"}
+    >
       <div class="sky-back" aria-hidden="true">
         <span class="sun"></span>
         <span class="moon"></span>
