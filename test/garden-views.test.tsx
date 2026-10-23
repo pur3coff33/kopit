@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FIXED } from "../src/lib/categories";
 import { categoryColor, flowerFor } from "../src/lib/colors";
-import { Avatar, Plant, Wordmark } from "../src/views/garden";
+import { Avatar, Plant, Sky, Wordmark } from "../src/views/garden";
 
 const count = (s: string, needle: string) => s.split(needle).length - 1;
 
@@ -62,5 +62,16 @@ describe("drawings", () => {
     const a = String(<Avatar index={1} name="Mia" />);
     expect(a).toContain(flowerFor(1).petal);
     expect(a).toContain(">M<");
+  });
+});
+
+describe("the sky's creatures", () => {
+  it("has a bee and a butterfly for clear days, a dragonfly and a bird for cloudy ones, a grasshopper for rain", () => {
+    const sky = String(<Sky night={false} />);
+    for (const c of ["bee", "butterfly", "dragonfly", "bird", "grasshopper"]) expect(sky, c).toContain(`class="critter ${c}"`);
+    // Drawings only: inside the sky's front layer, which screen readers skip.
+    const front = sky.slice(sky.indexOf('class="sky-front"'));
+    expect(front).toContain('class="critter bee"');
+    expect(sky).toMatch(/class="sky-front" aria-hidden="true"/);
   });
 });

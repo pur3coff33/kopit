@@ -554,6 +554,59 @@ p { margin: 6px 0; }
 .sky[data-phase="night"][data-weather="clear"] .fireflies, .sky[data-phase="night"][data-weather="cloudy"] .fireflies { opacity: 1; }
 .sky:not([data-weather="clear"]) .cloud { opacity: 0.95; }
 .sky[data-weather="rain"] .rain, .sky[data-weather="storm"] .rain { opacity: 1; }
+/* The daytime creatures (views/garden.tsx): a bee and a butterfly when clear, a dragonfly and a bird when cloudy, a
+   grasshopper by the pot in the rain. Still for anyone who asks for less motion. */
+.sky .critter { position: absolute; opacity: 0; transition: opacity 1.2s; }
+.sky .critter svg { display: block; width: 100%; height: auto; overflow: visible; }
+.sky .critter .wings { transform-box: fill-box; transform-origin: center; }
+.sky .bee { top: 46%; left: 26%; width: 13px; }
+.sky .butterfly { top: 22%; left: 10%; width: 14px; }
+.sky .dragonfly { top: 30%; left: 58%; width: 17px; }
+.sky .bird { top: 12%; left: 14%; width: 12px; }
+.sky .grasshopper { bottom: 4px; right: 8px; width: 15px; }
+.sky[data-phase="day"][data-weather="clear"] .bee, .sky[data-phase="day"][data-weather="clear"] .butterfly { opacity: 1; }
+.sky[data-phase="day"][data-weather="cloudy"] .dragonfly, .sky[data-phase="day"][data-weather="cloudy"] .bird { opacity: 1; }
+.sky[data-phase="day"][data-weather="rain"] .grasshopper { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .sky .bee { animation: buzz 9s ease-in-out infinite; }
+  .sky .bee .wings { animation: whirr 0.12s linear infinite alternate; }
+  .sky .butterfly { animation: flit 13s ease-in-out infinite; }
+  .sky .butterfly .wings { animation: flap 0.4s ease-in-out infinite alternate; }
+  .sky .dragonfly { animation: dart 8s steps(1, end) infinite; }
+  .sky .dragonfly .wings { animation: whirr 0.08s linear infinite alternate; }
+  .sky .bird { animation: glide 16s linear infinite; }
+  .sky .bird .wings { animation: beat 0.7s ease-in-out infinite alternate; }
+  .sky .grasshopper { animation: hop 7s ease-out infinite; }
+}
+@keyframes buzz {
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  20% { translate: 26px -14px; rotate: 10deg; }
+  40% { translate: 44px 6px; rotate: -6deg; }
+  60% { translate: 18px 16px; rotate: 8deg; }
+  80% { translate: -6px -4px; rotate: -10deg; }
+}
+@keyframes whirr { from { scale: 1 1; } to { scale: 1 0.55; } }
+@keyframes flit {
+  0%, 100% { translate: 0 0; }
+  25% { translate: 30px 10px; }
+  50% { translate: 62px -4px; }
+  75% { translate: 28px -12px; }
+}
+@keyframes flap { from { scale: 1 1; } to { scale: 0.25 1; } }
+@keyframes dart {
+  0%, 100% { translate: 0 0; }
+  22% { translate: -34px 10px; }
+  48% { translate: -14px -12px; }
+  74% { translate: 8px 18px; }
+}
+@keyframes glide { from { translate: -40px 0; } to { translate: 160px -6px; } }
+@keyframes beat { from { scale: 1 1; } to { scale: 1 0.5; } }
+@keyframes hop {
+  0%, 40%, 100% { translate: 0 0; }
+  46% { translate: -9px -11px; }
+  52%, 88% { translate: -18px 0; }
+  94% { translate: -9px -11px; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .sky .stars i { animation: twinkle 3s ease-in-out infinite alternate; }
   .sky .stars i:nth-child(2n) { animation-delay: -1.4s; animation-duration: 2.3s; }

@@ -134,6 +134,66 @@ export type Weather = "clear" | "cloudy" | "rain" | "storm";
  * and sunset for where the phone is. Every layer is drawn; data-phase and data-weather pick what shows (app.css).
  * `still`: a fixed sky for showing the looks (the guide); /js/sky.js leaves it alone.
  */
+/**
+ * The garden's daytime company, each showing in its weather (app.css): a bee and a butterfly when it's clear, a
+ * dragonfly and a bird when it's cloudy, a grasshopper sheltering in the rain. A storm sends them all under cover;
+ * at night the fireflies come out instead.
+ */
+function Critters() {
+  return (
+    <>
+      <span class="critter bee">
+        <svg viewBox="0 0 20 14">
+          <g class="wings" fill="#fff" opacity="0.85">
+            <ellipse cx="9" cy="4" rx="4" ry="3"></ellipse>
+            <ellipse cx="13" cy="4" rx="3.5" ry="2.6"></ellipse>
+          </g>
+          <ellipse cx="10" cy="9" rx="7" ry="4.2" fill="#f2c230"></ellipse>
+          <path d="M8 5.2v7.6M11.5 5v8" stroke="#2b2a26" stroke-width="1.6"></path>
+          <circle cx="16.4" cy="8.4" r="2.4" fill="#2b2a26"></circle>
+        </svg>
+      </span>
+      <span class="critter butterfly">
+        <svg viewBox="0 0 20 16">
+          <g class="wings">
+            <path d="M10 8C6 1 1 2 2 7c.6 3 4 3 8 1z" fill="#f2a65a"></path>
+            <path d="M10 8c4-7 9-6 8-1-.6 3-4 3-8 1z" fill="#f2a65a"></path>
+            <path d="M10 8c-3 2-6 6-3 7 2 .6 3-3 3-7z" fill="#e88a6a"></path>
+            <path d="M10 8c3 2 6 6 3 7-2 .6-3-3-3-7z" fill="#e88a6a"></path>
+          </g>
+          <path d="M10 4v9" stroke="#3b2f2a" stroke-width="1.2" stroke-linecap="round"></path>
+        </svg>
+      </span>
+      <span class="critter dragonfly">
+        <svg viewBox="0 0 24 12">
+          <g class="wings" fill="#e6f6f9" opacity="0.9">
+            <ellipse cx="8" cy="3.5" rx="5" ry="1.8" transform="rotate(-12 8 3.5)"></ellipse>
+            <ellipse cx="8" cy="8.5" rx="5" ry="1.8" transform="rotate(12 8 8.5)"></ellipse>
+            <ellipse cx="13" cy="3.8" rx="4.4" ry="1.6" transform="rotate(12 13 3.8)"></ellipse>
+            <ellipse cx="13" cy="8.2" rx="4.4" ry="1.6" transform="rotate(-12 13 8.2)"></ellipse>
+          </g>
+          <path d="M3 6h17" stroke="#2f8f9d" stroke-width="1.6" stroke-linecap="round"></path>
+          <circle cx="20.5" cy="6" r="1.8" fill="#2f8f9d"></circle>
+        </svg>
+      </span>
+      <span class="critter bird">
+        <svg viewBox="0 0 16 8">
+          <path class="wings" d="M1 6c2-3 5-3 7 0 2-3 5-3 7 0" fill="none" stroke="#4a5e50" stroke-width="1.6" stroke-linecap="round"></path>
+        </svg>
+      </span>
+      <span class="critter grasshopper">
+        <svg viewBox="0 0 22 12">
+          <path d="M4 7c3-3 10-3 14-1" stroke="#6aa84f" stroke-width="3.2" stroke-linecap="round" fill="none"></path>
+          <circle cx="18.5" cy="5.8" r="2.2" fill="#6aa84f"></circle>
+          <path d="M9 6l4-4 3 9" stroke="#4f8a3a" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+          <path d="M14 8l-2 3M17 8l1 3" stroke="#4f8a3a" stroke-width="1.1" stroke-linecap="round"></path>
+          <path d="M20 4l2-3" stroke="#4f8a3a" stroke-width="0.8" stroke-linecap="round"></path>
+        </svg>
+      </span>
+    </>
+  );
+}
+
 export function Sky(props: { night: boolean; weather?: Weather; still?: boolean; children?: Child }) {
   const drops = Array.from({ length: 10 }, () => <i></i>);
   return (
@@ -160,6 +220,7 @@ export function Sky(props: { night: boolean; weather?: Weather; still?: boolean;
           <i></i>
           <i></i>
         </span>
+        <Critters />
       </div>
     </div>
   );
