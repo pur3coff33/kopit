@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { profiles } from "../src/db/schema";
 import { TOUR_SCREENS } from "../src/views/tour";
 // @ts-ignore plain browser module
-import { placeNote, shouldTour } from "../public/js/tour.js";
+import { fitToScreen, placeNote, shouldTour } from "../public/js/tour.js";
 import { addEntry, authCookie, db, html, req, seedHousehold } from "./helpers";
 
 const PATHS = { add: "/", garden: "/spending", history: "/history", shed: "/settings" } as const;
@@ -109,5 +109,13 @@ describe("on the phone", () => {
     expect(corner.left).toBe(390 - 300 - 12); // pushed back onto the screen
     expect(corner.tip).toBeGreaterThan(200); // the arrow still points at the corner
     expect(placeNote(null, note, 390, 844)).toMatchObject({ side: null, left: 45, top: 362 });
+  });
+
+  it("keeps the lit-up part's edge on the screen when the part bleeds past it", () => {
+    const sky = fitToScreen({ left: -22, top: 96, width: 434, height: 230 }, 390, 844); // the garden's card, edge to edge
+    expect(sky).toEqual({ left: 4, top: 96, width: 382, height: 230 });
+    const inside = { left: 20, top: 100, width: 350, height: 160 };
+    expect(fitToScreen(inside, 390, 844)).toEqual(inside); // a part that fits stays as it is
+    expect(fitToScreen({ left: 20, top: 700, width: 350, height: 400 }, 390, 844)).toMatchObject({ top: 700, height: 140 });
   });
 });

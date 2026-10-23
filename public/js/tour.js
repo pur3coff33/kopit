@@ -6,6 +6,7 @@ const SEEN = "kopit-tours-seen-"; // + the person's id: screens whose tour close
 const REPLAY = "kopit-tours-replay-"; // + the person's id: screens to play again the next time they're opened
 const GAP = 12; // between the lit-up part and the note, and around the screen's edges
 const PAD = 6; // room around the lit-up part
+const RING = 4; // room kept on the screen for the lit-up part's gold edge
 
 /** Open a screen's tour: asked for again, or this person hasn't had it and this phone hasn't shown it. */
 export function shouldTour(due, seenHere, replay) {
@@ -25,6 +26,16 @@ export function placeNote(rect, note, vw, vh) {
   const top = side === "below" ? rect.top + rect.height + GAP : rect.top - GAP - note.height;
   const tip = Math.round(Math.max(22, Math.min(note.width - 22, rect.left + rect.width / 2 - left)));
   return { left, top: Math.round(Math.max(GAP, Math.min(vh - note.height - GAP, top))), side, tip };
+}
+
+/**
+ * `rect` cut down to the screen, with room for the gold edge. A part that bleeds past the screen (the garden's sky card
+ * runs to both sides) would otherwise have its edge, and its rounded corners, drawn out of sight.
+ */
+export function fitToScreen(rect, vw, vh) {
+  const left = Math.max(RING, rect.left);
+  const top = Math.max(RING, rect.top);
+  return { left, top, width: Math.max(0, Math.min(vw - RING, rect.left + rect.width) - left), height: Math.max(0, Math.min(vh - RING, rect.top + rect.height) - top) };
 }
 
 function readList(key) {
@@ -116,7 +127,7 @@ export function openTour(dialog, onDone) {
 
   const place = () => {
     const els = targets(dialog, steps[at].dataset.stepSpot);
-    const rect = els.length ? union(els) : null;
+    const rect = els.length ? fitToScreen(union(els), innerWidth, innerHeight) : null;
     light.classList.toggle("none", !rect);
     const r = rect ?? { left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0 };
     Object.assign(light.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
