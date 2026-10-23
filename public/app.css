@@ -472,6 +472,7 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
 .range-form .save { grid-column: 1 / -1; margin-top: 0; padding: 9px; font-size: 15px; }
 
 /* ---------- loading placeholders (shown by /js/router.js when a screen is slow to arrive) ---------- */
+/* Each one has the silhouette of its screen: Add, the Garden, History and the inner pages. */
 .skeleton { display: flex; flex-direction: column; flex: 1; }
 .sk {
   display: block; background: rgba(255, 255, 255, 0.55); border: 1px solid var(--edge); border-radius: 12px;
@@ -479,25 +480,46 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
 }
 @keyframes sk-pulse { from { opacity: 1; } to { opacity: 0.45; } }
 @media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
-.sk-amount { width: 150px; height: 54px; margin: 18px auto 12px; }
-.skeleton .cats .sk-tile { height: 60px; border-radius: 16px 16px 16px 6px; }
-.sk-chip { width: 76px; height: 26px; border-radius: 16px; margin: 2px 0 8px; }
+.sk-line { height: 12px; width: 60%; }
+.sk-label { width: 74px; height: 10px; margin: 14px 2px 6px; }
+.sk-chips, .sk-usual { display: flex; gap: 6px; margin: 6px 0; overflow: hidden; }
+.sk-chip { flex: none; width: 84px; height: 44px; border-radius: 16px; }
+/* Add */
+.sk-left, .sk-pad { display: contents; }
+.sk-amount { width: 150px; height: 54px; margin: 14px auto 18px; }
+.sk-pick { height: 60px; margin-top: 6px; border-radius: 20px 20px 20px 8px; }
+.sk-note { width: 92px; height: 44px; margin: 6px 0 8px; border-radius: 22px; }
 .skeleton .keys { margin-top: auto; }
 .sk-key { height: 46px; border-radius: 16px; }
 .sk-save { height: 52px; margin-top: 10px; border-radius: 26px; }
-.sk-chips { display: flex; gap: 6px; margin: 6px 0; }
-.sk-chips .sk-chip { margin: 0; }
-.sk-total { width: 170px; height: 40px; margin: 14px 0 6px; }
-.sk-title { width: 140px; height: 26px; margin: 10px 0 14px; }
-.sk-line { height: 12px; width: 60%; }
-.sk-short { width: 45%; }
-.sk-day { width: 90px; margin: 16px 0 6px; }
-.sk-nudge { height: 30px; margin: 10px 0; border-radius: 14px; }
-.sk-rows { margin: 8px 0; }
-.sk-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+/* Garden */
+.sk-seg { height: 54px; margin: 8px 0 4px; border-radius: 18px; }
+.sk-sky { height: 200px; margin: 10px -16px 2px; border-radius: 0 0 26px 26px; }
+.sk-missions, .sk-rows { margin: 10px 0; padding: 2px 14px; background: var(--solid); border: 1px solid var(--edge); border-radius: 22px; }
+.sk-missions { padding: 4px 14px 2px; }
+.sk-missions .sk-rows { margin: 0; padding: 0; background: none; border: 0; }
+.sk-missions .sk-label { margin-top: 6px; }
+.sk-group .sk-label { margin-top: 18px; }
+.sk-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
 .sk-ic { width: 34px; height: 34px; flex: none; border-radius: 50% 50% 50% 12px; }
+.sk-ic.sk-dot { width: 22px; height: 22px; border-radius: 50%; }
 .sk-mid { flex: 1; display: flex; flex-direction: column; gap: 6px; }
 .sk-bar { height: 8px; border-radius: 6px; }
+/* History */
+.sk-roof { height: 150px; margin: 6px -16px 0; border-radius: 0; }
+.sk-sign { width: 230px; height: 84px; margin: 20px auto 6px; border-radius: 12px; }
+.sk-shelf { margin: 22px 0 6px; }
+.sk-shelf .sk-label { width: 110px; margin: 0 4px 8px; }
+.sk-pots { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; padding: 0 3px; }
+.sk-pot { height: 52px; border-radius: 50% 50% 14px 14px; }
+.sk-plank { height: 13px; margin-top: 4px; border-radius: 4px; }
+.sk-tag { height: 28px; margin-top: 14px; border-radius: 4px 4px 4px 9px; }
+/* Inner pages */
+.sk-back { width: 74px; height: 30px; margin: 4px 0 0; border-radius: 15px; }
+.sk-card { display: flex; flex-direction: column; align-items: center; margin: 22px 0 16px; }
+.sk-badge { width: 52px; height: 52px; margin-bottom: 12px; border-radius: 50% 50% 50% 16px; }
+.sk-kicker { width: 130px; height: 10px; }
+.sk-title { width: 180px; height: 26px; margin: 10px 0 4px; }
 
 /* Smooth cross-fade between screens instead of a white flash (Chrome, Safari 18.2+). The header and bottom bar fade
    with the rest: they look the same on every screen, so they still seem to stay put. They mustn't get a
@@ -1323,9 +1345,9 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
 }
 @media (min-width: 720px) and (min-height: 600px) {
   .app { max-width: var(--w, 440px); }
-  .app:has(> main > .terrarium) { --w: 720px; }
-  .app:has(> main > .greenhouse) { --w: 720px; }
-  .app:has(#add) { --w: 520px; }
+  .app:has(> main > :is(.terrarium, .skeleton[data-kind="spending"])) { --w: 720px; }
+  .app:has(> main > :is(.greenhouse, .skeleton[data-kind="history"])) { --w: 720px; }
+  .app:has(:is(#add, .skeleton[data-kind="add"])) { --w: 520px; }
   .nav { align-self: center; width: min(420px, 100%); }
   /* History: two shelves a row. The month's sign and the garden's first day span both. */
   #history { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; align-items: start; }
@@ -1340,7 +1362,7 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
   main > .terrarium ~ .rows li.group ~ li.group { break-before: column; }
 }
 @media (orientation: landscape) and (min-width: 700px) {
-  .app:has(#add) { --w: 900px; max-width: var(--w); }
+  .app:has(:is(#add, .skeleton[data-kind="add"])) { --w: 900px; max-width: var(--w); }
   /* Add, two-pane: the amount, the category and the note on the left; the keypad and Save on the right. */
   #add { display: grid; flex: none; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto auto 1fr; column-gap: 28px; align-content: start; }
   #add > .amount { grid-column: 1; grid-row: 1; text-align: left; margin-left: 4px; }
@@ -1366,9 +1388,9 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
   .nav .add { width: 44px; height: 44px; margin-top: -18px; font-size: 26px; }
 }
 @media (min-width: 1100px) and (min-height: 600px) {
-  .app:has(> main > .terrarium) { --w: 1040px; }
-  .app:has(> main > .greenhouse) { --w: 1040px; }
-  .app:has(#add) { --w: 1000px; }
+  .app:has(> main > :is(.terrarium, .skeleton[data-kind="spending"])) { --w: 1040px; }
+  .app:has(> main > :is(.greenhouse, .skeleton[data-kind="history"])) { --w: 1040px; }
+  .app:has(:is(#add, .skeleton[data-kind="add"])) { --w: 1000px; }
   /* Leaves room for the rail: the column sits in the middle of the rest of the screen. */
   .app { margin-left: max(124px, calc((100% - var(--w, 440px)) / 2)); margin-right: auto; }
   .app .terrarium > .sky .plant { width: 340px; margin-inline: -68px; }
@@ -1402,6 +1424,26 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
   }
   .nav .tab { width: 72px; }
   .nav .add { order: 3; margin: 10px 0 0; }
+}
+/* The placeholders keep to the same columns, so the screen doesn't change shape when it arrives. */
+@media (min-width: 720px) and (min-height: 600px) {
+  .sk-cats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; padding-inline: 20px; }
+  .sk-sky { margin-left: calc(-1 * (var(--left) + 16px + var(--bleed))); margin-right: calc(-1 * (var(--right) + 16px + var(--bleed))); }
+  .skeleton[data-kind="history"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; align-items: start; }
+  .skeleton[data-kind="history"] > :not(.sk-shelf) { grid-column: 1 / -1; }
+  .sk-roof { margin-left: calc(-1 * (var(--left) + 16px + var(--bleed))); margin-right: calc(-1 * (var(--right) + 16px + var(--bleed))); }
+}
+@media (orientation: landscape) and (min-width: 700px) {
+  .skeleton[data-kind="add"] { display: grid; flex: none; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; align-content: start; }
+  .skeleton[data-kind="add"] > .sk-left { grid-column: 1; display: flex; flex-direction: column; }
+  .skeleton[data-kind="add"] > .sk-pad { grid-column: 2; display: flex; flex-direction: column; }
+  .skeleton[data-kind="add"] .sk-amount { margin-left: 4px; }
+  .skeleton[data-kind="add"] .keys { margin-top: 0; }
+}
+@media (min-width: 1100px) and (min-height: 600px) {
+  .sk-missions .sk-rows { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 28px; }
+  .skeleton[data-kind="history"] { display: flex; }
+  .skeleton[data-kind="history"] > .sk-shelf { max-width: 660px; }
 }
 @keyframes g-side { from { opacity: 0; translate: -10px 0; } }
 
@@ -1513,7 +1555,7 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
 
 /* Add on a tablet held upright: everything a size up, so the keypad isn't a small island at the bottom of a tall screen. */
 @media (min-width: 720px) and (min-height: 600px) and (orientation: portrait) {
-  .app:has(#add) { --w: 600px; }
+  .app:has(:is(#add, .skeleton[data-kind="add"])) { --w: 600px; }
   #add > .amount { font-size: 76px; margin: 44px 0 8px; }
   #add > .amount .cur { font-size: 40px; }
   #add > .underline { width: 180px; height: 16px; }

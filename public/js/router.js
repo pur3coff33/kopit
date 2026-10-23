@@ -58,15 +58,21 @@ export function skeletonKind(pathname) {
 // ---------- placeholders, shaped like the screen that's on its way ----------
 
 const bone = (cls = "") => `<span class="sk ${cls}"></span>`;
-const rows = (n) =>
-  `<div class="sk-rows">${`<div class="sk-row">${bone("sk-ic")}<span class="sk-mid">${bone("sk-line")}${bone("sk-bar")}</span></div>`.repeat(n)}</div>`;
+const rows = (n, ic = "") =>
+  `<div class="sk-rows">${`<div class="sk-row">${bone(`sk-ic ${ic}`)}<span class="sk-mid">${bone("sk-line")}${bone("sk-bar")}</span></div>`.repeat(n)}</div>`;
 const chips = (n) => `<div class="sk-chips">${bone("sk-chip").repeat(n)}</div>`;
+const group = (n) => `<div class="sk-group">${bone("sk-line sk-label")}${rows(n)}</div>`;
+const shelf = `<div class="sk-shelf">${bone("sk-line sk-label")}<div class="sk-pots">${bone("sk-pot").repeat(7)}</div>${bone("sk-plank")}<div class="sk-pots">${bone("sk-tag").repeat(7)}</div></div>`;
 
 const SKELETONS = {
-  add: `${bone("sk-amount")}<div class="cats">${bone("sk-tile").repeat(8)}</div>${bone("sk-chip")}<div class="keys">${bone("sk-key").repeat(12)}</div>${bone("sk-save")}`,
-  spending: `${chips(3)}${chips(3)}${bone("sk-total")}${bone("sk-line sk-short")}${bone("sk-nudge")}${rows(6)}`,
-  history: `${chips(3)}${bone("sk-line sk-day")}${rows(4)}${bone("sk-line sk-day")}${rows(3)}`,
-  list: `${bone("sk-line sk-short")}${bone("sk-title")}${rows(5)}`,
+  // The amount, the category button with the usual ones under it, the note, then the keypad and Save.
+  add: `<div class="sk-left">${bone("sk-amount")}${bone("sk-pick")}${bone("sk-line sk-label")}<div class="sk-usual">${bone("sk-chip").repeat(4)}</div>${bone("sk-note")}</div><div class="sk-pad"><div class="keys">${bone("sk-key").repeat(12)}</div>${bone("sk-save")}</div>`,
+  // The period bar and the people, the month's sky card, today's missions, then Needs and Wants.
+  spending: `${bone("sk-seg")}${chips(3)}${bone("sk-sky")}<div class="sk-missions">${bone("sk-line sk-label")}${rows(3, "sk-dot")}</div><div class="sk-cats">${group(3)}${group(3)}</div>`,
+  // The people, the glass roof and the month's sign, then a shelf of seven pots with their tags, twice.
+  history: `${chips(3)}${bone("sk-roof")}${bone("sk-sign")}${shelf}${shelf}`,
+  // An inner page: the back button, its title card, then a list.
+  list: `${bone("sk-back")}<div class="sk-card">${bone("sk-badge")}${bone("sk-line sk-kicker")}${bone("sk-title")}</div>${rows(5)}`,
 };
 
 // ---------- the router itself ----------
