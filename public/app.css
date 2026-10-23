@@ -64,16 +64,20 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* The garden behind the glass: soft colour blobs and two blurred leaves. Fixed, so it never scrolls or repaints. */
+/* The garden behind the glass: soft light on cream paper, two leafy branches' shadows at the edges, and a fine paper
+   grain. Fixed, so it never scrolls or repaints. The leaves sit at the corners at a set size, so on a wide screen they
+   frame the page instead of growing; their strength is the `opacity` in each branch, the grain's the `.12` alpha. */
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 800'><filter id='b'><feGaussianBlur stdDeviation='14'/></filter><g filter='url(%23b)' opacity='.5'><ellipse cx='380' cy='170' rx='110' ry='40' fill='%237FB08C' transform='rotate(35 380 170)'/><ellipse cx='10' cy='600' rx='120' ry='42' fill='%236AA279' transform='rotate(-40 10 600)'/></g></svg>") center / cover no-repeat,
-    radial-gradient(circle at 8% 6%, #ffd9c2 0, transparent 38%),
-    radial-gradient(circle at 96% 20%, #cfe8ff 0, transparent 40%),
-    radial-gradient(circle at 18% 72%, #c9ecc9 0, transparent 45%),
-    radial-gradient(circle at 92% 94%, #fbe3a8 0, transparent 40%),
-    var(--bg);
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .12  0 0 0 0 .2  0 0 0 0 .14  0 0 0 .12 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-40 -30 300 400'><filter id='b'><feGaussianBlur stdDeviation='2'/></filter><g filter='url(%23b)' opacity='.085' fill='%232f5640' transform='rotate(14 110 170)'><path d='M118 340 C108 250 124 130 112 0' fill='none' stroke='%232f5640' stroke-width='5' stroke-linecap='round'/><ellipse cx='162' cy='290' rx='46' ry='15' transform='rotate(-32 162 290)'/><ellipse cx='66' cy='246' rx='46' ry='15' transform='rotate(28 66 246)'/><ellipse cx='168' cy='196' rx='44' ry='14' transform='rotate(-30 168 196)'/><ellipse cx='62' cy='150' rx='44' ry='14' transform='rotate(30 62 150)'/><ellipse cx='164' cy='104' rx='40' ry='13' transform='rotate(-34 164 104)'/><ellipse cx='70' cy='58' rx='38' ry='12' transform='rotate(32 70 58)'/><ellipse cx='128' cy='14' rx='30' ry='11' transform='rotate(-70 128 14)'/></g></svg>") right -30px top -30px / 260px 347px no-repeat,
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-40 -30 300 400'><filter id='b'><feGaussianBlur stdDeviation='2'/></filter><g filter='url(%23b)' opacity='.085' fill='%232f5640' transform='rotate(-22 110 170)'><path d='M118 340 C108 250 124 130 112 0' fill='none' stroke='%232f5640' stroke-width='5' stroke-linecap='round'/><ellipse cx='162' cy='290' rx='46' ry='15' transform='rotate(-32 162 290)'/><ellipse cx='66' cy='246' rx='46' ry='15' transform='rotate(28 66 246)'/><ellipse cx='168' cy='196' rx='44' ry='14' transform='rotate(-30 168 196)'/><ellipse cx='62' cy='150' rx='44' ry='14' transform='rotate(30 62 150)'/><ellipse cx='164' cy='104' rx='40' ry='13' transform='rotate(-34 164 104)'/><ellipse cx='70' cy='58' rx='38' ry='12' transform='rotate(32 70 58)'/><ellipse cx='128' cy='14' rx='30' ry='11' transform='rotate(-70 128 14)'/></g></svg>") left -50px bottom -40px / 300px 400px no-repeat,
+    radial-gradient(ellipse 85% 42% at 2% 0%, #ffe1cf 0, transparent 72%),
+    radial-gradient(ellipse 62% 36% at 100% 16%, #d9eaf6 0, transparent 70%),
+    radial-gradient(ellipse 70% 40% at 0% 70%, #d2e8d0 0, transparent 72%),
+    radial-gradient(ellipse 80% 36% at 100% 100%, #f7e7b8 0, transparent 70%),
+    #f2f3e6;
 }
 
 a { color: inherit; }
