@@ -13,19 +13,22 @@ export function cleanNote(raw: unknown): string | null | undefined {
 
 export type NoteSuggestion = { note: string; categoryId: number | null; count: number };
 
-/** The household's notes, most used first (case-insensitive), each with the category it was last used with. */
+/**
+ * The household's notes, most used first (case-insensitive), each with the category it was last used with.
+ * One pass over the notes: the latest use of each note is its first row in a window, so nothing is looked up per note
+ * (that took a scan of every expense for each distinct note, and slowed the add screen as history grew).
+ */
 export async function noteSuggestions(env: Env, householdId: number, limit = 100): Promise<NoteSuggestion[]> {
   const { results } = await env.DB.prepare(
-    `SELECT
-       (SELECT l.note FROM entries l WHERE l.household_id = e.household_id AND lower(l.note) = lower(e.note)
-          ORDER BY l.spent_at DESC LIMIT 1) AS note,
-       (SELECT l.category_id FROM entries l WHERE l.household_id = e.household_id AND lower(l.note) = lower(e.note)
-          ORDER BY l.spent_at DESC LIMIT 1) AS categoryId,
-       COUNT(*) AS count
-     FROM entries e
-     WHERE e.household_id = ? AND e.note IS NOT NULL
-     GROUP BY lower(e.note)
-     ORDER BY count DESC, MAX(e.spent_at) DESC
+    `SELECT note, categoryId, count FROM (
+       SELECT note, category_id AS categoryId, spent_at,
+              ROW_NUMBER() OVER (PARTITION BY lower(note) ORDER BY spent_at DESC, created_at DESC) AS latest,
+              COUNT(*) OVER (PARTITION BY lower(note)) AS count
+       FROM entries
+       WHERE household_id = ? AND note IS NOT NULL
+     )
+     WHERE latest = 1
+     ORDER BY count DESC, spent_at DESC
      LIMIT ?`,
   )
     .bind(householdId, limit)
