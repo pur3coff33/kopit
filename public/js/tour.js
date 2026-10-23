@@ -64,6 +64,39 @@ function union(els) {
   return { left, top, width: Math.max(...rs.map((r) => r.right)) + PAD - left, height: Math.max(...rs.map((r) => r.bottom)) + PAD - top };
 }
 
+/**
+ * Example data for a screen with nothing to show yet, only while its tour plays: a `<template data-tour-sample=
+ * "#empty">` goes in place of that empty-state element, `[data-tour-text]` elements show that text, and
+ * `[data-tour-show]` ones (an "Example" label) appear. Returns a function that puts the screen back.
+ */
+function showSamples() {
+  const added = [];
+  const hidden = [];
+  for (const t of document.querySelectorAll("template[data-tour-sample]")) {
+    const empty = document.querySelector(t.dataset.tourSample);
+    if (!empty) continue;
+    for (const el of [...t.content.cloneNode(true).children]) {
+      empty.before(el);
+      added.push(el);
+    }
+    if (!empty.hidden) hidden.push(empty);
+    empty.hidden = true;
+  }
+  const texts = [...document.querySelectorAll("[data-tour-text]")].map((el) => {
+    const was = el.textContent;
+    el.textContent = el.dataset.tourText;
+    return () => (el.textContent = was);
+  });
+  const shown = [...document.querySelectorAll("[data-tour-show][hidden]")];
+  for (const el of shown) el.hidden = false;
+  return () => {
+    for (const el of added) el.remove();
+    for (const el of hidden) el.hidden = false;
+    for (const undo of texts) undo();
+    for (const el of shown) el.hidden = true;
+  };
+}
+
 /** Shows the tour from its first stop; `onDone` runs once it's closed (finished, skipped or Escape). */
 export function openTour(dialog, onDone) {
   const light = dialog.querySelector(".tour-spot");
@@ -72,9 +105,13 @@ export function openTour(dialog, onDone) {
   const back = dialog.querySelector("[data-back]");
   const next = dialog.querySelector("[data-next]");
   const count = dialog.querySelector(".tour-count");
-  // Stops whose part isn't on the screen right now (no expenses yet, say) are left out.
+  const putBack = showSamples();
+  // Stops whose part isn't on the screen right now are left out.
   const steps = [...dialog.querySelectorAll(".tour-step")].filter((s) => !s.dataset.stepSpot || targets(dialog, s.dataset.stepSpot).length);
-  if (steps.length === 0) return false;
+  if (steps.length === 0) {
+    putBack();
+    return false;
+  }
   let at = 0;
 
   const place = () => {
@@ -121,6 +158,7 @@ export function openTour(dialog, onDone) {
       skip.removeEventListener("click", onSkip);
       removeEventListener("resize", place);
       removeEventListener("scroll", place);
+      putBack();
       onDone();
     },
     { once: true },

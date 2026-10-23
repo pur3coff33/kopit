@@ -813,6 +813,9 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
   transition: left 0.25s ease, top 0.25s ease, width 0.25s ease, height 0.25s ease;
 }
 .tour-spot.none { box-shadow: 0 0 0 200vmax rgba(31, 51, 38, 0.62); }
+/* Example data on a screen with nothing yet, only while its tour plays (/js/tour.js). */
+[data-tour-show][hidden] { display: none; }
+.tour-example { margin: 12px 0 2px; background: rgba(255, 255, 255, 0.85); color: var(--ink); }
 .tour-note {
   position: fixed; width: min(360px, calc(100% - 24px)); padding: 14px 16px 12px; border-radius: 20px;
   background: #f7faf4; box-shadow: 0 16px 40px rgba(31, 51, 38, 0.3);

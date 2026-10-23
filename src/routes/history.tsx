@@ -7,7 +7,7 @@ import type { CategoryKey } from "../lib/categories";
 import { categoryColor } from "../lib/colors";
 import { missionDays, monthName, type DayMissions } from "../lib/garden";
 import { formatPeso } from "../lib/money";
-import { DAY_MS, MANILA_OFFSET_MS, addMonths, clockTime, dayKey, fromDateInput, monthStart, rangeLabel, toDateInput, weekStart } from "../lib/time";
+import { DAY_MS, MANILA_OFFSET_MS, addMonths, clockTime, dayKey, dayStart, fromDateInput, monthStart, rangeLabel, toDateInput, weekStart } from "../lib/time";
 import { WEEK_MS } from "../lib/week";
 import { weekLabel } from "../views/week";
 import { requireProfile, requireSession } from "../middleware/auth";
@@ -47,6 +47,57 @@ function DayMissionsLine({ m, today, spot }: { m: DayMissions; today: boolean; s
     </details>
   );
 }
+/**
+ * A made-up day for the tour of an empty History (/js/tour.js puts it in place of "Nothing logged yet" while the tour
+ * plays), so its stops have something to point at. Labelled Example, and never a link.
+ */
+function HistorySample({ name, now }: { name: string; now: number }) {
+  const at = (h: number, m: number) => dayStart(now) + h * 3_600_000 + m * 60_000;
+  const rows = [
+    { emoji: "🍱", note: "Office lunch", what: "Meals", amount: 15_000, key: "meals", at: at(12, 10) },
+    { emoji: "🚌", note: "Jeepney", what: "Transport", amount: 2_600, key: "transport", at: at(7, 45) },
+    { emoji: "🛒", note: "Wet market", what: "Groceries", amount: 30_000, key: "groceries", at: at(6, 30) },
+  ] as const;
+  const m: DayMissions = {
+    done: 2,
+    items: [
+      { title: "Keep today under ₱1,500", level: 1, ok: true, note: "₱476 so far" },
+      { title: "At most 6 buys today", level: 1, ok: true, note: "3 buys" },
+      { title: "No eating out today", level: 2, ok: false, note: "none yet" },
+    ],
+  };
+  return (
+    <template data-tour-sample="#history-empty">
+      <section class="history path tour-sample">
+        <span class="pill tour-example">Example</span>
+        <div class="day-group">
+          <h2 class="day">
+            <span>Today</span>
+            <span>{formatPeso(rows.reduce((s, r) => s + r.amount, 0))}</span>
+          </h2>
+          <DayMissionsLine m={m} today spot />
+          <ul class="rows" data-spot="day">
+            {rows.map((r) => (
+              <li>
+                <a class="row" style={`--tint:${categoryColor(r.key).tint}`}>
+                  <span class="ic">{r.emoji}</span>
+                  <span class="mid">
+                    <span class="nm">
+                      <span>{r.note}</span>
+                      <span>{formatPeso(r.amount)}</span>
+                    </span>
+                    <span class="sub">{[r.what, name, clockTime(r.at)].join(" · ")}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    </template>
+  );
+}
+
 history.use("/history", requireSession, requireProfile);
 
 /** How many days with spending each batch of history loads. A day is never split across batches. */
@@ -261,7 +312,12 @@ history.get("/history", async (c) => {
         ))}
       </div>
       {days.length === 0 && before === null ? (
-        <p class="muted" style="margin-top:18px">Nothing logged yet.</p>
+        <>
+          <p class="muted" id="history-empty" style="margin-top:18px">
+            Nothing logged yet.
+          </p>
+          <HistorySample name={c.get("profileName")} now={now} />
+        </>
       ) : (
         <section class="history path" id="history">
           {placed.map((item, i) => {

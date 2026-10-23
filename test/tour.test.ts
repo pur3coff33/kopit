@@ -69,6 +69,26 @@ describe("the first-time tours", () => {
     const jon = await authCookie(h.householdId, h.profileIds[0]);
     expect(await page("/spending?range=last", jon)).not.toContain('id="tour"');
   });
+
+  it("bring example data for an empty garden and History, for while they play, and none once there's real data", async () => {
+    const h = await seedHousehold();
+    const jon = await authCookie(h.householdId, h.profileIds[0]);
+    const history = await page("/history", jon);
+    const from = history.indexOf('<template data-tour-sample="#history-empty">');
+    expect(from).toBeGreaterThan(0);
+    const sample = history.slice(from, history.indexOf("</template>", from));
+    expect(history).toContain('id="history-empty"');
+    for (const spot of ["day", "day-result"]) expect(sample).toContain(`data-spot="${spot}"`);
+    expect(sample).toContain("Example");
+    expect(sample).not.toContain("href="); // nothing in it leads anywhere
+    const garden = await page("/spending", jon);
+    expect(garden).toContain('data-tour-text="₱1,250"');
+    expect(garden).toMatch(/<span class="pill" data-tour-show(="[^"]*")? hidden/);
+
+    await addEntry(h, { amount: 25_000, at: Date.now() - 60_000, category: "Eating out" });
+    expect(await page("/history", jon)).not.toContain("data-tour-sample");
+    expect(await page("/spending", jon)).not.toContain("data-tour-text");
+  });
 });
 
 describe("on the phone", () => {

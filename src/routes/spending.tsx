@@ -124,6 +124,7 @@ spending.get("/spending", async (c) => {
   const label = rangeLabel(view.range.start, view.range.end, now);
   const plant = <Plant leaves={leafCount} perfect={perfectCount} bud={bud} bloom={!!g?.bloomed} width={104} />;
   const tally = `${plural(leafCount, "good day", "good days")} · ${perfectCount} perfect · ${plural(b.count, "expense", "expenses")}`;
+  const sample = thisMonth && b.count === 0;
   return c.html(
     <Layout title="Garden" tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/sky.js", "/js/tour-page.js"]}>
       <Filters view={view} />
@@ -164,16 +165,24 @@ spending.get("/spending", async (c) => {
             <>
               <p class="muted">Spent {label}</p>
               <div class="total">
-                {totalPeso(b.total)}
+                {/* Nothing logged yet this month: the tour shows a made-up total instead, labelled Example. */}
+                {sample ? <span data-tour-text="₱1,250">{totalPeso(b.total)}</span> : totalPeso(b.total)}
                 {eye}
               </div>
+              {sample && (
+                <span class="pill" data-tour-show hidden>
+                  ↓ ₱180 · 🌸 on track · Example
+                </span>
+              )}
               {p &&
                 (p.diff < 0 && profileId === null ? (
                   <span class="pill">↓ {formatPeso(-p.diff)} · 🌸 on track</span>
                 ) : (
                   <span class="pill neutral">{paceText(p.diff)}</span>
                 ))}
-              <p class="muted tally">🍃 {tally}</p>
+              <p class="muted tally" data-tour-text={sample ? "🍃 3 good days · 1 perfect · 12 expenses" : undefined}>
+                🍃 {tally}
+              </p>
             </>
           )}
           <div class="terra-links">
