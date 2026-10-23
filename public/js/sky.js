@@ -164,7 +164,7 @@ function locate() {
 export function mount() {
   const sky = document.querySelector("[data-sky]");
   if (!sky) return;
-  const quiet = sky.dataset.sky === "quiet";
+  const quiet = sky.dataset.sky !== "ask";
   let stopped = false;
   let busy = false;
 

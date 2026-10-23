@@ -3,7 +3,8 @@ import type { AppEnv } from "../env";
 import { gardenMonths, monthName } from "../lib/garden";
 import { monthStart, toDateInput } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
-import { Back, TitleCard } from "../views/components";
+import { plural } from "../lib/aligned";
+import { Back, PotShelves, TitleCard } from "../views/components";
 import { Plant } from "../views/garden";
 import { Layout } from "../views/layout";
 
@@ -19,31 +20,25 @@ gallery.get("/gallery", async (c) => {
     <Layout title="Gallery" tab="spending" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} roof="day">
       <Back href="/spending">Garden</Back>
       <TitleCard kicker="Garden" place="Every month" title="Gallery" sub="A leaf for each good day, a small flower for each perfect one." />
-      {Array.from({ length: Math.ceil(months.length / 3) }, (_, r) => (
-        <div class="month-shelf">
-          <div class="plants">
-            {months.slice(r * 3, r * 3 + 3).map((m, i) => {
-              const growing = m.start === current;
-              const year = toDateInput(m.start).slice(0, 4);
-              const href = growing ? "/spending" : `/spending?range=custom&from=${toDateInput(m.start)}&to=${toDateInput(m.end - 1)}&who=all`;
-              const days = `${m.goodDays} good day${m.goodDays === 1 ? "" : "s"}`;
-              return (
-                <a class={growing ? "month-card growing" : "month-card"} href={href} style={`--i:${r * 3 + i}`}>
-                  <Plant leaves={m.goodDays} perfect={m.perfectDays} bloom={m.bloomed} width={84} />
-                  <span class="tag">
-                    <b>{monthName(m.start)}</b>
-                    <span>
-                      {growing ? `${m.goodDays} so far` : `${year} · ${days}`}
-                      {m.bloomed ? " · 🌸" : ""}
-                    </span>
-                  </span>
-                </a>
-              );
-            })}
-          </div>
-          <div class="g-plank"></div>
-        </div>
-      ))}
+      <PotShelves
+        items={months.map((m, i) => {
+          const growing = m.start === current;
+          const year = toDateInput(m.start).slice(0, 4);
+          const href = growing ? "/spending" : `/spending?range=custom&from=${toDateInput(m.start)}&to=${toDateInput(m.end - 1)}&who=all`;
+          return (
+            <a class={growing ? "month-card growing" : "month-card"} href={href} style={`--i:${i}`}>
+              <Plant leaves={m.goodDays} perfect={m.perfectDays} bloom={m.bloomed} width={84} />
+              <span class="tag">
+                <b>{monthName(m.start)}</b>
+                <span>
+                  {growing ? `${m.goodDays} so far` : `${year} · ${plural(m.goodDays, "good day")}`}
+                  {m.bloomed ? " · 🌸" : ""}
+                </span>
+              </span>
+            </a>
+          );
+        })}
+      />
     </Layout>,
   );
 });

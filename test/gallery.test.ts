@@ -18,7 +18,7 @@ describe("garden gallery", () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order); // newest first
     expect(body).toMatch(/class="month-card growing"[^>]*>[\s\S]*?<b>\w+<\/b><span>\d+ so far/);
     expect(body).toContain(`<span>${toDateInput(addMonths(now, -1)).slice(0, 4)} · `); // a finished month says its year
-    expect(body.match(/class="month-shelf"/g)).toHaveLength(2); // 4 months: 3 on the first shelf, 1 on the next
+    expect(body.match(/class="pot-shelf"/g)).toHaveLength(2); // 4 months: 3 on the first shelf, 1 on the next
     const last = addMonths(now, -1);
     expect(body).toContain(`from=${toDateInput(last)}&to=${toDateInput(monthStart(now) - 1)}`);
     expect(body.match(/class="month-card[^"]*"/g)).toHaveLength(4);

@@ -114,8 +114,7 @@ export function Plant(props: { leaves: number; perfect?: number; bud?: boolean; 
   );
 }
 
-/** The log-in frame: big wordmark, tagline and the sprout under its glass dome. Log in and set up share it. */
-/** The big wordmark over the plant under glass. `small`: a smaller dome, when there's more to say under it. */
+/** The log-in frame: big wordmark, tagline and the sprout under its glass dome. `small`: a smaller dome, when there's more to say under it. */
 export function Welcome({ small }: { small?: boolean }) {
   return (
     <div class={small ? "welcome small" : "welcome"}>
@@ -135,7 +134,7 @@ export function Welcome({ small }: { small?: boolean }) {
 export function RoofGlass({ children, sun = true }: { children?: Child; sun?: boolean }) {
   return (
     <>
-      {sun && <span class="sun"></span>}
+      {sun && <span class="g-sun"></span>}
       {sun && <span class="g-rays"></span>}
       {children}
       <svg class="frame" viewBox="0 0 390 150" preserveAspectRatio="none">
@@ -217,8 +216,7 @@ const STARS = [[6, 10], [14, 34], [22, 8], [31, 22], [40, 6], [47, 30], [58, 12]
 const DROPS = Array.from({ length: 24 }, (_, i) => [(i * 41 + 7) % 104 - 4, 9 + ((i * 7) % 8)]);
 const FLIES = [[18, 52], [72, 34], [64, 70], [34, 76], [88, 58]];
 
-/** A soft cloud; `kind` says from which weather it shows (app.css). */
-/** `x`, `top`, `width`: where it rests (with less motion) and how big, in % of the sky. */
+/** A soft cloud; `kind` says from which weather it shows (app.css). `x`, `top`, `width`: where it rests (with less motion) and how big, in % of the sky. */
 function Cloud(props: { kind: "clear" | "cloudy" | "wet"; x: number; top: number; width: number; drift: number; delay: number }) {
   return (
     <svg
@@ -241,14 +239,15 @@ function Cloud(props: { kind: "clear" | "cloudy" | "wet"; x: number; top: number
  * for where the phone is. Every layer is drawn; data-phase and data-weather pick what shows (app.css).
  * `label`: the line across the top naming the town and the weather, filled in by /js/sky.js once both are known.
  * `still`: a fixed sky for showing the looks (the guide); /js/sky.js leaves it alone.
- * `quiet`: the same sky on another screen (add, history): /js/sky.js keeps it up to date but never asks for the
- * location there; that stays the garden's question.
+ * `ask`: the one screen that may ask for the location (the garden). Elsewhere /js/sky.js keeps the sky up to date
+ * from what the garden already knows.
+ * `band`: just the sky, for a strip across the top of a screen: no hills, nothing living in it.
  */
-export function Sky(props: { night: boolean; weather?: Weather; still?: boolean; quiet?: boolean; label?: boolean; class?: string; children?: Child }) {
+export function Sky(props: { night: boolean; weather?: Weather; still?: boolean; ask?: boolean; band?: boolean; label?: boolean; class?: string; children?: Child }) {
   return (
     <div
       class={props.class ? `sky ${props.class}` : "sky"}
-      data-sky={props.still ? undefined : props.quiet ? "quiet" : ""}
+      data-sky={props.still ? undefined : props.ask ? "ask" : ""}
       data-phase={props.night ? "night" : "day"}
       data-weather={props.weather ?? "clear"}
     >
@@ -268,10 +267,12 @@ export function Sky(props: { night: boolean; weather?: Weather; still?: boolean;
         <svg class="bolt" viewBox="0 0 20 40">
           <path d="M12 0 L2 22 H9 L6 40 L18 14 H11 Z"></path>
         </svg>
-        <svg class="hills" viewBox="0 0 100 30" preserveAspectRatio="none">
-          <path class="far" d="M0 18 Q 25 4 50 14 T 100 10 V30 H0Z"></path>
-          <path class="near" d="M0 25 Q 30 15 62 22 T 100 20 V30 H0Z"></path>
-        </svg>
+        {!props.band && (
+          <svg class="hills" viewBox="0 0 100 30" preserveAspectRatio="none">
+            <path class="far" d="M0 18 Q 25 4 50 14 T 100 10 V30 H0Z"></path>
+            <path class="near" d="M0 25 Q 30 15 62 22 T 100 20 V30 H0Z"></path>
+          </svg>
+        )}
         <span class="mist"></span>
         <span class="flash"></span>
       </div>
@@ -286,20 +287,24 @@ export function Sky(props: { night: boolean; weather?: Weather; still?: boolean;
       <div class="sky-front" aria-hidden="true">
         <span class="rain">
           {DROPS.map(([x, h], i) => (
-            <i class={i % 3 === 0 ? "d" : undefined} style={`left:${x}%;height:${h}px;animation-delay:-${((i * 0.37) % 1).toFixed(2)}s`}></i>
+            <i class={i % 3 === 0 ? "d" : undefined} style={`left:${x}%;--h:${h}px;animation-delay:-${((i * 0.37) % 1).toFixed(2)}s`}></i>
           ))}
         </span>
-        <span class="splash">
-          {[8, 24, 41, 57, 73, 90].map((x, i) => (
-            <i style={`left:${x}%;animation-delay:-${(i * 0.19).toFixed(2)}s`}></i>
-          ))}
-        </span>
-        <span class="fireflies">
-          {FLIES.map(([x, y], i) => (
-            <i style={`left:${x}%;top:${y}%;animation-delay:-${i * 1.1}s`}></i>
-          ))}
-        </span>
-        <Critters />
+        {!props.band && (
+          <>
+            <span class="splash">
+              {[8, 24, 41, 57, 73, 90].map((x, i) => (
+                <i style={`left:${x}%;animation-delay:-${(i * 0.19).toFixed(2)}s`}></i>
+              ))}
+            </span>
+            <span class="fireflies">
+              {FLIES.map(([x, y], i) => (
+                <i style={`left:${x}%;top:${y}%;animation-delay:-${i * 1.1}s`}></i>
+              ))}
+            </span>
+            <Critters />
+          </>
+        )}
       </div>
     </div>
   );

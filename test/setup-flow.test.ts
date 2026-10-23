@@ -75,7 +75,7 @@ describe("profiles", () => {
     const page = await html(await req("/profile", { cookie: await authCookie(householdId) }));
     const names = [...page.matchAll(/<span class="tag">([^<]+)<\/span>/g)].map((m) => m[1]);
     expect(names).toEqual(["Jon", "Ana", "Lola", "Add a person"]);
-    expect(page.match(/class="flower-shelf"/g)).toHaveLength(2);
+    expect(page.match(/class="pot-shelf"/g)).toHaveLength(2);
     expect(page).toMatch(/<a class="who-card add" href="\/setup\/profiles"/);
   });
 });

@@ -49,7 +49,7 @@ export function Layout(props: {
           {props.scripts?.map((src) => <script type="module" src={src} data-page=""></script>)}
         </head>
         <body>
-          <div class="app">
+          <div class={props.bare ? "app bare" : "app"}>
             {props.roof && (
               <div class={props.roof === "dusk" ? "g-roof roof dusk" : "g-roof roof"} aria-hidden="true">
                 <RoofGlass />

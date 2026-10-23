@@ -45,6 +45,7 @@
   --mint: #d9ecd9;
   --track: rgba(31, 51, 38, 0.08);
   --blur: blur(16px) saturate(1.5);
+  --caps-ink: #2f5640; /* the spaced-capital labels */
   color-scheme: light;
 }
 
@@ -53,6 +54,7 @@
 /* Size from the real visible area (100%), not 100dvh: installed Android apps can count the
    status bar in dvh, which pushed Save under the bottom bar. */
 html, body { margin: 0; height: 100%; }
+html { scrollbar-gutter: stable; }
 
 body {
   background-color: var(--bg);
@@ -121,32 +123,32 @@ p { margin: 6px 0; }
    fading into the garden below. */
 .app { position: relative; }
 .g-roof.roof {
-  position: absolute; top: 0; left: 0; right: 0; z-index: -1; height: 230px; margin: 0; pointer-events: none;
+  position: absolute; top: 0; left: 0; right: 0; z-index: -1; height: 230px; margin: 0; pointer-events: none; overflow: hidden;
+  background: linear-gradient(#9fd3f0, #cfe9f5 60%, rgba(238, 246, 236, 0));
   -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent);
 }
-.g-roof.roof .sun { top: 74px; left: auto; right: 40px; }
+.g-roof.roof .g-sun { top: 74px; left: auto; right: 40px; }
 .g-roof.roof .frame { top: 30px; height: 200px; opacity: 0.85; }
 /* Deleting the household: a dusk-pink sky and a low sun, so it feels different before a word is read. */
 .g-roof.roof.dusk { background: linear-gradient(#f3c3ae, #f8dccd 55%, rgba(238, 246, 236, 0)); }
-.g-roof.roof.dusk .sun { background: radial-gradient(circle, #fff1d6 0 35%, #ffb27a 62%, #f08d5c); box-shadow: 0 0 30px 12px rgba(255, 160, 110, 0.45); }
+.g-roof.roof.dusk .g-sun { background: radial-gradient(circle, #fff1d6 0 35%, #ffb27a 62%, #f08d5c); box-shadow: 0 0 30px 12px rgba(255, 160, 110, 0.45); }
 /* Bare pages (log in, setup) have no header beside the sun: it sits by the wordmark instead. */
-.app:not(:has(> .top)) > .g-roof.roof .sun { top: 60px; left: 34px; right: auto; }
+.app.bare > .g-roof.roof .g-sun { top: 60px; left: 34px; right: auto; }
 
 .back {
   display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; margin: 4px 0 0; padding: 5px 12px 5px 9px; min-height: 30px;
   font-size: 12px; font-weight: 800; text-decoration: none; border-radius: 15px;
   background: var(--glass); border: 1px solid var(--edge); box-shadow: var(--lift);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); position: relative;
 }
 .back::before { content: "‹"; font-size: 15px; line-height: 1; margin-top: -2px; }
 /* Still a 44px tap target. */
-.back { position: relative; }
 .back::after { content: ""; position: absolute; inset: -8px -4px; }
 
 /* Like the month signs in History: spaced capitals over a thin, wide title. */
 .title-card { text-align: center; margin: 22px 0 16px; }
 .title-card .kicker {
-  display: flex; align-items: center; justify-content: center; margin: 0; color: #2f5640;
+  display: flex; align-items: center; justify-content: center; margin: 0; color: var(--caps-ink);
   font-size: 10px; font-weight: 800; letter-spacing: 0.34em; text-transform: uppercase;
 }
 .title-card .kicker span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -161,8 +163,8 @@ p { margin: 6px 0; }
   border-radius: 50% 50% 50% 16px; background: var(--tint, var(--glass)); border: 1px solid var(--edge); box-shadow: var(--lift);
 }
 /* Names of parts of a page, the same spaced capitals: inside cards, and over a chart or a list. */
-section.card > h2, .section-label {
-  margin: 2px 0 10px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: #2f5640;
+section.card > h2, .section-label, .fold summary h2, .missions-head span:first-child, .rows li.group span:first-child {
+  margin: 2px 0 10px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: var(--caps-ink);
 }
 .section-label { margin: 18px 4px -2px; }
 
@@ -355,7 +357,6 @@ section.card > h2, .section-label {
 .rows li + li { border-top: 1px solid var(--line); }
 /* The garden's Needs / Wants headings, each with its subtotal. */
 .rows li.group { display: flex; justify-content: space-between; padding: 14px 0 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-.rows li.group span:first-child { font-size: 10.5px; letter-spacing: 0.3em; color: #2f5640; }
 .rows li.group, .rows li.group + li { border-top: 0; }
 .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; text-decoration: none; }
 .row .ic {
@@ -510,8 +511,8 @@ section.card > h2, .section-label {
 .plant .bob { transform-box: fill-box; transform-origin: center; animation: bob 2.2s ease-in-out infinite alternate; }
 .plant .petals { transform-box: fill-box; transform-origin: center; animation: spin 9s linear infinite, breathe 2.6s ease-in-out infinite alternate; }
 .plant .bud { animation: circle 4s linear infinite; }
-.month-shelf .month-card:nth-child(2) .sway { animation-delay: -2.3s; }
-.month-shelf .month-card:nth-child(3) .sway { animation-delay: -4.6s; }
+.pot-shelf .month-card:nth-child(2) .sway { animation-delay: -2.3s; }
+.pot-shelf .month-card:nth-child(3) .sway { animation-delay: -4.6s; }
 @keyframes sway { 0%, 100% { rotate: 0deg; } 15% { rotate: 3deg; } 30% { rotate: -1.5deg; } 50% { rotate: 5deg; } 68% { rotate: -3deg; } 84% { rotate: 1.5deg; } }
 @keyframes flutter { 0%, 100% { rotate: 0deg; } 30% { rotate: 8deg; } 62% { rotate: -5deg; } }
 @keyframes bob { from { scale: 0.85; } to { scale: 1.2; } }
@@ -550,16 +551,16 @@ section.card > h2, .section-label {
 .sky[data-weather="drizzle"] { --sky-top: #9fb4c3; --sky-mid: #c6d3dc; --sky-low: #e6ebec; --hill-far: #9fc0a0; --hill-near: #83ab86; --cloud: #eef2f5; --cloud-shade: #c9d5de; --sun: 0.2; }
 .sky[data-weather="rain"] {
   --sky-top: #7f97a9; --sky-mid: #a9bac6; --sky-low: #d6dfe3; --hill-far: #8fb193; --hill-near: #739c7a; --cloud: #dfe6ec; --cloud-shade: #aebcc8; --sun: 0;
-  --on-sky: rgba(255, 255, 255, 0.95); --on-sky-glow: rgba(0, 0, 0, 0.35);
 }
 .sky[data-weather="storm"] {
   --sky-top: #4f5e70; --sky-mid: #75859a; --sky-low: #aab6c0; --hill-far: #6f8f78; --hill-near: #587a63; --cloud: #9aa7b4; --cloud-shade: #6b7887;
-  --drop: rgba(40, 65, 95, 0.7); --sun: 0; --on-sky: rgba(255, 255, 255, 0.95); --on-sky-glow: rgba(0, 0, 0, 0.35);
+  --drop: rgba(40, 65, 95, 0.7); --sun: 0;
 }
 .sky[data-phase="night"] {
   --sky-top: #0f1c3a; --sky-mid: #22396a; --sky-low: #4b5f8c; --hill-far: #2c4660; --hill-near: #1f354b; --cloud: #5d6f8f; --cloud-shade: #45577a;
-  --drop: rgba(200, 220, 250, 0.55); --on-sky: rgba(255, 255, 255, 0.95); --on-sky-glow: rgba(0, 0, 0, 0.35);
+  --drop: rgba(200, 220, 250, 0.55);
 }
+.sky:is([data-phase="night"], [data-weather="rain"], [data-weather="storm"]) { --on-sky: rgba(255, 255, 255, 0.95); --on-sky-glow: rgba(0, 0, 0, 0.35); }
 .sky[data-phase="night"][data-weather="cloudy"] { --sky-top: #1a2333; --sky-mid: #2d3a52; --sky-low: #4b5870; --cloud: #5a6782; }
 .sky[data-phase="night"][data-weather="drizzle"], .sky[data-phase="night"][data-weather="rain"] { --sky-top: #161f2e; --sky-mid: #27344a; --sky-low: #3f4c63; --cloud: #4f5d75; --cloud-shade: #3b475d; }
 .sky[data-phase="night"][data-weather="storm"] { --sky-top: #0b1018; --sky-mid: #1b2433; --sky-low: #2f3a4c; --cloud: #3c475a; --cloud-shade: #2a3344; }
@@ -569,8 +570,8 @@ section.card > h2, .section-label {
 .sky > :not(.sky-back, .sky-front) { position: relative; }
 .sky .plant { position: relative; display: block; transition: filter 1.2s; }
 .sky[data-phase="night"] .plant { filter: brightness(0.82) saturate(0.9); }
-.sky[data-weather="drizzle"] .plant, .sky[data-weather="rain"] .plant, .sky[data-weather="storm"] .plant { filter: saturate(1.15) brightness(1.04); }
-.sky[data-phase="night"][data-weather="drizzle"] .plant, .sky[data-phase="night"][data-weather="rain"] .plant, .sky[data-phase="night"][data-weather="storm"] .plant { filter: brightness(0.82) saturate(1.05); }
+.sky:is([data-weather="drizzle"], [data-weather="rain"], [data-weather="storm"]) .plant { filter: saturate(1.15) brightness(1.04); }
+.sky[data-phase="night"]:is([data-weather="drizzle"], [data-weather="rain"], [data-weather="storm"]) .plant { filter: brightness(0.82) saturate(1.05); }
 /* Stars and fireflies twinkle, so they show and hide as a group; everything else on its own. */
 .sky .sun, .sky .moon, .sky .stars, .sky .cloud, .sky .bolt, .sky .mist, .sky .flash, .sky .rain i, .sky .splash i, .sky .fireflies { position: absolute; opacity: 0; transition: opacity 1.2s; }
 
@@ -601,11 +602,10 @@ section.card > h2, .section-label {
 .sky .bolt { top: 14%; left: 22%; width: clamp(10px, 6cqi, 22px); fill: #fff7c2; filter: drop-shadow(0 0 6px #fff7c2); }
 .sky .rain, .sky .splash { position: absolute; inset: 0; }
 .sky .fireflies { inset: 0; }
-.sky .rain i { top: -20px; width: 1.6px; border-radius: 2px; background: linear-gradient(transparent, var(--drop)); rotate: 10deg; }
+.sky .rain i { top: -20px; width: 1.6px; height: var(--h); border-radius: 2px; background: linear-gradient(transparent, var(--drop)); rotate: 10deg; }
 .sky .splash i { bottom: 6px; width: 10px; height: 3px; border-radius: 50%; border: 1px solid var(--drop); }
 .sky .fireflies i { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #fbe98a; box-shadow: 0 0 8px 3px rgba(251, 233, 138, 0.6); }
 
-.sky[data-phase="day"] .sun { opacity: var(--sun); }
 .sky[data-phase="night"] .sun { opacity: 0; }
 .sky[data-phase="night"] .moon { opacity: 1; }
 .sky[data-phase="night"]:is([data-weather="drizzle"], [data-weather="rain"], [data-weather="storm"]) .moon { opacity: 0.15; }
@@ -614,7 +614,7 @@ section.card > h2, .section-label {
 .sky .cloud.clear { opacity: 0.9; }
 .sky:not([data-weather="clear"]) .cloud.cloudy, .sky:is([data-weather="drizzle"], [data-weather="rain"], [data-weather="storm"]) .cloud { opacity: 1; }
 .sky[data-phase="day"]:is([data-weather="drizzle"], [data-weather="rain"]) .mist { opacity: 1; }
-.sky[data-weather="drizzle"] .rain i.d { opacity: 0.7; height: 6px !important; }
+.sky[data-weather="drizzle"] .rain i.d { opacity: 0.7; height: 6px; }
 .sky:is([data-weather="rain"], [data-weather="storm"]) .rain i { opacity: 1; }
 .sky[data-weather="storm"] .rain i { rotate: 22deg; }
 .sky[data-phase="night"]:is([data-weather="clear"], [data-weather="cloudy"]) .fireflies { opacity: 1; }
@@ -644,11 +644,12 @@ section.card > h2, .section-label {
 .sky[data-phase="day"]:is([data-weather="drizzle"], [data-weather="rain"]) .grasshopper { opacity: 1; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .sky .sun::before { animation: sky-spin 40s linear infinite; }
-  .sky .stars i { animation: twinkle 3s ease-in-out infinite alternate; }
+  /* Only what the hour and the weather show is animated: rain only when it rains, stars and fireflies only at night. */
+  .sky[data-phase="day"][data-weather="clear"] .sun::before { animation: spin 40s linear infinite; }
+  .sky[data-phase="night"]:is([data-weather="clear"], [data-weather="cloudy"]) .stars i { animation: twinkle 3s ease-in-out infinite alternate; }
   .sky .stars i:nth-child(2n) { animation-duration: 2.3s; }
   .sky .cloud { animation: drift linear infinite; }
-  .sky .rain i { animation: fall 0.7s linear infinite; }
+  .sky:is([data-weather="drizzle"], [data-weather="rain"], [data-weather="storm"]) .rain i { animation: fall 0.7s linear infinite; }
   .sky .rain i:nth-child(3n + 2) { animation-duration: 0.6s; }
   .sky[data-weather="drizzle"] .rain i { animation-duration: 1.6s; }
   .sky[data-weather="storm"] .rain i { animation-duration: 0.42s; }
@@ -656,25 +657,24 @@ section.card > h2, .section-label {
   .sky[data-weather="storm"] .flash { animation: lightning 6s linear infinite; }
   .sky[data-weather="storm"] .bolt { animation: bolt 6s linear infinite; }
   .sky[data-weather="storm"] .plant .sway { animation: gust 3s ease-in-out infinite; }
-  .sky .fireflies i { animation: glow 5s ease-in-out infinite; }
+  .sky[data-phase="night"]:is([data-weather="clear"], [data-weather="cloudy"]) .fireflies i { animation: glow 5s ease-in-out infinite; }
   .sky .fireflies i:nth-child(2n) { animation-duration: 6.2s; }
-  .sky .bee { animation: buzz 9s ease-in-out infinite; }
-  .sky .bee .wings { animation: whirr 0.12s linear infinite alternate; }
-  .sky .butterfly { animation: flit 13s ease-in-out infinite; }
-  .sky .butterfly .wings { animation: flap 0.4s ease-in-out infinite alternate; }
+  .sky[data-phase="day"][data-weather="clear"] .bee { animation: buzz 9s ease-in-out infinite; }
+  .sky[data-phase="day"][data-weather="clear"] .bee .wings { animation: whirr 0.12s linear infinite alternate; }
+  .sky[data-phase="day"][data-weather="clear"] .butterfly { animation: flit 13s ease-in-out infinite; }
+  .sky[data-phase="day"][data-weather="clear"] .butterfly .wings { animation: flap 0.4s ease-in-out infinite alternate; }
   /* Glides from spot to spot, hovers, turns on the spot and glides on: every leg eases in and out, so it never jumps. */
-  .sky .dragonfly { animation: hover-fly 15s cubic-bezier(0.45, 0.05, 0.3, 1) infinite; }
-  .sky .dragonfly svg { animation: hover-bob 1.3s ease-in-out infinite alternate; }
-  .sky .dragonfly .wings { animation: whirr 0.07s linear infinite alternate; }
-  .sky .bird { animation: glide 18s linear infinite; }
-  .sky .bird svg { animation: hover-bob 2.4s ease-in-out infinite alternate; }
-  .sky .bird .wings { animation: beat 0.7s ease-in-out infinite alternate; }
-  .sky .grasshopper { animation: hop 7s ease-out infinite; }
+  .sky[data-phase="day"][data-weather="cloudy"] .dragonfly { animation: hover-fly 15s cubic-bezier(0.45, 0.05, 0.3, 1) infinite; }
+  .sky[data-phase="day"][data-weather="cloudy"] .dragonfly svg { animation: hover-bob 1.3s ease-in-out infinite alternate; }
+  .sky[data-phase="day"][data-weather="cloudy"] .dragonfly .wings { animation: whirr 0.07s linear infinite alternate; }
+  .sky[data-phase="day"][data-weather="cloudy"] .bird { animation: glide 18s linear infinite; }
+  .sky[data-phase="day"][data-weather="cloudy"] .bird svg { animation: hover-bob 2.4s ease-in-out infinite alternate; }
+  .sky[data-phase="day"][data-weather="cloudy"] .bird .wings { animation: beat 0.7s ease-in-out infinite alternate; }
+  .sky[data-phase="day"]:is([data-weather="drizzle"], [data-weather="rain"]) .grasshopper { animation: hop 7s ease-out infinite; }
   .sky-label.play > * { animation: sky-title 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
   .sky-label.play > .rule { animation-delay: 0.3s; }
   .sky-label.play > .what { animation-delay: 0.6s; }
 }
-@keyframes sky-spin { to { rotate: 360deg; } }
 @keyframes twinkle { from { opacity: 0.25; } to { opacity: 1; } }
 @keyframes drift { from { translate: calc(var(--x) * -1cqi - 70px) 0; } to { translate: calc((110 - var(--x)) * 1cqi) 0; } }
 @keyframes fall { from { translate: 0 -10px; } to { translate: 30px 190px; } }
@@ -718,8 +718,9 @@ section.card > h2, .section-label {
 }
 
 /* This month's garden card is the sky: the plant stands on its hills, the words sit on frosted glass. */
-.terrarium:has(> .sky) { padding: 0; overflow: hidden; }
-.terrarium > .sky { flex: 1; min-width: 0; justify-content: flex-start; padding: 40px 12px 10px; border-radius: 26px; min-height: 200px; }
+/* Full width and open at the top: its sky carries on behind the header and the buttons (see "one sky" below). */
+.terrarium:has(> .sky) { padding: 0; margin-left: -16px; margin-right: -16px; border: 0; border-radius: 0 0 26px 26px; overflow-x: clip; }
+.terrarium > .sky { flex: 1; min-width: 0; justify-content: flex-start; padding: 40px 12px 10px; border-radius: 0 0 26px 26px; min-height: 200px; }
 .terrarium > .sky .terra-text {
   z-index: 2; padding: 10px 12px; margin-bottom: 2px; border-radius: 18px;
   background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(255, 255, 255, 0.8); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
@@ -750,11 +751,13 @@ section.card > h2, .section-label {
    builds itself as it comes into view: the plank slides out, the pots drop on one by one, the plants grow in and the
    price tags swing until they settle. Without it, everything simply stands there. */
 .greenhouse {
-  position: relative; display: flex; flex-direction: column; min-width: 0; min-height: calc(100dvh - 240px); margin: 6px -16px 8px; padding: 0 10px; overflow: hidden;
+  position: relative; display: flex; flex-direction: column; min-width: 0; min-height: calc(100dvh - 240px); margin: 6px -16px 8px; padding: 0 10px;
+  /* Open at the top for the sky (see "one sky" below), rounded at the bottom. */
+  overflow-x: clip; clip-path: inset(-100vh 0 0 0 round 0 0 26px 26px);
   background:
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.7) 0 3px, transparent 3px 25%),
     linear-gradient(#eef6ec, #e2efdf 40%, #e9e6cf 85%, #ece0c2);
-  border-radius: 26px;
+  border-radius: 0 0 26px 26px;
 }
 /* the garden bed the glass house stands on, at its very bottom */
 .g-bed { position: relative; margin: auto -10px 0; height: 44px; background: linear-gradient(transparent 14px, #a9c98f 14px, #8fb877 26px, #a07650 26px, #7d5a3c); }
@@ -762,10 +765,10 @@ section.card > h2, .section-label {
 .g-bed path { fill: none; stroke: #6aa279; stroke-width: 1.6; stroke-linecap: round; }
 .g-bed .pink { fill: #f0a3b5; } .g-bed .gold { fill: #f2c94c; }
 .g-start { margin: 26px 0 18px; text-align: center; font-size: 12.5px; font-weight: 800; color: #6b5a3a; }
-.g-far { position: absolute; inset: 0; pointer-events: none; will-change: transform; }
+.g-far { position: absolute; inset: 0; overflow: hidden; pointer-events: none; will-change: transform; }
 .g-drip { position: absolute; width: 3px; height: 7px; border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%; background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 2px rgba(120, 160, 180, 0.6); opacity: 0; }
-.g-roof { position: relative; height: 150px; margin: 0 -10px; overflow: hidden; background: linear-gradient(#9fd3f0, #cfe9f5 60%, rgba(238, 246, 236, 0)); }
-.g-roof .sun { position: absolute; top: 34px; left: 40px; width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle, #fff6c9 0 35%, #ffd65a 62%, #ffbf3c); box-shadow: 0 0 26px 10px rgba(255, 214, 90, 0.5), 0 0 80px 30px rgba(255, 214, 90, 0.25); }
+.g-roof { position: relative; height: 150px; margin: 0 -10px; }
+.g-sun { position: absolute; top: 34px; left: 40px; width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle, #fff6c9 0 35%, #ffd65a 62%, #ffbf3c); box-shadow: 0 0 26px 10px rgba(255, 214, 90, 0.5), 0 0 80px 30px rgba(255, 214, 90, 0.25); }
 .g-roof .frame { position: absolute; inset: 0; width: 100%; height: 100%; }
 .g-rays {
   position: absolute; inset: -40% 10% 0 -40%;
@@ -804,8 +807,7 @@ section.card > h2, .section-label {
 .g-pot.none svg { opacity: 0.55; }
 .g-pot .puff { position: absolute; left: 50%; bottom: -2px; width: 34px; height: 8px; translate: -50% 0; border-radius: 50%; background: radial-gradient(rgba(190, 160, 120, 0.55), transparent 70%); opacity: 0; pointer-events: none; }
 .g-pot .sway { transform-box: view-box; transform-origin: 20px 35px; }
-.g-pot .lf, .g-pot .fl { transform-box: fill-box; transform-origin: center; }
-.g-pot .spark { transform-box: fill-box; transform-origin: center; }
+.g-pot :is(.lf, .fl, .spark) { transform-box: fill-box; transform-origin: center; }
 .g-pot.sel svg { translate: 0 -10px; scale: 1.22; filter: drop-shadow(0 10px 8px rgba(31, 51, 38, 0.25)); }
 .g-pot.sel::before { content: ""; position: absolute; left: 50%; bottom: -4px; width: 64px; height: 110px; translate: -50% 0; background: radial-gradient(50% 60% at 50% 70%, rgba(255, 250, 215, 0.85), transparent 70%); z-index: -1; }
 .g-pots.focus .g-pot:not(.sel) svg { filter: saturate(0.5) brightness(0.95); opacity: 0.45; }
@@ -939,13 +941,12 @@ section.card .form input { box-shadow: none; background: rgba(255, 255, 255, 0.8
 }
 .people .rename .ok { flex: none; min-height: 44px; padding: 0 16px; border: 0; border-radius: 22px; background: var(--btn); color: #fff; font-weight: 900; cursor: pointer; }
 .people li.editing .rename { display: flex; }
-.people li.editing .n, .people li.editing .edit, .people li.editing .new { display: none; }
-.people li.editing .plus { display: none; }
+.people li.editing :is(.n, .edit, .new) { display: none; }
 /* Change PIN, folded into one line until it's wanted. */
 section.card.fold { padding: 0; }
 .fold summary { list-style: none; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 14px; cursor: pointer; }
 .fold summary::-webkit-details-marker { display: none; }
-.fold summary h2 { flex: 1; min-width: 0; margin: 0; font-size: 10.5px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: #2f5640; }
+.fold summary h2 { flex: 1; min-width: 0; margin: 0; }
 .fold summary small { display: block; margin-top: 3px; font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--muted); }
 .fold .dots { display: flex; gap: 5px; }
 .fold .dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(31, 51, 38, 0.28); }
@@ -978,7 +979,7 @@ section.card.fold { padding: 0; }
   text-align: center; padding: 10px 4px 9px; border-radius: 18px; font-size: 11.5px; line-height: 1.3; color: var(--muted);
   background: var(--glass); border: 1px solid var(--edge); box-shadow: var(--lift);
 }
-.perks b { display: block; margin-bottom: 3px; font-size: 9.5px; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: #2f5640; }
+.perks b { display: block; margin-bottom: 3px; font-size: 9.5px; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; color: var(--caps-ink); }
 a.save { display: flex; align-items: center; justify-content: center; text-decoration: none; }
 .or { display: flex; align-items: center; gap: 10px; margin: 22px 0 10px; font-size: 10px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); }
 .or i { flex: 1; height: 1px; background: rgba(31, 51, 38, 0.15); }
@@ -990,9 +991,11 @@ a.save { display: flex; align-items: center; justify-content: center; text-decor
 .login summary::-webkit-details-marker { display: none; }
 .login[open] summary { display: none; }
 /* Who's gardening: everyone's flower in a pot, three to a greenhouse shelf, with their name on a tag under it. */
-.flower-shelf { margin: 26px 4px 68px; }
-.flower-shelf .pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: end; padding: 0 6px; }
-.flower-shelf form { margin: 0; }
+/* Pots on greenhouse shelves, three to a plank (PotShelves): who's gardening, and the gallery. Each one's name hangs on a tag under the plank. */
+.pot-shelf { margin: 22px 4px 72px; }
+.pot-shelf .pots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: end; padding: 0 6px; }
+.pot-shelf form { margin: 0; }
+.pot-shelf .tag { position: absolute; left: -4px; right: -4px; top: calc(100% + 34px); text-align: center; }
 .who-card {
   position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; padding: 0; cursor: pointer;
   border: 0; background: none; text-decoration: none; transform-origin: 50% 100%;
@@ -1010,10 +1013,7 @@ a.save { display: flex; align-items: center; justify-content: center; text-decor
   display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin-bottom: 8px; border-radius: 50%;
   border: 1.5px dashed rgba(31, 51, 38, 0.3); color: var(--muted); font-size: 24px; font-weight: 400;
 }
-.who-card .tag {
-  position: absolute; left: -4px; right: -4px; top: calc(100% + 34px); text-align: center;
-  font-size: 14px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+.who-card .tag { font-size: 14px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .who-card.add .tag { font-size: 12px; font-weight: 800; color: var(--muted); }
 .who-card:active .avatar { translate: 0 1px; }
 
@@ -1037,7 +1037,6 @@ a.save { display: flex; align-items: center; justify-content: center; text-decor
   background: var(--solid); border: 1px solid var(--edge); box-shadow: var(--lift);
 }
 .missions-head { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 0 4px; }
-.missions-head span:first-child { font-size: 10.5px; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; color: #2f5640; }
 .missions-head span:last-child { color: #2f6b3c; font-size: 12px; font-weight: 800; }
 .missions ul { list-style: none; margin: 0; padding: 0; }
 .missions .m { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; }
@@ -1062,12 +1061,9 @@ a.save { display: flex; align-items: center; justify-content: center; text-decor
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* ---------- gallery: every month's plant, three to a greenhouse shelf, its month on a tag under it ---------- */
-.month-shelf { margin: 18px 0 76px; }
-.month-shelf .plants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; padding: 0 8px; }
 .month-card { position: relative; display: block; text-decoration: none; transform-origin: 50% 100%; }
 .month-card svg { display: block; width: 100%; max-width: 92px; height: auto; margin: 0 auto -2px; }
 .month-card.growing svg { filter: drop-shadow(0 0 14px rgba(255, 230, 140, 0.9)); }
-.month-card .tag { position: absolute; left: -2px; right: -2px; top: calc(100% + 34px); text-align: center; }
 .month-card .tag b { display: block; font-size: 10px; font-weight: 800; letter-spacing: 0.26em; text-transform: uppercase; }
 .month-card .tag span { display: block; font-size: 11px; color: var(--muted); }
 .month-card.growing .tag b { color: #2f6b3c; }
@@ -1141,7 +1137,7 @@ a.save { display: flex; align-items: center; justify-content: center; text-decor
 main:has(.guide-sec), .legal { counter-reset: chapter; }
 .guide-sec h2, .legal h2 {
   counter-increment: chapter; display: flex; align-items: center;
-  font-size: 11px; font-weight: 800; letter-spacing: 0.28em; text-transform: uppercase; color: #2f5640;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.28em; text-transform: uppercase; color: var(--caps-ink);
 }
 .guide-sec h2::before, .legal h2::before { content: counter(chapter, decimal-leading-zero); margin-right: 0.4em; opacity: 0.6; }
 .guide-sec h2::after, .legal h2::after { content: ""; flex: 1; height: 1px; margin-left: 10px; background: currentColor; opacity: 0.18; }
@@ -1216,7 +1212,7 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
   .title-card > :nth-child(3) { animation-delay: 0.24s; }
   .title-card > :nth-child(4) { animation-delay: 0.36s; }
   .title-card .kicker { animation-name: page-track; }
-  .title-card ~ :is(.card, section, .perks, .cat-total, .weeks, .rows, .month-shelf, .flower-shelf, .msg) { animation: page-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s both; }
+  .title-card ~ :is(.card, section, .perks, .cat-total, .weeks, .rows, .pot-shelf, .msg) { animation: page-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s both; }
   .title-card ~ section:nth-of-type(2) { animation-delay: 0.4s; }
   .title-card ~ section:nth-of-type(3) { animation-delay: 0.5s; }
   .title-card ~ section:nth-of-type(n + 4) { animation-delay: 0.6s; }
@@ -1230,21 +1226,14 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
 /* ---------- one sky over add, the garden and history ---------- */
 /* The garden's card and History's greenhouse open up to the top of the screen: their sky carries on, in its own top
    colour, behind the header and the buttons (which float on it), and is cut off at the screen's edge. */
-.terrarium:has(> .sky), .greenhouse { margin-left: -16px; margin-right: -16px; border: 0; border-radius: 0 0 26px 26px; }
-.terrarium:has(> .sky) { overflow: visible; clip-path: inset(-100vh 0 0 0 round 0 0 26px 26px); }
-.terrarium > .sky { border-radius: 0 0 26px 26px; }
 .terrarium > .sky::before, .roof-sky::before {
   content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 100vh; background: var(--sky-top); transition: background-color 1.2s;
 }
 .app:has(:is(.terrarium > .sky, .roof-sky)) :is(.install, .top, main > .seg, main > .chips) { position: relative; z-index: 2; }
-/* History's roof is that same live sky behind the glass, fading into the greenhouse; no hills, no critters in there. */
-.greenhouse { overflow: visible; clip-path: inset(-100vh 0 0 0 round 0 0 26px 26px); }
-.greenhouse .g-far { overflow: hidden; }
-.g-roof:has(> .roof-sky) { overflow: visible; background: none; }
+/* History's roof is that same live sky behind the glass, fading into the greenhouse. */
 .roof-sky { position: absolute; inset: 0; display: block; padding: 0; }
 .roof-sky > .sky-back, .roof-sky > .sky-front { -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); border-radius: 0; }
-.roof-sky :is(.hills, .critter, .splash, .fireflies) { display: none; }
-.roof-sky .sun { top: 18px; left: auto; right: 22px; }
+.roof-sky .sun { top: 18px; right: 22px; }
 .roof-sky .moon { top: 18px; right: 24px; }
 .greenhouse:has(.roof-sky[data-phase="night"]) {
   background:
@@ -1253,10 +1242,9 @@ main:has(.guide-sec), .legal { counter-reset: chapter; }
 }
 /* Add: a band of it behind the header and the amount, fading out before the category button. */
 .add-sky {
-  position: absolute; top: 0; left: 0; right: 0; z-index: -1; height: 190px; min-height: 0; padding: 0; display: block; pointer-events: none;
+  position: absolute; top: 0; left: 0; right: 0; z-index: -1; height: 190px; min-height: 0; padding: 0; display: block; overflow-x: clip; pointer-events: none;
   -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent);
 }
-.add-sky :is(.hills, .critter, .splash, .fireflies) { display: none; }
 .add-sky .sun, .add-sky .moon { top: 54px; right: 22px; }
 .sky.add-sky > .sky-label { top: 50px; right: 60px; }
 /* After dark the words on the sky turn light: the wordmark, Add's amount; the buttons on it get more glass. */

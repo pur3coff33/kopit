@@ -33,7 +33,7 @@ add.get("/", requireSession, requireProfile, async (c) => {
   return c.html(
     <Layout title="kop.it" tab="add" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/add.js", "/js/sky.js"]}>
       {/* The garden's live sky, as a band behind the header and the amount. */}
-      <Sky night={isNight(now)} quiet label class="add-sky" />
+      <Sky night={isNight(now)} band label class="add-sky" />
       <section
         id="add"
         data-profile-id={String(c.get("profileId"))}

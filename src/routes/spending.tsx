@@ -10,6 +10,7 @@ import { formatPeso } from "../lib/money";
 import { breakdown, categoryPace, pace, paceText, rangeTotal, weeklyTotals, type BreakdownRow } from "../lib/stats";
 import { addMonths, dayStart, isNight, rangeLabel, resolveRange, toDateInput, type Range, type RangeKind } from "../lib/time";
 import { requireProfile, requireSession } from "../middleware/auth";
+import { plural } from "../lib/aligned";
 import { AmountsEye, Back, Hideable, TitleCard, herePath } from "../views/components";
 import { Plant, Sky } from "../views/garden";
 import { Layout } from "../views/layout";
@@ -89,8 +90,6 @@ function Filters({ view }: { view: View }) {
     </>
   );
 }
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 spending.get("/spending", async (c) => {
   const householdId = c.get("householdId");
@@ -198,7 +197,13 @@ spending.get("/spending", async (c) => {
       <Filters view={view} />
       <section class="terrarium" data-spot="garden">
         {/* Only this month's card is today's sky; past months are records. */}
-        {thisMonth ? <Sky night={isNight(now)} label>{card}</Sky> : card}
+        {thisMonth ? (
+          <Sky night={isNight(now)} ask label>
+            {card}
+          </Sky>
+        ) : (
+          card
+        )}
       </section>
       {missions && (
         <section class="missions" data-spot="missions">
@@ -346,40 +351,40 @@ spending.get("/spending/category/:id", async (c) => {
           </span>
         )}
       </div>
-      {weeks.length >= 2 && <p class="section-label">By week</p>}
       {weeks.length >= 2 && (
-        <div class="weeks" aria-hidden="true">
-          {weeks.map((w) => (
-            <div class={w.start === thisWeek && view.range.end > now ? "wk now" : "wk"}>
-              <i style={`height:${Math.max(4, Math.round((w.total / tallest) * 78))}%;background:${col.fill}`}></i>
-              <span>{shortDay(Math.max(w.start, view.range.start))}</span>
-            </div>
-          ))}
-        </div>
+        <>
+          <p class="section-label">By week</p>
+          <div class="weeks" aria-hidden="true">
+            {weeks.map((w) => (
+              <div class={w.start === thisWeek && view.range.end > now ? "wk now" : "wk"}>
+                <i style={`height:${Math.max(4, Math.round((w.total / tallest) * 78))}%;background:${col.fill}`}></i>
+                <span>{shortDay(Math.max(w.start, view.range.start))}</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
       {rows.length === 0 ? (
         <p class="muted">Nothing here for this range.</p>
       ) : (
-        <p class="section-label">
-          {rows.length} expense{rows.length === 1 ? "" : "s"}
-        </p>
-      )}
-      {rows.length > 0 && (
-        <ul class="rows">
-          {rows.map((r) => (
-            <li>
-              <a class="row" href={`/entries/${r.id}/edit?back=${encodeURIComponent(c.req.path + "?" + q)}`}>
-                <span class="mid">
-                  <span class="nm">
-                    <span>{r.note ?? shortDay(r.spentAt)}</span>
-                    <span>{formatPeso(r.amount)}</span>
+        <>
+          <p class="section-label">{plural(rows.length, "expense")}</p>
+          <ul class="rows">
+            {rows.map((r) => (
+              <li>
+                <a class="row" href={`/entries/${r.id}/edit?back=${encodeURIComponent(c.req.path + "?" + q)}`}>
+                  <span class="mid">
+                    <span class="nm">
+                      <span>{r.note ?? shortDay(r.spentAt)}</span>
+                      <span>{formatPeso(r.amount)}</span>
+                    </span>
+                    <span class="sub">{r.note ? `${shortDay(r.spentAt)} · ${r.who}` : r.who}</span>
                   </span>
-                  <span class="sub">{r.note ? `${shortDay(r.spentAt)} · ${r.who}` : r.who}</span>
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </Layout>,
   );

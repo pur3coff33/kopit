@@ -13,8 +13,10 @@ describe("one sky over add, the garden and history", () => {
       expect(body).toMatch(/data-sky="[^"]*" data-phase="(day|night)" data-weather="clear"/);
       expect(body).toContain("data-sky-label");
     }
-    expect(garden).toContain('data-sky=""');
-    expect(add).toMatch(/class="sky add-sky" data-sky="quiet"/);
-    expect(history).toMatch(/<div class="g-roof" aria-hidden="true"><div class="sky roof-sky" data-sky="quiet"/);
+    expect(garden).toContain('data-sky="ask"');
+    expect(add).toMatch(/class="sky add-sky" data-sky=""/);
+    expect(history).toMatch(/<div class="g-roof" aria-hidden="true"><div class="sky roof-sky" data-sky=""/);
+    // The bands are just sky: no hills or creatures sent to be hidden.
+    for (const body of [add, history]) expect(body).not.toMatch(/class="hills"|class="critter/);
   });
 });

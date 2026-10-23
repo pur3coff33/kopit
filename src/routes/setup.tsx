@@ -7,7 +7,7 @@ import { createHousehold, isFull } from "../lib/households";
 import { PROFILE_COOKIE, SESSION_COOKIE, createSession, setLongCookie } from "../lib/session";
 import { requireSession } from "../middleware/auth";
 import { Avatar, Welcome } from "../views/garden";
-import { PinInput, TitleCard } from "../views/components";
+import { PinInput, PotShelves, TitleCard } from "../views/components";
 import { Layout } from "../views/layout";
 
 export const setup = new Hono<AppEnv>();
@@ -163,12 +163,7 @@ setup.get("/profile", requireSession, async (c) => {
   return c.html(
     <Layout title="Who are you?" roof="day">
       <TitleCard kicker="This phone" title="Who's gardening?" sub="Tap your flower. Each phone remembers its gardener." />
-      {Array.from({ length: Math.ceil(pots.length / 3) }, (_, r) => (
-        <div class="flower-shelf">
-          <div class="pick">{pots.slice(r * 3, r * 3 + 3)}</div>
-          <div class="g-plank"></div>
-        </div>
-      ))}
+      <PotShelves items={pots} />
     </Layout>,
   );
 });

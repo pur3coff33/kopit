@@ -201,6 +201,23 @@ export const herePath = (url: string) => {
   return u.pathname + u.search;
 };
 
+/**
+ * Pots on greenhouse shelves, three to a plank (who's gardening, the gallery). Each item stands on the plank with its
+ * name on a `.tag` under it.
+ */
+export function PotShelves({ items }: { items: Child[] }) {
+  return (
+    <>
+      {Array.from({ length: Math.ceil(items.length / 3) }, (_, r) => (
+        <div class="pot-shelf">
+          <div class="pots">{items.slice(r * 3, r * 3 + 3)}</div>
+          <div class="g-plank"></div>
+        </div>
+      ))}
+    </>
+  );
+}
+
 /** Back to the screen this one came from: a small glass button at the top. */
 export function Back({ href, children }: { href: string; children: Child }) {
   return (

@@ -1,12 +1,12 @@
 import { Hono } from "hono";
 import type { Child } from "hono/jsx";
-import { and, desc, eq, gte, lt, min, sql, sum } from "drizzle-orm";
+import { and, desc, eq, gte, lt, min, sum } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { categories, entries, profiles } from "../db/schema";
 import type { AppEnv } from "../env";
 import type { CategoryKey } from "../lib/categories";
 import { categoryColor } from "../lib/colors";
-import { dayResults, isGood, isPerfect, missionDays, monthGardens, monthName, type DayMissions, type DayResult } from "../lib/garden";
+import { dayResults, isGood, isPerfect, missionDays, monthGardens, monthKey, monthName, spentMonth, type DayMissions, type DayResult } from "../lib/garden";
 import { formatPeso } from "../lib/money";
 import { DAY_MS, MANILA_OFFSET_MS, addMonths, clockTime, dayKey, dayStart, fromDateInput, isNight, monthStart, toDateInput, weekStart } from "../lib/time";
 import { WEEK_MS } from "../lib/week";
@@ -233,7 +233,7 @@ function ExpenseRow({ r, i, back }: { r: Row; i: number; back?: string }) {
   );
 }
 
-type Day = { day: number; kind: PotKind; rows: Row[]; total: number; missions?: DayMissions; big: boolean };
+type Day = { day: number; kind: PotKind; rows: Row[]; total: number; missions?: DayMissions; big?: boolean };
 
 /** A week's shelf: seven pots with their price tags, and under it the receipt of the day that's open. */
 function Shelf(props: {
@@ -251,18 +251,20 @@ function Shelf(props: {
   spot?: boolean;
 }) {
   const { week, days, now, open } = props;
+  const headings = days.map((d) => dayHeading(startOf(d.day), now));
+  // Pots and their tags build in left to right, a beat apart.
+  const delay = (k: number) => `--d:${(0.25 + k * 0.09).toFixed(2)}s`;
   const pots = days.map((d, k) => {
-    const heading = dayHeading(startOf(d.day), now);
     const said = d.kind === "none" ? "" : d.rows.length ? formatPeso(d.total) : props.nothing;
     return (
       <button
         type="button"
         class={`g-pot ${d.kind}${k === open ? " sel" : ""}`}
         data-k={k}
-        style={`--d:${(0.25 + k * 0.09).toFixed(2)}s`}
+        style={delay(k)}
         disabled={d.kind === "none"}
         aria-pressed={d.kind === "none" ? undefined : k === open ? "true" : "false"}
-        aria-label={d.kind === "none" ? undefined : `${heading}: ${said}`}
+        aria-label={d.kind === "none" ? undefined : `${headings[k]}: ${said}`}
       >
         <PotPlant kind={d.kind} />
         <span class="puff"></span>
@@ -301,7 +303,7 @@ function Shelf(props: {
       <div class="g-plank"></div>
       <div class="g-tags" aria-hidden="true">
         {days.map((d, k) => (
-          <div class={`g-tag ${d.kind === "none" ? "f" : d.kind === "today" ? "today" : !d.rows.length ? "q" : ""}`} style={`--d:${(0.25 + k * 0.09).toFixed(2)}s`}>
+          <div class={`g-tag ${d.kind === "none" ? "f" : d.kind === "today" ? "today" : !d.rows.length ? "q" : ""}`} style={delay(k)}>
             <i>
               {LETTERS[k]} {Number(toDateInput(startOf(d.day)).slice(8))}
             </i>
@@ -315,7 +317,7 @@ function Shelf(props: {
             d.kind === "none" ? null : (
               <div class="g-receipt" data-k={k} hidden={k !== open} style={`--x:${(((k + 0.5) / 7) * 100).toFixed(1)}%`} data-spot={props.spot && k === open ? "day" : undefined}>
                 <div class="sh">
-                  <b>{dayHeading(startOf(d.day), now)}</b>
+                  <b>{headings[k]}</b>
                   <span>{formatPeso(d.total)}</span>
                 </div>
                 {d.big && <p class="sm">📈 Biggest day this week</p>}
@@ -347,7 +349,7 @@ function Chapter(props: { start: number; chapter: number; stats: Child; wrapped:
         <h2 class="m">{monthName(props.start)}</h2>
         <div class="s">{props.stats}</div>
         {props.wrapped && (
-          <a class="g-wrap" href={`/wrapped/${toDateInput(props.start).slice(0, 7)}?from=history`}>
+          <a class="g-wrap" href={`/wrapped/${monthKey(props.start)}?from=history`}>
             ▶ {monthName(props.start)}, wrapped
           </a>
         )}
@@ -357,7 +359,7 @@ function Chapter(props: { start: number; chapter: number; stats: Child; wrapped:
 }
 
 /** The glass house the shelves stand in (decorative), its roof the garden's own live sky: the same weather, day or night. */
-function Greenhouse({ children, after, night }: { children: Child; after?: Child; night: boolean }) {
+function Greenhouse({ children, night }: { children: Child; night: boolean }) {
   return (
     <div class="greenhouse">
       <div class="g-far" aria-hidden="true">
@@ -366,14 +368,13 @@ function Greenhouse({ children, after, night }: { children: Child; after?: Child
         ))}
       </div>
       <div class="g-roof" aria-hidden="true">
-        <Sky night={night} quiet label class="roof-sky" />
+        <Sky night={night} band label class="roof-sky" />
         <RoofGlass sun={false}>
           {VINE("left")}
           {VINE("right")}
         </RoofGlass>
       </div>
       {children}
-      {after}
       <div class="g-bed" aria-hidden="true">
         <svg viewBox="0 0 400 30" preserveAspectRatio="none">
           {Array.from({ length: 40 }, (_, k) => {
@@ -416,7 +417,7 @@ function HistorySample({ name, now }: { name: string; now: number }) {
     const day = dayKey(week) + k;
     const kind = day > today ? "none" : day === today ? "today" : looks[k];
     const mine = day === today ? rows : kind === "quiet" ? [] : [{ ...rows[0], spentAt: startOf(day) + 12 * 3_600_000 }];
-    return { day, kind, rows: mine, total: mine.reduce((s, r) => s + r.amount, 0), missions: day === today ? missions : undefined, big: false };
+    return { day, kind, rows: mine, total: mine.reduce((s, r) => s + r.amount, 0), missions: day === today ? missions : undefined };
   });
   return (
     <template data-tour-sample="#history-empty">
@@ -512,17 +513,20 @@ history.get("/history", async (c) => {
   }
   // The plants are the household's garden whoever is picked; the missions behind them show for Everyone only.
   const months = [...new Set(weeks.map((w) => shelfMonth(w, now)))].sort((a, b) => a - b);
+  // One day-results lookup covers both the shelves and, for Everyone, the month signs above them.
+  const lastDay = Math.max(to, months.length ? addMonths(months[months.length - 1], 1) : to);
+  const days = dayResults(c.env, householdId, createdAt, dayKey(Math.min(from, months[0] ?? from)), dayKey(lastDay), now);
   const [results, missions, gardens, mine] = await Promise.all([
-    dayResults(c.env, householdId, createdAt, dayKey(from), dayKey(to), now),
+    days,
     everyone ? missionDays(c.env, householdId, createdAt, [...byDay.keys()], now) : Promise.resolve(null),
-    everyone ? monthGardens(c.env, householdId, createdAt, now, months) : Promise.resolve([]),
+    everyone ? monthGardens(c.env, householdId, createdAt, now, months, days) : Promise.resolve([]),
     everyone || months.length === 0
       ? Promise.resolve([])
       : db
-          .select({ month: sql<string>`strftime('%Y-%m', (${entries.spentAt} + 28800000) / 1000, 'unixepoch')`, total: sum(entries.amountCentavos) })
+          .select({ month: spentMonth, total: sum(entries.amountCentavos) })
           .from(entries)
           .where(and(scope, gte(entries.spentAt, months[0]), lt(entries.spentAt, addMonths(months[months.length - 1], 1))))
-          .groupBy(sql`1`),
+          .groupBy(spentMonth),
   ]);
   const hidden = c.get("hideAmounts");
   const monthStats = (m: number): Child => {
@@ -536,7 +540,7 @@ history.get("/history", async (c) => {
         </>
       );
     }
-    const total = Number(mine.find((x) => x.month === toDateInput(m).slice(0, 7))?.total ?? 0);
+    const total = Number(mine.find((x) => x.month === monthKey(m))?.total ?? 0);
     return (
       <>
         <Hideable centavos={total} hidden={hidden} />
@@ -553,6 +557,7 @@ history.get("/history", async (c) => {
   const back = encodeURIComponent(`/history?who=${who}`);
   const nothing = !everyone && whoName ? `nothing by ${whoName}` : "nothing spent";
   const shelves: Child[] = [];
+  const thisMonday = weekStart(now);
   let month = before === null ? null : shelfMonth(before, now); // the month the last batch ended in already has its sign
   for (const w of weeks) {
     const m = shelfMonth(w, now);
@@ -560,28 +565,29 @@ history.get("/history", async (c) => {
       month = m;
       shelves.push(<Chapter start={m} chapter={chapterOf(m)} stats={monthStats(m)} wrapped={everyone && m < monthStart(now) && addMonths(m, 1) > createdAt} />);
     }
-    const days: Day[] = Array.from({ length: 7 }, (_, k) => {
+    const lists = Array.from({ length: 7 }, (_, k) => byDay.get(dayKey(w) + k) ?? []);
+    const totals = lists.map((list) => list.reduce((s, r) => s + r.amount, 0));
+    // "Biggest day this week", once there are at least three finished days with spending to compare.
+    const spent = totals.map((t, k) => (lists[k].length && dayKey(w) + k < today ? k : -1)).filter((k) => k >= 0);
+    const biggest = spent.length >= 3 ? spent.reduce((a, b) => (totals[b] > totals[a] ? b : a)) : -1;
+    const days: Day[] = lists.map((list, k) => {
       const day = dayKey(w) + k;
-      const list = byDay.get(day) ?? [];
       return {
         day,
         kind: potKind(day, today, firstDay, list.length > 0, results.get(day)),
         rows: list,
-        total: list.reduce((s, r) => s + r.amount, 0),
+        total: totals[k],
         missions: missions?.get(day),
-        big: false,
+        big: k === biggest,
       };
     });
-    const spending = days.filter((d) => d.rows.length && d.day < today);
-    if (spending.length >= 3) spending.reduce((a, b) => (b.total > a.total ? b : a)).big = true;
-    const thisWeek = w === weekStart(now);
+    const thisWeek = w === thisMonday;
     const shown = days.filter((d) => d.kind !== "none" && d.day < today);
     const grew = shown.filter((d) => {
       const r = results.get(d.day);
       return r && isGood(r);
     }).length;
-    const finished = w + WEEK_MS <= weekStart(now);
-    const weekTotal = days.reduce((s, d) => s + d.total, 0);
+    const weekTotal = totals.reduce((s, t) => s + t, 0);
     const sub = thisWeek ? "still growing" : everyone ? (grew === 7 ? "✨ every day grew" : `${grew} of ${shown.length} days grew`) : `${formatPeso(weekTotal)} by ${whoName}`;
     shelves.push(
       <Shelf
@@ -591,7 +597,7 @@ history.get("/history", async (c) => {
         label={thisWeek ? `This week · ${weekLabel(w)}` : weekLabel(w)}
         sub={sub}
         lights={everyone && grew === 7}
-        recap={everyone && finished && w + WEEK_MS > createdAt ? { total: weekTotal } : undefined}
+        recap={everyone && !thisWeek && w + WEEK_MS > createdAt ? { total: weekTotal } : undefined}
         open={thisWeek ? today - dayKey(w) : null}
         nothing={nothing}
         back={back}
@@ -605,19 +611,15 @@ history.get("/history", async (c) => {
   if (!more) shelves.push(<p class="g-start">🌱 Your garden began here · {dayHeading(Math.min(createdAt, oldest ?? createdAt), now)}</p>);
   return c.html(
     page(
-      <Greenhouse
-        night={isNight(now)}
-        after={
-          nextHref && (
-            <a class="more" id="more-history" href={nextHref}>
-              Show more
-            </a>
-          )
-        }
-      >
+      <Greenhouse night={isNight(now)}>
         <section class="g-house" id="history">
           {shelves}
         </section>
+        {nextHref && (
+          <a class="more" id="more-history" href={nextHref}>
+            Show more
+          </a>
+        )}
       </Greenhouse>,
     ),
   );

@@ -200,21 +200,33 @@ export type MonthGarden = {
   topTitle: string | null;
 };
 
-const monthKey = (ms: number) => toDateInput(ms).slice(0, 7);
+/** "2026-10": a Manila month, as `spentMonth` groups expenses by. */
+export const monthKey = (ms: number) => toDateInput(ms).slice(0, 7);
+/** The Manila month an expense was spent in, as SQL ("2026-10"). */
+export const spentMonth = sql<string>`strftime('%Y-%m', (${entries.spentAt} + 28800000) / 1000, 'unixepoch')`;
 
-/** Month gardens for the given month starts: one grouped totals query and one day-results lookup for all of them. */
-async function buildMonths(env: Env, householdId: number, createdAt: number, now: number, starts: number[]): Promise<MonthGarden[]> {
+/**
+ * Month gardens for `starts` (Manila month starts, oldest first): one grouped totals query and one day-results lookup
+ * for all of them. `days`: those day results when the caller is already fetching them (they must cover every month).
+ */
+export async function monthGardens(
+  env: Env,
+  householdId: number,
+  createdAt: number,
+  now: number,
+  starts: number[],
+  days?: Promise<Map<number, DayResult>>,
+): Promise<MonthGarden[]> {
   if (starts.length === 0) return [];
   const from = addMonths(starts[0], -1); // the month before the first, for its bloom
   const to = addMonths(starts[starts.length - 1], 1);
-  const month = sql<string>`strftime('%Y-%m', (${entries.spentAt} + 28800000) / 1000, 'unixepoch')`;
-  const [totals, days] = await Promise.all([
+  const [totals, results] = await Promise.all([
     getDb(env)
-      .select({ month, total: sum(entries.amountCentavos), n: count() })
+      .select({ month: spentMonth, total: sum(entries.amountCentavos), n: count() })
       .from(entries)
       .where(and(eq(entries.householdId, householdId), gte(entries.spentAt, from), lt(entries.spentAt, to)))
-      .groupBy(month),
-    dayResults(env, householdId, createdAt, dayKey(starts[0]), dayKey(to), now),
+      .groupBy(spentMonth),
+    days ?? dayResults(env, householdId, createdAt, dayKey(starts[0]), dayKey(to), now),
   ]);
   const byMonth = new Map(totals.map((t) => [t.month, { total: Number(t.total ?? 0), n: t.n }]));
   return starts.map((start) => {
@@ -228,7 +240,7 @@ async function buildMonths(env: Env, householdId: number, createdAt: number, now
     let missionsDone = 0;
     const typeCounts = new Map<string, number>();
     for (let d = dayKey(start); d < dayKey(end); d++) {
-      const r = days.get(d);
+      const r = results.get(d);
       if (!r) continue;
       if (isGood(r)) goodDays++;
       if (isPerfect(r)) perfectDays++;
@@ -252,21 +264,16 @@ async function buildMonths(env: Env, householdId: number, createdAt: number, now
   });
 }
 
-/** Month gardens for `starts` (Manila month starts, oldest first), worked out together. */
-export async function monthGardens(env: Env, householdId: number, createdAt: number, now: number, starts: number[]): Promise<MonthGarden[]> {
-  return buildMonths(env, householdId, createdAt, now, starts);
-}
-
 /** One month of the household's garden. `start` is the Manila start of the month. */
 export async function monthGarden(env: Env, householdId: number, start: number, createdAt: number, now: number): Promise<MonthGarden> {
-  return (await buildMonths(env, householdId, createdAt, now, [start]))[0];
+  return (await monthGardens(env, householdId, createdAt, now, [start]))[0];
 }
 
 /** Every month since the household began, oldest first, this month (still growing) last. */
 export async function gardenMonths(env: Env, householdId: number, createdAt: number, now: number): Promise<MonthGarden[]> {
   const starts: number[] = [];
   for (let m = monthStart(createdAt); m <= monthStart(now); m = addMonths(m, 1)) starts.push(m);
-  return buildMonths(env, householdId, createdAt, now, starts);
+  return monthGardens(env, householdId, createdAt, now, starts);
 }
 
 /** Good and perfect days in [start, end), as far as they're known (finished days only). */
