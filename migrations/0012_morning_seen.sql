@@ -1,0 +1,1 @@
+ALTER TABLE `profiles` ADD `morning_seen` text DEFAULT '{}' NOT NULL;

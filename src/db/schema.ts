@@ -20,6 +20,8 @@ export const profiles = sqliteTable("profiles", {
   hideAmounts: integer("hide_amounts", { mode: "boolean" }).notNull().default(false),
   /** The screens whose first-time tour this person has had (or closed), comma-separated: "add,garden". */
   toursSeen: text("tours_seen").notNull().default(""),
+  /** What this person has already had of the day's start (morning.ts), as JSON: {"leaf","note":"YYYY-MM-DD","wrapped":"YYYY-MM","week":"YYYY-MM-DD"}. */
+  morningSeen: text("morning_seen").notNull().default("{}"),
   createdAt: integer("created_at").notNull(),
 });
 

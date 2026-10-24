@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-// @ts-ignore plain browser module
-import { shouldShowWrapped } from "../public/js/leaf.js";
 import { addMonths, toDateInput } from "../src/lib/time";
 import { addEntry, authCookie, html, req, seedHousehold } from "./helpers";
 
@@ -61,15 +59,10 @@ describe("Wrapped", () => {
     expect(svg).not.toContain("₱");
   });
 
-  it("is due on the add screen once last month is over", async () => {
+  it("is due on whichever screen opens first once last month is over", async () => {
     const { cookie, last } = await household(50000, 40000);
-    expect(await html(await req("/", { cookie }))).toContain(`data-wrapped="${key(last)}"`);
-  });
-
-  it("plays once per phone", () => {
-    expect(shouldShowWrapped("2026-10", null)).toBe(true);
-    expect(shouldShowWrapped("2026-10", "2026-09")).toBe(true);
-    expect(shouldShowWrapped("2026-10", "2026-10")).toBe(false);
-    expect(shouldShowWrapped(null, null)).toBe(false);
+    const res = await req("/api/morning", { cookie });
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { recap: string }).recap).toMatch(new RegExp(`^/wrapped/${key(last)}`));
   });
 });

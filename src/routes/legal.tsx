@@ -47,6 +47,7 @@ legal.get("/privacy", (c) =>
         <li>Every expense: the amount, its category, the optional note, who logged it and when.</li>
         <li>How each day's missions went (to grow the plant).</li>
         <li>Each day's note: a few lines about that day's spending, written by AI (see below).</li>
+        <li>Which of the day's leaf, note and recaps each person has already seen, so they show once.</li>
         <li>Logins (as hashed tokens) and failed PIN tries, to keep the household safe.</li>
         <li>When an expense is deleted, only its random id and the time, so an offline phone can't send it back.</li>
       </ul>
@@ -57,7 +58,7 @@ legal.get("/privacy", (c) =>
         <li>Two cookies: one keeps you logged in, the other remembers who the phone belongs to.</li>
         <li>Expenses saved without signal, until they're sent.</li>
         <li>A copy of the add screen, so it opens offline.</li>
-        <li>Small notes like "this leaf was already celebrated", and the last weather, rounded location and town name for the sky.</li>
+        <li>Small notes like "nothing more to show today", and the last weather, rounded location and town name for the sky.</li>
       </ul>
 
       <h2>Your location and the weather</h2>

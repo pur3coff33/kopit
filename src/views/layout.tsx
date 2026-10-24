@@ -44,6 +44,13 @@ export function Layout(props: {
           <link rel="preload" href="/fonts/nunito-latin-ext-wght-normal.woff2" as="font" type="font/woff2" crossorigin="" />
           <link rel="stylesheet" href="/app.css" />
           <script type="module" src="/js/install.js"></script>
+          {/* The start of the day (a recap, the morning card) on whichever screen a person opens first. */}
+          {props.profileName && !props.bare && (
+            <>
+              <meta name="kopit-person" content={props.profileName} />
+              <script type="module" src="/js/morning.js"></script>
+            </>
+          )}
           {/* The router runs first; it starts each page script (data-page) and stops it when you leave. */}
           <script type="module" src="/js/router.js"></script>
           {props.scripts?.map((src) => <script type="module" src={src} data-page=""></script>)}

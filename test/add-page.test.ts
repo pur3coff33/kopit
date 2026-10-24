@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { entries } from "../src/db/schema";
 import { FIXED } from "../src/lib/categories";
-import { DAY_MS, dayStart, toDateInput } from "../src/lib/time";
+import { DAY_MS, dayStart } from "../src/lib/time";
 import { addEntry, authCookie, db, html, req, seedHousehold } from "./helpers";
 
 describe("add screen notes", () => {
@@ -85,29 +85,19 @@ describe("add screen", () => {
   });
 });
 
-describe("add screen garden", () => {
-  const view = async (h: Awaited<ReturnType<typeof seedHousehold>>) =>
-    html(await req("/", { cookie: await authCookie(h.householdId, h.profileIds[0]) }));
-
-  it("celebrates yesterday's leaf (missions live on the garden screen, not here)", async () => {
+describe("add screen and the day's start", () => {
+  it("leaves the morning card to /js/morning.js, which every app screen loads", async () => {
     const now = Date.now();
-    const h = await seedHousehold({ createdAt: dayStart(now) - DAY_MS + 3_600_000 }); // started yesterday
-    const body = await view(h);
-    expect(body).toContain(`data-day="${toDateInput(now)}"`);
-    expect(body).toContain(`data-leaf="${toDateInput(now - DAY_MS)}"`);
-    expect(body).toContain("A perfect day! 🌸"); // a quiet day meets every mission
-    expect(body).toContain("That's your 1st leaf");
-  });
-
-  it("has no leaf to celebrate after a day that broke its missions: the morning card is only its note", async () => {
-    const h = await seedHousehold({ createdAt: Date.now() - 3 * DAY_MS });
-    const yesterday = dayStart(Date.now()) - DAY_MS;
-    const cats = ["Groceries", "Eating out", "Transport", "Bills", "Household", "Shopping"];
-    const amounts = [500_000, 4_000, 90_000, 200_000, 60_000, 120_000];
-    for (let i = 0; i < cats.length; i++) await addEntry(h, { amount: amounts[i], at: yesterday + (7 + i * 3) * 3_600_000, category: cats[i] });
-    const body = await view(h);
+    const h = await seedHousehold({ createdAt: dayStart(now) - DAY_MS + 3_600_000 }); // started yesterday: a leaf is due
+    const cookie = await authCookie(h.householdId, h.profileIds[0]);
+    const body = await html(await req("/", { cookie }));
+    expect(body).not.toContain('id="morning-card"');
     expect(body).not.toContain("data-leaf=");
-    expect(body).not.toContain('class="leaf-head"');
-    expect(body).toContain('class="note-head"');
+    for (const path of ["/", "/spending", "/history", "/settings"]) {
+      const page = await html(await req(path, { cookie }));
+      expect(page).toContain('<script type="module" src="/js/morning.js">');
+      expect(page).toContain('<meta name="kopit-person" content="Jon"/>');
+    }
+    expect(await html(await req("/login"))).not.toContain("/js/morning.js");
   });
 });

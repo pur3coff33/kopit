@@ -1,17 +1,10 @@
 import { attachKeypad, display, keypadKeyFor, press, toCentavos } from "./keypad.js";
-import { isStale, morningCard, recapToPlay } from "./leaf.js";
 import { sheetNotes, suggest, withPresets } from "./notes.js";
 import { count, enqueue, flush, remove } from "./queue.js";
 import { saveEntry } from "./save.js";
 import { startTour } from "./tour.js";
 
 const $ = (sel) => document.querySelector(sel);
-const LEAF_SEEN = "kopit-leaf-seen";
-const NOTE_SEEN = "kopit-note-seen";
-const NOTE_WAIT_MS = 20_000; // a note written on the spot can take a few seconds; past this, the card goes without it
-const NOTE_GONE_MS = 3_500; // how long a card that couldn't get its note says so before it closes itself
-const WRAPPED_SEEN = "kopit-wrapped-seen";
-const WEEK_SEEN = "kopit-week-seen";
 const DRAFT = "kopit-draft"; // what was typed when an update reloaded the app (sessionStorage)
 
 /** The amount, category and note kept across an update's reload, or null when there's nothing worth bringing back. */
@@ -29,13 +22,6 @@ export function readDraft(raw) {
   }
 }
 
-function remember(key) {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
 // The screen's elements: looked up again each time the screen is mounted.
 let profileId, amt, save, tiles, usual, pick, catSheet, noteSheet, noteChips, noteOther, noteUse, toastEl, toastText, undoBtn, noteToggle, noteBox, noteInput, suggestEl;
 let pickIcon = ""; // the picker button's icon while nothing is picked
@@ -294,133 +280,19 @@ async function onSave() {
 }
 
 function onVisible() {
-  if (document.visibilityState !== "visible") return;
-  sync();
-  // Back from the background, maybe on a new day: re-check yesterday's leaf.
-  const root = $("#add");
-  if (root) showGarden(root);
+  if (document.visibilityState === "visible") sync();
 }
 
 /**
  * Opens the add screen's first-time tour if it's due (or asked for again with ?tour); returns whether it opened.
- * Yesterday's leaf and Wrapped wait until it's closed.
+ * The day's start (/js/morning.js) waits until it's closed.
  */
 function showTour(root) {
   const replay = new URLSearchParams(location.search).has("tour");
   if (replay) history.replaceState(history.state, "", "/"); // a reload shouldn't play it again
   const dialog = $("#tour");
   if (!dialog) return false; // an older offline copy of the screen, from before the tour
-  return startTour(dialog, { replay, onDone: () => root === $("#add") && showGarden(root) });
-}
-
-/** The morning card once on this phone: yesterday's leaf and its note (fetching a fresh stamp first if this screen is from an earlier day). */
-function showGarden(root) {
-  if ($("#tour")?.open) return; // the tour is on: the leaf waits for it to close
-  if (isStale(root.dataset.day, Date.now())) {
-    refreshGarden(root); // rendered on an earlier day: fetch today's leaf in the background
-    return;
-  }
-  // A new month or week: its recap plays first (last month's and last week's as one story when both are due), once
-  // per phone, and only if this phone can remember it played.
-  const month = root.dataset.wrapped ?? null;
-  const week = root.dataset.week ?? null;
-  const recap = recapToPlay(month, week, remember(WRAPPED_SEEN), remember(WEEK_SEEN));
-  if (recap) {
-    try {
-      if (month) localStorage.setItem(WRAPPED_SEEN, month);
-      if (week) localStorage.setItem(WEEK_SEEN, week);
-      // The recap shows instead of yesterday's leaf card, not before it.
-      if (root.dataset.leaf) localStorage.setItem(LEAF_SEEN, root.dataset.leaf);
-    } catch {}
-    if ((!month || remember(WRAPPED_SEEN) === month) && (!week || remember(WEEK_SEEN) === week)) {
-      location.assign(recap);
-      return;
-    }
-  }
-  const sheet = $("#leaf-sheet");
-  if (!sheet || sheet.open || sheet.dataset.busy) return;
-  const card = morningCard(root.dataset.leaf ?? null, root.dataset.note ?? null, Date.now(), remember(LEAF_SEEN), remember(NOTE_SEEN));
-  // No signal: the note can't come, so it waits for a launch with signal instead of opening only to say so.
-  if (card.note && !navigator.onLine) card.note = false;
-  if (!card.leaf && !card.note) return;
-  const open = () => {
-    if (root !== $("#add") || sheet.open || !sheet.isConnected) return;
-    sheet.addEventListener(
-      "close",
-      () => {
-        try {
-          if (root.dataset.leaf) localStorage.setItem(LEAF_SEEN, root.dataset.leaf);
-          if (root.dataset.note && card.note) localStorage.setItem(NOTE_SEEN, root.dataset.note);
-        } catch {}
-      },
-      { once: true },
-    );
-    sheet.showModal();
-  };
-  // The leaf's heading while there's a leaf to celebrate (its recap may already have shown it), the note's otherwise.
-  const leafHead = sheet.querySelector(".leaf-head");
-  const noteHead = sheet.querySelector(".note-head");
-  const button = sheet.querySelector("button.save");
-  if (leafHead) leafHead.hidden = !card.leaf;
-  if (noteHead) noteHead.hidden = card.leaf;
-  if (button) button.textContent = card.leaf ? button.dataset.leafLabel : button.dataset.noteLabel;
-  sheet.setAttribute("aria-labelledby", card.leaf ? "leaf-title" : "note-title");
-  // The card opens straight away; the note's placeholder (server-rendered) is swapped for it when it comes.
-  const slot = sheet.querySelector(".dn-slot");
-  if (slot) slot.hidden = !card.note;
-  open();
-  if (!card.note) return;
-  sheet.dataset.busy = "1";
-  fillNote(slot, root.dataset.note).then((got) => {
-    delete sheet.dataset.busy;
-    if (got === "ok" || !slot) return;
-    // The leaf stands on its own. A card that's only the note says what happened and closes itself: it's seen for today
-    // either way, and a note that can still come waits in History.
-    if (card.leaf) return void (slot.hidden = true);
-    slot.innerHTML = `<p class="dn-wait">${got === "later" ? "Couldn't write yesterday's note just now. You'll find it in History later." : "No note for yesterday this time."}</p>`;
-    setTimeout(() => sheet.open && sheet.close(), NOTE_GONE_MS);
-  });
-}
-
-/** Puts a day's note in `slot`: "ok"; "none" when it has none and won't; "later" when it may come later (or we're offline). */
-async function fillNote(slot, day) {
-  if (!slot || !day) return "none";
-  try {
-    const res = await fetch(`/api/day-note/${day}?full`, { credentials: "same-origin", signal: AbortSignal.timeout(NOTE_WAIT_MS) });
-    if (res.status === 204) return "none";
-    if (res.status !== 200) return "later";
-    slot.innerHTML = await res.text();
-    slot.firstElementChild?.classList.add("dn-in");
-    return "ok";
-  } catch {
-    return "later";
-  }
-}
-
-/** Swaps in today's leaf from a fresh copy of the add screen, and keeps that copy for the next offline launch. */
-async function refreshGarden(root) {
-  try {
-    const res = await fetch("/", { credentials: "same-origin" });
-    if (!res.ok || res.redirected) return;
-    const copy = res.clone();
-    self.caches?.open("kopit-v2").then((c) => c.put("/", copy)).catch(() => {});
-    const doc = new DOMParser().parseFromString(await res.text(), "text/html");
-    const fresh = doc.querySelector("#add");
-    if (!fresh || root !== $("#add") || isStale(fresh.dataset.day, Date.now())) return; // left the screen, or still stale
-    root.dataset.day = fresh.dataset.day;
-    if (fresh.dataset.leaf) root.dataset.leaf = fresh.dataset.leaf;
-    else delete root.dataset.leaf;
-    if (fresh.dataset.wrapped) root.dataset.wrapped = fresh.dataset.wrapped;
-    else delete root.dataset.wrapped;
-    if (fresh.dataset.week) root.dataset.week = fresh.dataset.week;
-    else delete root.dataset.week;
-    if (fresh.dataset.note) root.dataset.note = fresh.dataset.note;
-    else delete root.dataset.note;
-    $("#leaf-sheet")?.remove();
-    const sheet = doc.querySelector("#leaf-sheet");
-    if (sheet) root.after(document.adoptNode(sheet));
-    showGarden(root);
-  } catch {} // offline: the leaf waits for a launch with signal
+  return startTour(dialog, { replay });
 }
 
 /** Keeps what's typed for after an update's reload. */
@@ -520,7 +392,7 @@ export function mount() {
   restoreDraft();
   render();
   sync();
-  if (!showTour(root)) showGarden(root);
+  showTour(root);
 
   return () => {
     window.removeEventListener("online", sync);

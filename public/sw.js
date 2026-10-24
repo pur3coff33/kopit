@@ -12,7 +12,7 @@ const PRECACHE = [
   "/js/notes.js",
   "/js/router.js",
   "/js/update.js",
-  "/js/leaf.js",
+  "/js/morning.js",
   "/js/tour.js",
   "/js/tour-page.js",
   "/js/wrapped.js",

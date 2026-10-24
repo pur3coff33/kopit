@@ -25,7 +25,6 @@ describe("installable app", () => {
     const cookie = await authCookie(h.householdId, h.profileIds[0]);
     const texts = [
       await (await asset("/sw.js")).text(),
-      await (await asset("/js/add.js")).text(),
       await (await req("/login?bye=1")).text(),
       await (await req("/settings/delete", { ...form({ pin: "482913", confirm: "DELETE" }), cookie })).text(),
     ];

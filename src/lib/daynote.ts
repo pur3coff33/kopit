@@ -59,7 +59,17 @@ export type NoteFacts = {
   other: number;
   usual: number | null;
   items: Array<{ what: string; category: string | null; group: Group | null; who: string; amount: number; time: string }>;
-  cats: Array<{ name: string; emoji: string; group: Group; amount: number; usual: number | null; daysThisWeek: number }>;
+  /** Each category the day had: its usual day, and the week so far (Monday up to and including this day). */
+  cats: Array<{
+    key: CategoryKey;
+    name: string;
+    emoji: string;
+    group: Group;
+    amount: number;
+    usual: number | null;
+    daysThisWeek: number;
+    week: number;
+  }>;
   missions: { met: string[]; missed: string[] } | null;
 };
 
@@ -115,11 +125,16 @@ export async function noteFacts(env: Env, householdId: number, createdAt: number
     const group = groupOf(r.key);
     if (r.categoryId === null || !group) continue;
     const c = cats.get(r.categoryId);
-    if (c) c.amount += r.amount;
+    if (c) {
+      c.amount += r.amount;
+      c.week += r.amount;
+    }
     else {
-      const days = new Set(past.filter((e) => e.categoryId === r.categoryId && dayKey(e.spentAt) >= weekFirst).map((e) => dayKey(e.spentAt)));
+      const thisWeek = past.filter((e) => e.categoryId === r.categoryId && dayKey(e.spentAt) >= weekFirst);
+      const days = new Set(thisWeek.map((e) => dayKey(e.spentAt)));
       const before = inWindow.filter((e) => e.categoryId === r.categoryId).reduce((s, e) => s + e.amount, 0);
-      cats.set(r.categoryId, { name: r.name!, emoji: r.emoji!, group, amount: r.amount, usual: avg(before), daysThisWeek: days.size + 1 });
+      const week = thisWeek.reduce((s, e) => s + e.amount, 0);
+      cats.set(r.categoryId, { key: r.key as CategoryKey, name: r.name!, emoji: r.emoji!, group, amount: r.amount, usual: avg(before), daysThisWeek: days.size + 1, week: week + r.amount });
     }
   }
   const m = missions.get(day);
@@ -146,6 +161,9 @@ export async function noteFacts(env: Env, householdId: number, createdAt: number
 
 const diff = (a: number, b: number) => `${formatPeso(Math.abs(a - b))} ${a >= b ? "more" : "less"}`;
 
+/** A want that ran at least twice its usual day (and ₱100 over it): one the note should point out. */
+export const ranHigh = (c: NoteFacts["cats"][number]) => c.group === "want" && c.usual !== null && c.amount >= 2 * c.usual && c.amount - c.usual >= 10_000;
+
 /** The facts as the AI reads them: plain lines, every amount already worked out. */
 export function factsText(f: NoteFacts): string {
   const out = [
@@ -163,11 +181,14 @@ export function factsText(f: NoteFacts): string {
     "By category:",
     ...f.cats.map(
       (c) =>
-        `- ${c.emoji} ${c.name} (${c.group}): ${formatPeso(c.amount)}` +
+        `- ${c.emoji} ${c.name} (${c.key === "vices" ? "a vice: drinking, smoking or gambling" : c.group}): ${formatPeso(c.amount)}` +
         (c.usual === null ? "" : `, usually ${formatPeso(c.usual)} a day`) +
-        `, bought on ${c.daysThisWeek} ${c.daysThisWeek === 1 ? "day" : "days"} this week so far`,
+        (ranHigh(c) ? " (much more than usual)" : "") +
+        `, bought on ${c.daysThisWeek} ${c.daysThisWeek === 1 ? "day" : "days"} this week so far, ${formatPeso(c.week)} this week so far`,
     ),
   ];
+  const vices = f.cats.find((c) => c.key === "vices");
+  if (vices) out.push(`Vices this day: ${formatPeso(vices.amount)} (${formatPeso(vices.week)} this week so far). Give them a line of their own.`);
   if (f.missions) {
     out.push(`Garden missions met: ${f.missions.met.length ? f.missions.met.join("; ") : "none"}`);
     out.push(`Garden missions missed: ${f.missions.missed.length ? f.missions.missed.join("; ") : "none"}`);
@@ -183,6 +204,10 @@ Voice: warm, gentle and plain, like a kind friend who is good with money. Simple
 - If the day ran high, say so plainly and kindly, and say what made it high. If it went well, enjoy it with them.
 - Needs (groceries, meals, bills, transport, health, school, family) are necessary: you may explain them, never suggest
   cutting one. You may suggest spending less on a want, always as an option ("maybe", "if you feel like it").
+- Vices (drinking, smoking, gambling) come first. When the day had any, always give them a line of their own: say
+  plainly what was spent on them, without judging or preaching, and make the idea for the next day about less of them
+  (or none), as an option. A short caring word about health or family is fine; a lecture is not.
+- After vices, point out the wants marked "much more than usual".
 - Using people's names is fine.
 - Call the day by its weekday ("Saturday"), never "today", "yesterday" or "tomorrow". Call the next day by its weekday too.
 
@@ -221,6 +246,7 @@ export function factAmounts(f: NoteFacts): number[] {
   for (const c of f.cats) {
     out.push(c.amount);
     if (c.usual !== null) out.push(c.usual, Math.abs(c.amount - c.usual));
+    out.push(c.week);
   }
   return out.filter((a) => a > 0);
 }

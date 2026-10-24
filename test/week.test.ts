@@ -119,11 +119,12 @@ describe("popping up", () => {
     expect((await todayGarden(env, fresh.householdId, now - DAY_MS, now)).weekRecap).toBeNull(); // last week was before it
   });
 
-  it("carries it on the add screen", async () => {
+  it("plays it on whichever screen each person opens first", async () => {
     const mon = weekStart(Date.now()) - 7 * DAY_MS;
     const h = await weeks(mon);
-    const body = await html(await req("/", { cookie: await authCookie(h.householdId, h.profileIds[0]) }));
-    expect(body).toContain(`data-week="${toDateInput(mon)}"`);
+    const res = await req("/api/morning", { cookie: await authCookie(h.householdId, h.profileIds[0]) });
+    // Early in a month last month's Wrapped is due too, and the week plays inside it (?week=).
+    expect(((await res.json()) as { recap: string }).recap).toMatch(new RegExp(`week[/=]${toDateInput(mon)}$`));
   });
 });
 

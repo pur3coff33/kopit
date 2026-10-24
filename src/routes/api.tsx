@@ -7,10 +7,12 @@ import { resolveCategory } from "../lib/categories";
 import { dayNote, noteRows, noteable } from "../lib/daynote";
 import { deleteEntry, insertEntry } from "../lib/entries";
 import { MAX_CENTAVOS, formatPeso } from "../lib/money";
+import { cleanSeen, markSeen, morning } from "../lib/morning";
 import { cleanNote } from "../lib/notes";
 import { weekCategoryTotal } from "../lib/stats";
 import { DAY_MS, dayKey, fromDateInput } from "../lib/time";
 import { DayNoteBody } from "../views/daynote";
+import { MorningCard } from "../views/morning";
 import { isTourScreen } from "../views/tour";
 
 export const api = new Hono<AppEnv>();
@@ -101,4 +103,24 @@ api.get("/day-note/:date", async (c) => {
     return later ? c.json({ error: "later" }, 503, { "Retry-After": "60" }) : c.body(null, 204);
   }
   return c.html(<DayNoteBody note={note} full={c.req.query("full") !== undefined} />, 200, { "Cache-Control": "no-store" });
+});
+
+// What this person's day starts with, asked by /js/morning.js on whichever screen they open first: a recap to play, or
+// the morning card. 204: nothing, or nothing more today.
+api.get("/morning", async (c) => {
+  const now = Date.now();
+  const m = await morning(c.env, c.get("householdId"), c.get("householdCreatedAt"), c.get("profileId"), now);
+  const fresh = { "Cache-Control": "no-store" };
+  if (m.kind === "none") return c.body(null, 204, fresh);
+  if (m.kind === "recap") return c.json({ recap: m.url, marks: m.marks }, 200, fresh);
+  const card = String(await (<MorningCard garden={m.garden} leaf={m.leaf} note={m.note} now={now} />).toString());
+  return c.json({ card, leaf: m.leaf, note: m.note }, 200, fresh);
+});
+
+// This person has had part of their day's start (a recap starting, the morning card closing): don't show it again.
+api.post("/morning/seen", async (c) => {
+  const had = cleanSeen(await readJson(c.req.raw));
+  if (!had) return c.json({ error: "seen" }, 400);
+  await markSeen(c.env, c.get("householdId"), c.get("profileId"), had);
+  return c.json({ ok: true });
 });

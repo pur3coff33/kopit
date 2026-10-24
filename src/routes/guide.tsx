@@ -81,7 +81,7 @@ guide.get("/guide", (c) => {
           ))}
         </ul>
         <p class="muted">
-          Only finished days count: today's leaf shows up after midnight, and the add screen celebrates it the next morning.
+          Only finished days count: today's leaf shows up after midnight, and kop.it celebrates it the next morning, on whichever screen you open first.
           The plant is always the whole household's, whoever is picked on the garden screen.
         </p>
       </section>

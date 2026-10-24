@@ -86,6 +86,21 @@ describe("a day's facts", () => {
     expect(factAmounts(f)).toEqual(expect.arrayContaining([117_500, 107_500, 96_500, 16_000]));
   });
 
+  it("singles out vices, with the week so far, and wants that ran far above usual", async () => {
+    const day = NOTES_FROM;
+    const h = await seedHousehold({ createdAt: startOf(day - 14) });
+    for (let d = day - 14; d < day; d++) await addEntry(h, { amount: 5_000, at: at(d, 20), category: "Eating out" }); // ₱50 a day
+    await addEntry(h, { amount: 18_000, at: at(day - 2, 21), category: "Vices" }); // Wednesday
+    await addEntry(h, { amount: 25_000, at: at(day, 22), category: "Vices" });
+    await addEntry(h, { amount: 30_000, at: at(day, 19), category: "Eating out" });
+    const f = (await noteFacts(env, h.householdId, startOf(day - 14), day, at(day + 1, 9)))!;
+    const text = factsText(f);
+    expect(text).toContain("Vices (a vice: drinking, smoking or gambling): ₱250");
+    expect(text).toContain("Vices this day: ₱250 (₱430 this week so far). Give them a line of their own.");
+    expect(text).toMatch(/Eating out \(want\): ₱300, usually ₱50 a day \(much more than usual\)/);
+    expect(factAmounts(f)).toEqual(expect.arrayContaining([25_000, 43_000]));
+  });
+
   it("has no usual day in the household's first week, and no facts for a day with nothing spent", async () => {
     const day = NOTES_FROM;
     const h = await seedHousehold({ createdAt: startOf(day - 2) });
@@ -238,9 +253,11 @@ describe("where a note shows", () => {
     const cats = ["Groceries", "Eating out", "Transport", "Bills", "Household", "Shopping"];
     const amounts = [500_000, 4_000, 90_000, 200_000, 60_000, 120_000];
     for (let i = 0; i < cats.length; i++) await addEntry(h, { amount: amounts[i], at: at(yesterday, 7 + i * 2), category: cats[i] });
-    const body = await html(await app.request("/", { headers: { Cookie: await authCookie(h.householdId, h.profileIds[0]) } }, env));
-    expect(body).not.toContain("data-leaf=");
-    expect(body).toContain(`data-note="${toDateInput(startOf(yesterday))}"`);
+    const res = await app.request("/api/morning", { headers: { Cookie: await authCookie(h.householdId, h.profileIds[0]) } }, env);
+    const m = (await res.json()) as { card: string; leaf: string | null; note: string };
+    expect(m.leaf).toBeNull();
+    expect(m.note).toBe(toDateInput(startOf(yesterday)));
+    const body = m.card;
     expect(body).toContain('aria-labelledby="note-title"');
     expect(body).toContain("Yesterday, in a few words");
     expect(body).toContain('class="dn-slot"');
@@ -256,7 +273,8 @@ describe("where a note shows", () => {
     const made = fakeAI({ lines: [{ emoji: "💸", text: "That was ₱99,999!" }], tip: "" }).ai;
     for (let i = 0; i < MAX_TRIES; i++) await dayNote({ ...env, AI: made }, h.householdId, startOf(yesterday - 3), yesterday, now);
     const cookie = await authCookie(h.householdId, h.profileIds[0]);
-    expect(await html(await app.request("/", { headers: { Cookie: cookie } }, env))).not.toContain("data-note=");
+    const m = await app.request("/api/morning", { headers: { Cookie: cookie } }, env);
+    if (m.status !== 204) expect(((await m.json()) as { note: unknown }).note).toBeNull(); // the leaf may still be due
     expect(await html(await app.request("/history", { headers: { Cookie: cookie } }, env))).not.toContain("The day in a few words");
   });
 
