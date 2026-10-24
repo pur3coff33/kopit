@@ -112,3 +112,26 @@ export const dayMissions = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.householdId, t.day] })],
 );
+
+/**
+ * Each finished day's note (daynote.ts): the numbers kop.it worked out and the few lines the AI wrote around them, as
+ * JSON. Written the first time it's asked for; the row is deleted when an expense on that day changes (written again
+ * then). Until the note is in, the row counts the tries at it and holds the claim of the phone writing it.
+ */
+export const dayNotes = sqliteTable(
+  "day_notes",
+  {
+    householdId: integer("household_id").notNull().references(() => households.id),
+    /** Manila day key. */
+    day: integer("day").notNull(),
+    /** The DayNote (daynote.ts) as JSON; null until it's written. */
+    note: text("note"),
+    /** Tries at writing it that cost something (MAX_TRIES at most). */
+    tries: integer("tries").notNull().default(0),
+    /** A random id for whoever is writing it right now, and since when; null when no one is. */
+    claim: text("claim"),
+    claimedAt: integer("claimed_at"),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.day] })],
+);

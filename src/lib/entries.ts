@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { deletedEntries, entries } from "../db/schema";
 import type { Env } from "../env";
+import { forgetNote } from "./daynote";
 import { invalidateGarden } from "./garden";
 
 export type NewEntry = {
@@ -26,8 +27,13 @@ export async function insertEntry(env: Env, householdId: number, e: NewEntry, no
     .onConflictDoNothing()
     .run();
   if (result.meta.changes === 0) return "duplicate";
-  await invalidateGarden(env, householdId, e.spentAt);
+  await changed(env, householdId, e.spentAt);
   return "created";
+}
+
+/** An expense on `spentAt` was written or deleted: the garden's results and the day's note it touches are out of date. */
+async function changed(env: Env, householdId: number, spentAt: number) {
+  await Promise.all([invalidateGarden(env, householdId, spentAt), forgetNote(env, householdId, spentAt)]);
 }
 
 const scoped = (householdId: number, id: string) => and(eq(entries.id, id), eq(entries.householdId, householdId));
@@ -51,8 +57,8 @@ export async function updateEntry(
     .where(scoped(householdId, id))
     .returning({ spentAt: entries.spentAt });
   if (rows.length === 0) return false;
-  await invalidateGarden(env, householdId, before.spentAt);
-  if (rows[0].spentAt !== before.spentAt) await invalidateGarden(env, householdId, rows[0].spentAt);
+  await changed(env, householdId, before.spentAt);
+  if (rows[0].spentAt !== before.spentAt) await changed(env, householdId, rows[0].spentAt);
   return true;
 }
 
@@ -60,7 +66,7 @@ export async function deleteEntry(env: Env, householdId: number, id: string, now
   const db = getDb(env);
   const rows = await db.delete(entries).where(scoped(householdId, id)).returning({ spentAt: entries.spentAt });
   if (rows.length === 0) return false;
-  await invalidateGarden(env, householdId, rows[0].spentAt);
+  await changed(env, householdId, rows[0].spentAt);
   await db.insert(deletedEntries).values({ id, householdId, deletedAt: now }).onConflictDoNothing();
   return true;
 }

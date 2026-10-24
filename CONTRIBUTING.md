@@ -17,6 +17,8 @@ npm run dev
 
 Open http://localhost:8787/setup to create a household.
 
+`npm run dev` runs fully local and never asks Workers AI: each day's note is made up around the day's real numbers (🧪 "Sample note"), so trying things out costs nothing and needs no Cloudflare login. The real notes only come from the deployed app. Tests don't use the AI either.
+
 ## Checks
 
 ```sh

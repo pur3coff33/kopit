@@ -6,6 +6,7 @@ import { categories, entries, profiles } from "../db/schema";
 import type { AppEnv } from "../env";
 import type { CategoryKey } from "../lib/categories";
 import { categoryColor } from "../lib/colors";
+import { noteRows, noteable, type DayNote } from "../lib/daynote";
 import { dayResults, isGood, isPerfect, missionDays, monthGardens, monthKey, monthName, spentMonth, type DayMissions, type DayResult } from "../lib/garden";
 import { formatPeso } from "../lib/money";
 import { DAY_MS, MANILA_OFFSET_MS, addMonths, clockTime, dayKey, dayStart, fromDateInput, isNight, monthStart, toDateInput, weekStart } from "../lib/time";
@@ -13,6 +14,7 @@ import { WEEK_MS } from "../lib/week";
 import { weekLabel } from "../views/week";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Hideable } from "../views/components";
+import { DayNoteBody, NoteSkeleton } from "../views/daynote";
 import { RoofGlass, Sky } from "../views/garden";
 import { Layout } from "../views/layout";
 import { Tour } from "../views/tour";
@@ -47,6 +49,21 @@ function DayMissionsLine({ m, today }: { m: DayMissions; today: boolean }) {
           </li>
         ))}
       </ul>
+    </details>
+  );
+}
+
+/**
+ * A finished day's note in its receipt, folded like the missions under it. One not written yet (`note` null) is asked
+ * for when the line is first opened (/js/history.js): it's written then, which can take a few seconds.
+ */
+function DayNoteLine({ day, note }: { day: number; note: DayNote | null }) {
+  return (
+    <details class="missions day-missions day-note-line" data-note={note ? undefined : toDateInput(day * DAY_MS - MANILA_OFFSET_MS)}>
+      <summary>
+        <span aria-hidden="true">✨</span> The day in a few words
+      </summary>
+      {note ? <DayNoteBody note={note} /> : <NoteSkeleton />}
     </details>
   );
 }
@@ -233,7 +250,7 @@ function ExpenseRow({ r, i, back }: { r: Row; i: number; back?: string }) {
   );
 }
 
-type Day = { day: number; kind: PotKind; rows: Row[]; total: number; missions?: DayMissions; big?: boolean };
+type Day = { day: number; kind: PotKind; rows: Row[]; total: number; missions?: DayMissions; big?: boolean; note?: DayNote | null };
 
 /** A week's shelf: seven pots with their price tags, and under it the receipt of the day that's open. */
 function Shelf(props: {
@@ -321,6 +338,7 @@ function Shelf(props: {
                   <span>{formatPeso(d.total)}</span>
                 </div>
                 {d.big && <p class="sm">📈 Biggest day this week</p>}
+                {d.note !== undefined && <DayNoteLine day={d.day} note={d.note} />}
                 {d.missions && <DayMissionsLine m={d.missions} today={d.kind === "today"} />}
                 {d.rows.length ? (
                   <ul class="rows">
@@ -516,7 +534,9 @@ history.get("/history", async (c) => {
   // One day-results lookup covers both the shelves and, for Everyone, the month signs above them.
   const lastDay = Math.max(to, months.length ? addMonths(months[months.length - 1], 1) : to);
   const days = dayResults(c.env, householdId, createdAt, dayKey(Math.min(from, months[0] ?? from)), dayKey(lastDay), now);
-  const [results, missions, gardens, mine] = await Promise.all([
+  // A day's note is the household's too, so like the missions it shows for Everyone only.
+  const noted = everyone ? [...byDay.keys()].filter((d) => noteable(d, today, true)) : [];
+  const [results, missions, gardens, mine, notes] = await Promise.all([
     days,
     everyone ? missionDays(c.env, householdId, createdAt, [...byDay.keys()], now) : Promise.resolve(null),
     everyone ? monthGardens(c.env, householdId, createdAt, now, months, days) : Promise.resolve([]),
@@ -527,6 +547,7 @@ history.get("/history", async (c) => {
           .from(entries)
           .where(and(scope, gte(entries.spentAt, months[0]), lt(entries.spentAt, addMonths(months[months.length - 1], 1))))
           .groupBy(spentMonth),
+    noteRows(c.env, householdId, noted),
   ]);
   const hidden = c.get("hideAmounts");
   const monthStats = (m: number): Child => {
@@ -579,6 +600,8 @@ history.get("/history", async (c) => {
         total: totals[k],
         missions: missions?.get(day),
         big: k === biggest,
+        // Written: shown. Not yet: asked for when its line opens. Its tries used up: no line.
+        note: !noted.includes(day) ? undefined : !notes.has(day) ? null : (notes.get(day) ?? undefined),
       };
     });
     const thisWeek = w === thisMonday;

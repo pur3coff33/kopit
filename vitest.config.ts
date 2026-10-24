@@ -7,6 +7,8 @@ export default defineConfig(async () => {
     plugins: [
       cloudflareTest({
         wrangler: { configPath: "./wrangler.jsonc" },
+        // Workers AI is remote-only: tests stay offline and hand each note's writer a stand-in instead (daynote.test.ts).
+        remoteBindings: false,
         miniflare: {
           bindings: { PIN_PEPPER: "test-pepper", TEST_MIGRATIONS: migrations },
           // Backups are off in wrangler.jsonc, but the code stays tested so it can be switched on later.

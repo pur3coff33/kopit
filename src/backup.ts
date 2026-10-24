@@ -1,5 +1,5 @@
 import { getTableColumns, getTableName, type Table } from "drizzle-orm";
-import { categories, dayMissions, deletedEntries, entries, gardenDays, households, profiles } from "./db/schema";
+import { categories, dayMissions, dayNotes, deletedEntries, entries, gardenDays, households, profiles } from "./db/schema";
 import type { Env } from "./env";
 import { toDateInput } from "./lib/time";
 
@@ -16,6 +16,8 @@ const TABLES: Array<[Table, string]> = [
   // worked out again, so they're backed up like the expenses.
   [gardenDays, "household_id, day"],
   [dayMissions, "household_id, day"],
+  // A day's note could be written again, but in other words: kept too, so History reads the same after a restore.
+  [dayNotes, "household_id, day"],
   [entries, "created_at, id"],
   [deletedEntries, "deleted_at, id"],
 ];

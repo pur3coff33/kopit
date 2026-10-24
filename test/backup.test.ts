@@ -3,14 +3,14 @@ import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { dumpToSql, runBackup } from "../src/backup";
 import { deleteEntry } from "../src/lib/entries";
-import { categories, dayMissions, gardenDays } from "../src/db/schema";
+import { categories, dayMissions, dayNotes, gardenDays } from "../src/db/schema";
 import { hashPin, verifyPin } from "../src/lib/pin";
 import { hashPinCore } from "../src/lib/pin-core.js";
 // @ts-ignore plain node script module
 import { resetSql } from "../scripts/hash-pin-lib.mjs";
 import { addEntry, db, seedHousehold } from "./helpers";
 
-const TABLES = ["households", "profiles", "categories", "garden_days", "day_missions", "entries", "deleted_entries"] as const;
+const TABLES = ["households", "profiles", "categories", "garden_days", "day_missions", "day_notes", "entries", "deleted_entries"] as const;
 
 async function counts() {
   const out: Record<string, number> = {};
@@ -29,6 +29,7 @@ describe("dumpToSql", () => {
     // A day kept for good from before the fixed categories, and a day's missions: neither can be rebuilt.
     await db().insert(gardenDays).values({ householdId: h.householdId, day: 20_700, missions: 3, done: 2, doneTypes: "a,b", items: '[{"title":"Skip ☕ Coffee"}]', final: true });
     await db().insert(dayMissions).values({ householdId: h.householdId, day: 20_700, baseline: '{"day":20700}', createdAt: 1 });
+    await db().insert(dayNotes).values({ householdId: h.householdId, day: 20_750, note: `{"lines":[{"emoji":"🛒","text":"Mom's groceries"}]}`, createdAt: 1 });
     const before = await counts();
     expect(before.garden_days).toBe(1);
     expect(before.deleted_entries).toBe(1);

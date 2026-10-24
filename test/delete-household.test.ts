@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { households } from "../src/db/schema";
+import { dayNotes, households } from "../src/db/schema";
 import { verifyLogin } from "../src/lib/login";
 import { addEntry, authCookie, db, form, html, req, seedHousehold } from "./helpers";
 
@@ -10,7 +10,7 @@ async function setup() {
   return { h, cookie: await authCookie(h.householdId, h.profileIds[0]) };
 }
 
-const TABLES = ["entries", "deleted_entries", "sessions", "garden_days", "day_missions", "categories", "profiles"];
+const TABLES = ["entries", "deleted_entries", "sessions", "garden_days", "day_missions", "day_notes", "categories", "profiles"];
 
 async function rowsOf(householdId: number) {
   const out: Record<string, number> = {};
@@ -69,8 +69,10 @@ describe("delete household", () => {
     await addEntry(other, { amount: 2000, at: Date.now() - 60_000, category: "Eating out" });
     const otherPhone = await authCookie(h.householdId, h.profileIds[1]);
     await req("/spending", { cookie }); // works out the garden, so its tables have rows to erase too
+    await db().insert(dayNotes).values({ householdId: h.householdId, day: 20_750, note: "{}", createdAt: 1 });
     const before = await rowsOf(h.householdId);
     expect(before.day_missions).toBeGreaterThan(0);
+    expect(before.day_notes).toBe(1);
 
     const res = await req("/settings/delete", { ...form({ pin: "482913", confirm: "DELETE" }), cookie });
     expect(res.status).toBe(200);

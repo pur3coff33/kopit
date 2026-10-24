@@ -2,6 +2,10 @@ export type Env = {
   DB: D1Database;
   /** Optional: R2 needs a payment method on the Cloudflare account, so backups start switched off. */
   BACKUPS?: R2Bucket;
+  /** Workers AI, for each day's note (daynote.ts). Without it there are simply no notes. */
+  AI?: Ai;
+  /** "1" in local dev (npm run dev): notes are made-up lines around the real numbers, and the AI is never asked. */
+  DUMMY_NOTES?: string;
   ASSETS: Fetcher;
   CF_VERSION_METADATA: WorkerVersionMetadata;
   PIN_PEPPER: string;

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --local --var DUMMY_NOTES:1",
     "test": "vitest run",
     "typecheck": "tsc",
     "db:generate": "drizzle-kit generate",

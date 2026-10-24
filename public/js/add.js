@@ -1,5 +1,5 @@
 import { attachKeypad, display, keypadKeyFor, press, toCentavos } from "./keypad.js";
-import { isStale, recapToPlay, shouldCelebrate } from "./leaf.js";
+import { isStale, morningCard, recapToPlay } from "./leaf.js";
 import { sheetNotes, suggest, withPresets } from "./notes.js";
 import { count, enqueue, flush, remove } from "./queue.js";
 import { saveEntry } from "./save.js";
@@ -7,6 +7,9 @@ import { startTour } from "./tour.js";
 
 const $ = (sel) => document.querySelector(sel);
 const LEAF_SEEN = "kopit-leaf-seen";
+const NOTE_SEEN = "kopit-note-seen";
+const NOTE_WAIT_MS = 20_000; // a note written on the spot can take a few seconds; past this, the card goes without it
+const NOTE_GONE_MS = 3_500; // how long a card that couldn't get its note says so before it closes itself
 const WRAPPED_SEEN = "kopit-wrapped-seen";
 const WEEK_SEEN = "kopit-week-seen";
 const DRAFT = "kopit-draft"; // what was typed when an update reloaded the app (sessionStorage)
@@ -310,7 +313,7 @@ function showTour(root) {
   return startTour(dialog, { replay, onDone: () => root === $("#add") && showGarden(root) });
 }
 
-/** Celebrate yesterday's leaf once on this phone (fetching a fresh stamp first if this screen is from an earlier day). */
+/** The morning card once on this phone: yesterday's leaf and its note (fetching a fresh stamp first if this screen is from an earlier day). */
 function showGarden(root) {
   if ($("#tour")?.open) return; // the tour is on: the leaf waits for it to close
   if (isStale(root.dataset.day, Date.now())) {
@@ -335,17 +338,63 @@ function showGarden(root) {
     }
   }
   const sheet = $("#leaf-sheet");
-  if (!sheet || sheet.open || !shouldCelebrate(root.dataset.leaf ?? null, Date.now(), remember(LEAF_SEEN))) return;
-  sheet.addEventListener(
-    "close",
-    () => {
-      try {
-        localStorage.setItem(LEAF_SEEN, root.dataset.leaf);
-      } catch {}
-    },
-    { once: true },
-  );
-  sheet.showModal();
+  if (!sheet || sheet.open || sheet.dataset.busy) return;
+  const card = morningCard(root.dataset.leaf ?? null, root.dataset.note ?? null, Date.now(), remember(LEAF_SEEN), remember(NOTE_SEEN));
+  // No signal: the note can't come, so it waits for a launch with signal instead of opening only to say so.
+  if (card.note && !navigator.onLine) card.note = false;
+  if (!card.leaf && !card.note) return;
+  const open = () => {
+    if (root !== $("#add") || sheet.open || !sheet.isConnected) return;
+    sheet.addEventListener(
+      "close",
+      () => {
+        try {
+          if (root.dataset.leaf) localStorage.setItem(LEAF_SEEN, root.dataset.leaf);
+          if (root.dataset.note && card.note) localStorage.setItem(NOTE_SEEN, root.dataset.note);
+        } catch {}
+      },
+      { once: true },
+    );
+    sheet.showModal();
+  };
+  // The leaf's heading while there's a leaf to celebrate (its recap may already have shown it), the note's otherwise.
+  const leafHead = sheet.querySelector(".leaf-head");
+  const noteHead = sheet.querySelector(".note-head");
+  const button = sheet.querySelector("button.save");
+  if (leafHead) leafHead.hidden = !card.leaf;
+  if (noteHead) noteHead.hidden = card.leaf;
+  if (button) button.textContent = card.leaf ? button.dataset.leafLabel : button.dataset.noteLabel;
+  sheet.setAttribute("aria-labelledby", card.leaf ? "leaf-title" : "note-title");
+  // The card opens straight away; the note's placeholder (server-rendered) is swapped for it when it comes.
+  const slot = sheet.querySelector(".dn-slot");
+  if (slot) slot.hidden = !card.note;
+  open();
+  if (!card.note) return;
+  sheet.dataset.busy = "1";
+  fillNote(slot, root.dataset.note).then((got) => {
+    delete sheet.dataset.busy;
+    if (got === "ok" || !slot) return;
+    // The leaf stands on its own. A card that's only the note says what happened and closes itself: it's seen for today
+    // either way, and a note that can still come waits in History.
+    if (card.leaf) return void (slot.hidden = true);
+    slot.innerHTML = `<p class="dn-wait">${got === "later" ? "Couldn't write yesterday's note just now. You'll find it in History later." : "No note for yesterday this time."}</p>`;
+    setTimeout(() => sheet.open && sheet.close(), NOTE_GONE_MS);
+  });
+}
+
+/** Puts a day's note in `slot`: "ok"; "none" when it has none and won't; "later" when it may come later (or we're offline). */
+async function fillNote(slot, day) {
+  if (!slot || !day) return "none";
+  try {
+    const res = await fetch(`/api/day-note/${day}?full`, { credentials: "same-origin", signal: AbortSignal.timeout(NOTE_WAIT_MS) });
+    if (res.status === 204) return "none";
+    if (res.status !== 200) return "later";
+    slot.innerHTML = await res.text();
+    slot.firstElementChild?.classList.add("dn-in");
+    return "ok";
+  } catch {
+    return "later";
+  }
 }
 
 /** Swaps in today's leaf from a fresh copy of the add screen, and keeps that copy for the next offline launch. */
@@ -365,6 +414,8 @@ async function refreshGarden(root) {
     else delete root.dataset.wrapped;
     if (fresh.dataset.week) root.dataset.week = fresh.dataset.week;
     else delete root.dataset.week;
+    if (fresh.dataset.note) root.dataset.note = fresh.dataset.note;
+    else delete root.dataset.note;
     $("#leaf-sheet")?.remove();
     const sheet = doc.querySelector("#leaf-sheet");
     if (sheet) root.after(document.adoptNode(sheet));

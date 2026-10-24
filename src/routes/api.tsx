@@ -4,10 +4,13 @@ import { getDb } from "../db/client";
 import { profiles } from "../db/schema";
 import type { AppEnv } from "../env";
 import { resolveCategory } from "../lib/categories";
+import { dayNote, noteRows, noteable } from "../lib/daynote";
 import { deleteEntry, insertEntry } from "../lib/entries";
 import { MAX_CENTAVOS, formatPeso } from "../lib/money";
 import { cleanNote } from "../lib/notes";
 import { weekCategoryTotal } from "../lib/stats";
+import { DAY_MS, dayKey, fromDateInput } from "../lib/time";
+import { DayNoteBody } from "../views/daynote";
 import { isTourScreen } from "../views/tour";
 
 export const api = new Hono<AppEnv>();
@@ -76,4 +79,26 @@ api.post("/tour", async (c) => {
       .where(and(eq(profiles.id, c.get("profileId")), eq(profiles.householdId, c.get("householdId"))));
   }
   return c.json({ ok: true });
+});
+
+// A finished day's note, as the piece of page it goes in: the morning card's (?full) or a receipt's in History. Written on
+// the first ask, so it can take a few seconds. 204: the day has none and won't (nothing spent, no AI, or its tries are
+// used up). 503: not right now (another phone is writing it, or the AI turned it away): asking later may get it.
+api.get("/day-note/:date", async (c) => {
+  const ms = fromDateInput(c.req.param("date"));
+  if (ms === null) return c.json({ error: "date" }, 400);
+  const householdId = c.get("householdId");
+  const day = dayKey(ms);
+  const note = await dayNote(c.env, householdId, c.get("householdCreatedAt"), day, Date.now());
+  if (!note) {
+    const spent = await c.env.DB.prepare("SELECT 1 FROM entries WHERE household_id = ? AND spent_at >= ? AND spent_at < ? LIMIT 1")
+      .bind(householdId, ms, ms + DAY_MS)
+      .first();
+    const later =
+      (c.env.AI || c.env.DUMMY_NOTES === "1") &&
+      noteable(day, dayKey(Date.now()), !!spent) &&
+      !(await noteRows(c.env, householdId, [day])).has(day);
+    return later ? c.json({ error: "later" }, 503, { "Retry-After": "60" }) : c.body(null, 204);
+  }
+  return c.html(<DayNoteBody note={note} full={c.req.query("full") !== undefined} />, 200, { "Cache-Control": "no-store" });
 });

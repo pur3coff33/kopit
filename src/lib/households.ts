@@ -1,6 +1,6 @@
 import { count, eq } from "drizzle-orm";
 import { getDb } from "../db/client";
-import { categories, dayMissions, deletedEntries, entries, gardenDays, households, profiles, sessions } from "../db/schema";
+import { categories, dayMissions, dayNotes, deletedEntries, entries, gardenDays, households, profiles, sessions } from "../db/schema";
 import type { Env } from "../env";
 import { FIXED } from "./categories";
 import { normalizeUsername } from "./login";
@@ -53,6 +53,7 @@ export async function deleteHousehold(env: Env, householdId: number): Promise<vo
     db.delete(sessions).where(eq(sessions.householdId, householdId)),
     db.delete(gardenDays).where(eq(gardenDays.householdId, householdId)),
     db.delete(dayMissions).where(eq(dayMissions.householdId, householdId)),
+    db.delete(dayNotes).where(eq(dayNotes.householdId, householdId)),
     db.delete(categories).where(eq(categories.householdId, householdId)),
     db.delete(profiles).where(eq(profiles.householdId, householdId)),
     db.delete(households).where(eq(households.id, householdId)),

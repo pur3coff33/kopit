@@ -1,8 +1,10 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../env";
 import { FIXED, listCategories, usualCategories } from "../lib/categories";
+import { noteDue } from "../lib/daynote";
+import { NoteSkeleton } from "../views/daynote";
 import { todayGarden } from "../lib/garden";
-import { DAY_MS, fromDateInput, isNight, weekdayDate } from "../lib/time";
+import { DAY_MS, dayStart, fromDateInput, isNight, weekdayDate } from "../lib/time";
 import { noteSuggestions } from "../lib/notes";
 import { requireProfile, requireSession } from "../middleware/auth";
 import { Amount, CategoryPicker, CategorySheet, Keypad, Toast } from "../views/components";
@@ -22,14 +24,16 @@ export function ordinal(n: number): string {
 add.get("/", requireSession, requireProfile, async (c) => {
   const householdId = c.get("householdId");
   const now = Date.now();
-  const [cats, usual, notes, garden] = await Promise.all([
+  const [cats, usual, notes, garden, noteDay] = await Promise.all([
     listCategories(c.env, householdId),
     usualCategories(c.env, householdId, now),
     noteSuggestions(c.env, householdId),
     todayGarden(c.env, householdId, c.get("householdCreatedAt"), now),
+    noteDue(c.env, householdId, now),
   ]);
   const presets = Object.fromEntries(cats.map((c) => [c.id, FIXED.find((f) => f.key === c.key)!.presets]));
   const leafAt = garden.leafDay ? (fromDateInput(garden.leafDay) ?? now - DAY_MS) : null;
+  const yesterdayAt = dayStart(now) - DAY_MS;
   return c.html(
     <Layout title="kop.it" tab="add" profileName={c.get("profileName")} profileIndex={c.get("profileIndex")} scripts={["/js/add.js", "/js/sky.js"]}>
       {/* The garden's live sky, as a band behind the header and the amount. */}
@@ -41,6 +45,7 @@ add.get("/", requireSession, requireProfile, async (c) => {
         data-presets={JSON.stringify(presets)}
         data-day={garden.today}
         data-leaf={garden.leafDay ?? undefined}
+        data-note={noteDay ?? undefined}
         data-wrapped={garden.wrappedMonth ?? undefined}
         data-week={garden.weekRecap ?? undefined}
       >
@@ -94,20 +99,40 @@ add.get("/", requireSession, requireProfile, async (c) => {
         </div>
         <button class="skip" type="button" id="note-skip"></button>
       </dialog>
-      {garden.leafDay && leafAt !== null && (
-        <dialog class="sheet leaf-sheet" id="leaf-sheet" aria-labelledby="leaf-title">
-          <Plant leaves={garden.leafNumber} newLeaf width={140} />
-          <h2 id="leaf-title">{garden.perfect ? "A perfect day! 🌸" : "A new leaf! 🍃"}</h2>
-          <p>
-            {garden.perfect
-              ? "Every mission done yesterday"
-              : `You finished ${garden.leafDone} of ${garden.leafMissions} missions yesterday`}{" "}
-            (<span class="nowrap">{weekdayDate(leafAt)}</span>). That's your {ordinal(garden.leafNumber)} leaf{" "}
-            {garden.leafMonthIsCurrent ? "this month" : `in ${garden.leafMonth}`}.
-          </p>
+      {/* The morning card: yesterday's leaf, its note (fetched into .dn-slot by /js/add.js), or both. Each part shows
+          once per phone; the heading is the leaf's when there's one still to celebrate, the note's otherwise. */}
+      {((garden.leafDay && leafAt !== null) || noteDay) && (
+        <dialog class="sheet leaf-sheet" id="leaf-sheet" aria-labelledby={garden.leafDay ? "leaf-title" : "note-title"}>
+          {garden.leafDay && leafAt !== null && (
+            <div class="leaf-head">
+              <Plant leaves={garden.leafNumber} newLeaf width={140} />
+              <h2 id="leaf-title">{garden.perfect ? "A perfect day! 🌸" : "A new leaf! 🍃"}</h2>
+              <p>
+                {garden.perfect
+                  ? "Every mission done yesterday"
+                  : `You finished ${garden.leafDone} of ${garden.leafMissions} missions yesterday`}{" "}
+                (<span class="nowrap">{weekdayDate(leafAt)}</span>). That's your {ordinal(garden.leafNumber)} leaf{" "}
+                {garden.leafMonthIsCurrent ? "this month" : `in ${garden.leafMonth}`}.
+              </p>
+            </div>
+          )}
+          {noteDay && (
+            <div class="note-head" hidden={!!garden.leafDay}>
+              <h2 id="note-title">Yesterday, in a few words</h2>
+              <p>
+                <span class="nowrap">{weekdayDate(yesterdayAt)}</span>
+                {garden.leafMissions > 0 && ` · ${garden.leafDone} of ${garden.leafMissions} missions`}
+              </p>
+            </div>
+          )}
+          {noteDay && (
+            <div class="dn-slot" aria-live="polite">
+              <NoteSkeleton full />
+            </div>
+          )}
           <form method="dialog">
-            <button class="save" type="submit">
-              Nice, thanks
+            <button class="save" type="submit" data-leaf-label="Nice, thanks" data-note-label="Got it">
+              {garden.leafDay ? "Nice, thanks" : "Got it"}
             </button>
           </form>
         </dialog>

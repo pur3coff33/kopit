@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 // @ts-ignore plain browser module
-import { isStale, manilaDate, shouldCelebrate } from "../public/js/leaf.js";
+import { isStale, manilaDate, morningCard, shouldCelebrate } from "../public/js/leaf.js";
 
 const noonOct21 = Date.UTC(2026, 9, 21, 4); // 12:00 Manila
 
@@ -19,6 +19,17 @@ describe("leaf helpers (add screen)", () => {
     expect(shouldCelebrate("2026-10-20", noonOct21, "2026-10-20")).toBe(false);
     expect(shouldCelebrate("2026-10-19", noonOct21, null)).toBe(false);
     expect(shouldCelebrate(null, noonOct21, null)).toBe(false);
+  });
+});
+
+describe("the morning card (add screen)", () => {
+  it("shows yesterday's leaf and its note once per phone each", () => {
+    expect(morningCard("2026-10-20", "2026-10-20", noonOct21, null, null)).toEqual({ leaf: true, note: true });
+    expect(morningCard(null, "2026-10-20", noonOct21, null, null)).toEqual({ leaf: false, note: true });
+    // Its recap played instead of the leaf: the note still comes, under its own heading.
+    expect(morningCard("2026-10-20", "2026-10-20", noonOct21, "2026-10-20", null)).toEqual({ leaf: false, note: true });
+    expect(morningCard("2026-10-20", "2026-10-20", noonOct21, "2026-10-20", "2026-10-20")).toEqual({ leaf: false, note: false });
+    expect(morningCard(null, "2026-10-19", noonOct21, null, null)).toEqual({ leaf: false, note: false });
   });
 });
 

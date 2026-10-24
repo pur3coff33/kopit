@@ -33,3 +33,11 @@ export function recapToPlay(month, week, seenMonth, seenWeek) {
 export function shouldCelebrate(leafDay, nowMs, lastSeen) {
   return !!leafDay && leafDay === manilaDate(nowMs - DAY_MS) && leafDay !== lastSeen;
 }
+
+/**
+ * What the morning card shows, once per phone each: yesterday's leaf (`leafDay`) and yesterday's note (`noteDay`), as
+ * "YYYY-MM-DD" or null. `leaf`: celebrate the leaf (its heading); `note`: fetch the note into the card.
+ */
+export function morningCard(leafDay, noteDay, nowMs, seenLeaf, seenNote) {
+  return { leaf: shouldCelebrate(leafDay, nowMs, seenLeaf), note: shouldCelebrate(noteDay, nowMs, seenNote) };
+}

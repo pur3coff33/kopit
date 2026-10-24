@@ -99,7 +99,7 @@ describe("add screen garden", () => {
     expect(body).toContain("That's your 1st leaf");
   });
 
-  it("has no leaf to celebrate after a day that broke its missions", async () => {
+  it("has no leaf to celebrate after a day that broke its missions: the morning card is only its note", async () => {
     const h = await seedHousehold({ createdAt: Date.now() - 3 * DAY_MS });
     const yesterday = dayStart(Date.now()) - DAY_MS;
     const cats = ["Groceries", "Eating out", "Transport", "Bills", "Household", "Shopping"];
@@ -107,6 +107,7 @@ describe("add screen garden", () => {
     for (let i = 0; i < cats.length; i++) await addEntry(h, { amount: amounts[i], at: yesterday + (7 + i * 3) * 3_600_000, category: cats[i] });
     const body = await view(h);
     expect(body).not.toContain("data-leaf=");
-    expect(body).not.toContain('id="leaf-sheet"');
+    expect(body).not.toContain('class="leaf-head"');
+    expect(body).toContain('class="note-head"');
   });
 });

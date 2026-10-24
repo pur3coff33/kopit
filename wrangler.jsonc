@@ -10,6 +10,8 @@
   "assets": { "directory": "./public", "binding": "ASSETS" },
   // Each deploy's upload time stamps every page, so an app left open can tell a newer one is out (public/js/update.js).
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  // Each day's note (src/lib/daynote.ts). The free plan's daily Workers AI allowance covers it; past that, notes just wait.
+  "ai": { "binding": "AI", "remote": true },
   "d1_databases": [
     {
       "binding": "DB",

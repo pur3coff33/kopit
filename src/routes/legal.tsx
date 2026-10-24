@@ -7,7 +7,7 @@ import { REPO_URL } from "./guide";
 
 export const legal = new Hono<AppEnv>();
 
-const UPDATED = "October 23, 2026";
+const UPDATED = "October 24, 2026";
 
 function LegalPage(props: { title: string; heading: string; children?: Child }) {
   return (
@@ -46,6 +46,7 @@ legal.get("/privacy", (c) =>
         <li>The names of the people in the household, whether each one has hidden the total with the eye, and which screens' first-time tours they've seen.</li>
         <li>Every expense: the amount, its category, the optional note, who logged it and when.</li>
         <li>How each day's missions went (to grow the plant).</li>
+        <li>Each day's note: a few lines about that day's spending, written by AI (see below).</li>
         <li>Logins (as hashed tokens) and failed PIN tries, to keep the household safe.</li>
         <li>When an expense is deleted, only its random id and the time, so an offline phone can't send it back.</li>
       </ul>
@@ -67,6 +68,15 @@ legal.get("/privacy", (c) =>
         <a href="https://www.bigdatacloud.com/terms-of-use">BigDataCloud</a> once, and again only if you move a few
         kilometres. Your location is never sent to kop.it's server. Say no and nothing is sent anywhere; the sky just
         follows the clock.
+      </p>
+
+      <h2>Each day's note</h2>
+      <p>
+        To write a day's note, kop.it sends that day's expenses (amounts, categories, notes, and the names of who logged
+        them) with a few totals it worked out to{" "}
+        <a href="https://developers.cloudflare.com/workers-ai/platform/data-usage/">Workers AI</a>, run by Cloudflare,
+        which also hosts kop.it. Cloudflare says it doesn't keep them after the note is written and doesn't use them to
+        train AI. The note is kept with the household until the day's expenses change or the household is deleted.
       </p>
 
       <h2>Where it's stored</h2>
@@ -129,8 +139,9 @@ legal.get("/terms", (c) =>
 
       <h2>Not financial advice</h2>
       <p>
-        Missions, leaves and blooms are encouragement, not advice. Totals are only as right as what's logged. For decisions
-        that matter, check your own records.
+        Missions, leaves, blooms and each day's note are encouragement, not advice. A day's note is written by AI from
+        kop.it's own numbers, and can still get things wrong. Totals are only as right as what's logged. For decisions that
+        matter, check your own records.
       </p>
 
       <h2>No guarantees</h2>

@@ -136,6 +136,43 @@ export function mount() {
   }
   list.addEventListener("click", onClick);
 
+  // A day's note not written yet is asked for the first time its line opens (toggle doesn't bubble: caught on the way down).
+  // Its placeholder comes from the server; a copy is kept to put back if a try has to be made again.
+  let skeleton = "";
+  async function onToggle(ev) {
+    const line = ev.target;
+    if (!line.matches?.("details[data-note]") || !line.open || line.dataset.loading) return;
+    line.dataset.loading = "1";
+    const say = (text) => {
+      line.querySelector(".dn-loading, .dn-wait")?.remove();
+      line.insertAdjacentHTML("beforeend", `<p class="dn-wait">${text}</p>`);
+    };
+    // The placeholder is there from the server, or put back after an earlier try said "later".
+    const placeholder = line.querySelector(".dn-loading");
+    if (placeholder) skeleton = placeholder.outerHTML;
+    else {
+      line.querySelector(".dn-wait")?.remove();
+      line.insertAdjacentHTML("beforeend", skeleton);
+    }
+    try {
+      const res = await fetch(`/api/day-note/${line.dataset.note}`, { credentials: "same-origin" });
+      if (stopped) return;
+      if (res.status === 200) {
+        line.querySelector(".dn-loading")?.remove();
+        line.insertAdjacentHTML("beforeend", await res.text());
+        line.lastElementChild?.classList.add("dn-in");
+        delete line.dataset.note;
+      } else if (res.status === 204) {
+        say("No note for this day.");
+        delete line.dataset.note;
+      } else say("Couldn't write this day's note just now. Open it again in a minute.");
+    } catch {
+      if (!stopped) say("Couldn't get this day's note. Try again when you're online.");
+    }
+    delete line.dataset.loading;
+  }
+  list.addEventListener("toggle", onToggle, true);
+
   async function loadMore() {
     if (!more || more.dataset.loading) return;
     more.dataset.loading = "1";
@@ -189,6 +226,7 @@ export function mount() {
     removeEventListener("scroll", onScroll);
     clearTimeout(scrollTimer);
     list.removeEventListener("click", onClick);
+    list.removeEventListener("toggle", onToggle, true);
     timers.forEach(clearTimeout);
   };
 }

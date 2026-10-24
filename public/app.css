@@ -560,6 +560,46 @@ section.card > h2, .section-label, .fold summary h2, .missions-head span:first-c
 .leaf-sheet .plant { display: block; margin: 0 auto; }
 .leaf-sheet h2 { font-size: 21px; margin: 6px 0 4px; }
 .leaf-sheet p { font-size: 14px; opacity: 0.8; line-height: 1.45; margin: 0 4px 14px; }
+.leaf-sheet { overflow-y: auto; }
+/* With a note under it the plant steps back a little, so the card still fits a small phone. */
+.leaf-sheet:has(.day-note) .plant { width: 96px; height: auto; }
+
+/* A day's note (src/views/daynote.tsx): on the morning card, and folded into a day's receipt in History. */
+.dn-slot { margin: 0 0 14px; text-align: left; }
+.dn-slot:empty { display: none; }
+.day-note { text-align: left; }
+.dn-bars { margin: 0 0 10px; }
+.dn-bar { display: grid; grid-template-columns: 74px 1fr auto; align-items: center; gap: 8px; margin: 5px 0; font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.dn-bar i { height: 8px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.dn-bar b { display: block; height: 100%; border-radius: 99px; background: var(--leaf); }
+.dn-bar.high b { background: #e3a857; }
+.dn-bar.usual b { background: #b7d6be; }
+.dn-bar.ph b { background: rgba(31, 51, 38, 0.2); }
+.dn-bar strong { color: var(--ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+.day-note .dn-src { margin: 2px 0 0; font-size: 11px; font-weight: 700; color: var(--muted); text-align: right; opacity: 1; }
+.dn-lines { list-style: none; margin: 0; padding: 0; }
+.dn-lines li { display: flex; gap: 10px; padding: 5px 0; font-size: 14px; line-height: 1.4; }
+.dn-lines li span:first-child { flex: none; width: 20px; text-align: center; }
+.dn-tip { margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: var(--mint); font-size: 14px; line-height: 1.4; }
+.dn-tip span { display: block; margin-bottom: 2px; font-size: 10.5px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; color: var(--caps-ink); }
+.day-note .dn-next { margin: 4px 0 10px; font-size: 13.5px; line-height: 1.4; opacity: 1; }
+.dn-wait, .leaf-sheet .dn-wait { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--muted); opacity: 1; }
+.day-note-line .day-note { padding-bottom: 4px; }
+/* While the note is being written: its shape, pulsing like the screens' loading placeholders; then it fades in. */
+.dn-loading .sk { background: var(--track); border: 0; }
+.dn-sk-label { width: 60px; height: 10px; }
+.dn-sk-track { height: 8px; border-radius: 99px; }
+.dn-sk-amount { width: 48px; height: 12px; }
+.dn-sk-lines div { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.dn-sk-dot { flex: none; width: 20px; height: 20px; border-radius: 50%; }
+.dn-sk-lines .sk-line { height: 12px; }
+.dn-sk-tip { height: 58px; margin-top: 8px; border-radius: 14px; }
+.day-note-line .dn-loading { padding-bottom: 8px; }
+.day-note-line .dn-sk-tip { height: 34px; }
+.dn-in { animation: dn-in 0.35s ease-out both; }
+@keyframes dn-in { from { opacity: 0; translate: 0 4px; } }
+@media (prefers-reduced-motion: reduce) { .dn-in { animation: none; } }
+
 .leaf.new { transform-box: fill-box; transform-origin: center; animation: leaf-grow 0.4s ease-out 0.25s both; }
 @keyframes leaf-grow { from { opacity: 0; scale: 0.2; } to { opacity: 1; scale: 1; } }
 @media (prefers-reduced-motion: reduce) { .leaf.new { animation: none; } }
